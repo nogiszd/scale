@@ -19,7 +19,7 @@ and owners: docs/TASKS.md. Milestone states: docs/ROADMAP.md.
    adapters, CRT startup, DLL init), each with its own test executable.
 3. Graphics triangle slice (M6).
 
-Review queue: Codex T-706. Then decide the next shader ABI extension with Codex (contract first).
+Review queue: Codex T-730 (ABI v2 contract). After approval: T-733 interpreter for v2 (mine), in parallel with Codex T-731/T-732.
 
 ## Decisions to remember
 
