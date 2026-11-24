@@ -35,7 +35,7 @@ For verified results, see [Development progress](docs/PROGRESS.md). For the comp
 
 ## Roadmap
 
-SCALE is being built as a complete translation layer that runs Xbox Series X|S games on Windows. The game's AMD64 code runs natively on the host CPU. Everything else it expects from the console is supplied by SCALE: system services, graphics, shaders, audio and input. Every pillar is required, and a game is only considered working once all of them do their part.
+SCALE is being built as a complete translation layer that runs Xbox Series X|S executables on Windows. The executable's AMD64 code runs natively on the host CPU. Everything else it expects from the console is supplied by SCALE: system services, graphics, shaders, audio and input. Every pillar is required, and an executable is only considered working once all of them do their part.
 
 | Pillar | Milestones | Status | Scope |
 | :----- | :--------- | :----- | :---- |
@@ -43,9 +43,9 @@ SCALE is being built as a complete translation layer that runs Xbox Series X|S g
 | **Shaders** | M7 | **In progress** | RDNA2 (gfx1030) recompiler to SPIR-V. Decoder, typed IR and validated SPIR-V output for the first compute subset are done. Next: an independent reference interpreter and GPU differential verification, then control flow, EXEC masks, wave operations, memory/resources and vertex/pixel stages. |
 | **Graphics** | M6, M8 | Planned | Vulkan host backend ([decision 0003](docs/decisions/0003-gpu-backend.md)): first a verified compute/triangle slice, then the console graphics API mapped onto Vulkan, with resources, descriptors, synchronization, presentation and pipelines built from translated shaders. |
 | **Audio, input and local data** | M9 | Planned | Interfaces demanded by verified test titles, built on public host APIs. Offline behavior is accurate, and unavailable services report documented errors. Nothing impersonates online services. |
-| **Running games** | M10 | Gated | Authorized retail testing starts only after the readiness baseline in [AGENTS.md](AGENTS.md) is met. After that, compatibility improves blocker by blocker from observed evidence. Each title is tracked per stage (inspected, loaded, initialized, menu, rendering, gameplay). |
+| **Running executables** | M10 | Gated | Authorized retail testing starts only after the readiness baseline in [AGENTS.md](AGENTS.md) is met. After that, compatibility improves blocker by blocker from observed evidence. Each executable is tracked per stage (inspected, loaded, initialized, menu, rendering, interactive). |
 
-Nothing on this roadmap is implemented beyond what the status tables show. Broad game compatibility is the goal, not a promise.
+Nothing on this roadmap is implemented beyond what the status tables show. Broad compatibility is the goal, not a promise.
 
 ## Getting started
 
@@ -175,7 +175,7 @@ The PE inspection interface is documented in [docs/contracts/inspect.md](docs/co
 
 SCALE is an independent project and is not affiliated with Microsoft or Xbox.
 
-The project uses public documentation and self-authored test material only. It does not implement package decryption, DRM bypass, entitlement spoofing or online service impersonation, and it ships no proprietary SDK files or games.
+The project uses public documentation and self-authored test material only. It does not implement package decryption, DRM bypass, entitlement spoofing or online service impersonation, and it ships no proprietary SDK files or third-party executables.
 
 ---
 
