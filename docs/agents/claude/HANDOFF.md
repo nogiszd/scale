@@ -4,7 +4,7 @@ Role: architect and integration coordinator (sole merger to `integration`
 and `main`), CPU/runtime, reference interpreter, Vulkan backend,
 differential GPU verification.
 
-Last updated: 2026-11-24, at `integration` = `main` = `f0d2927` (local; 13 commits ahead of `origin`).
+Last updated: 2026-11-24, after T-720. Pushes need the maintainer's approval. Next for me: T-712 (waits for Codex's `decode.h` v3, T-708), T-801 portability, then M3.
 `origin` is at `e912520`, and the maintainer authorizes each push.
 
 ## State of the project
@@ -38,7 +38,7 @@ Test totals (unchanged since the T-703 merge, `da29a41`): `ctest --preset full` 
    the test is SKIPPED. Record device, driver and SDK. The device is an
    RX 9070 XT, Vulkan 1.4.359, `shaderRoundingModeRTEFloat32 = true`,
    subgroup 64 (range 32–64).
-3. **T-720 — differential runner**: T-704 JSON test cases → decode → (a)
+3. ~~**T-720 — differential runner**~~ DONE: 4 cases PASS on the RX 9070 XT and the first M7 slice is verified. Follow-up: switch to T-705 JSON cases when it lands. Former plan:: T-704 JSON test cases → decode → (a)
    T-711 interpreter, (b) IR → SPIR-V → T-601 GPU run. Compare both
    against the manual expected values and each other: exact u32, f32 at
    0 ULP in the normal domain. This closes the first M7 slice.

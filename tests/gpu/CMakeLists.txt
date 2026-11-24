@@ -19,3 +19,12 @@ scale_add_test(NAME gpu_vulkan_compute
     TIMEOUT 120)
 add_dependencies(gpu_vulkan_compute scale_gpu_test_shaders)
 target_compile_definitions(gpu_vulkan_compute PRIVATE "SCALE_TEST_SPIRV_SCALE3=\"${_scale3_spv}\"")
+
+# --- Differential runner: interpreter vs GPU (T-720) ---------------------------
+if(TARGET scale_shader_spirv AND TARGET scale_shader_ref)
+    scale_add_test(NAME gpu_shader_differential
+        SOURCES differential_test.cpp
+        LIBS scale::graphics scale::shader_spirv scale::shader_ir scale::shader_decode scale::shader_ref
+        LABELS gpu
+        TIMEOUT 120)
+endif()

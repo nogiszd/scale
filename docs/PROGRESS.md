@@ -2,6 +2,37 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-720 Differential runner: first M7 slice verified on hardware (Claude)
+
+- `gpu_shader_differential` (label gpu): for each ABI v0 case, it decodes,
+  then (a) runs the independent interpreter (`scale::shader_ref`) and
+  (b) runs IR → SPIR-V (`scale::shader_ir`, `scale::shader_spirv`) →
+  `scale::graphics` dispatch on **every** device. Both are compared with
+  hand-computed expected values and the GPU result with the interpreter. The
+  output buffer starts as 0xDEADBEEF, so unwritten words are visible. Cases
+  that need RTE are SKIPPED per device without `shaderRoundingModeRTEFloat32`.
+- Cases (llvm-mc 23.1.6 encodings): `t704_add_lane_to_input` (contract
+  outputs), `f32_add_mul_rne` (−4·(1+x) on exact values, plus an RNE tie
+  lane), `scalar_broadcast_mul_lo` (literal, `s_add_u32`, SGPR broadcast,
+  `v_mul_lo_u32`), `u32_double_wrap`.
+- Result on AMD Radeon RX 9070 XT (Vulkan 1.4.359, AMD 26.10.1 LLPC,
+  subgroup 64 [32..64]): **4/4 PASS**, the interpreter matches expected and
+  the GPU matches both. Under `VK_LAYER_KHRONOS_validation`: 0 messages.
+- Mutation check: an emitter that uses `OpIMul` for `uadd` is caught (GPU vs
+  expected and GPU vs interpreter fail on the integer cases). Code restored.
+  The runner now prints PASS/FAIL from the actual comparison.
+- **M7 first-slice acceptance (AGENTS.md):** the decoder agrees with LLVM
+  disassembly (T-701), hand-authored expected values agree with the
+  interpreter (T-711), and validated SPIR-V (T-703) runs on Vulkan hardware
+  with results matching the reference (T-720). Device, driver and tool
+  versions are recorded above.
+- Limitations: one GPU class (A2). The RTE tie case can't tell RTE apart
+  from a device whose default is already RTE, so a device that ignored the
+  execution mode but rounds to nearest-even by default would still pass.
+  Cases are inline C++ until T-705 provides the shared JSON loader. ABI v1
+  (EXEC masks, branches) comes next (T-708, T-709, T-712).
+- `ctest`: full/release-full 169/169, full-all/release-full-all 232/232, gpu 4/4.
+
 ## 2026-11-24 — T-601 Vulkan compute harness and GPU target matrix (Claude)
 
 - `docs/contracts/gpu_targets.md` describes the properties that vary between
