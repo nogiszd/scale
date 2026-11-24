@@ -13,6 +13,12 @@ scale_add_test(NAME unit_diagnostics
     LIBS scale::diagnostics
     LABELS quick)
 
+# --- PE inspector (T-101) -----------------------------------------------------
+scale_add_test(NAME unit_loader
+    SOURCES loader/pe_image_test.cpp
+    LIBS scale::loader
+    LABELS quick)
+
 # --- Test infrastructure self-test (T-001) -----------------------------------
 # The probe is built but its cases are not registered (they skip and fail on
 # purpose). These tests check that GoogleTest's skip output matches the
