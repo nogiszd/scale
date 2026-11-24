@@ -5,8 +5,8 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 ## Start here
 
 1. Read `AGENTS.md`, `docs/MULTI_AGENT.md`, `docs/architecture.md`,
-   `docs/contracts/testing.md` and your tasks in `docs/TASKS.md`
-   (T-704, T-701, then T-702 and T-703).
+   `docs/contracts/testing.md`, the decisions `0003` and `0004`, and the
+   current task registry on `integration`.
 2. Use the existing Codex worktree. Start each task branch from the current
    `integration` after the coordinator's review checkpoint.
 3. Build with `-DSCALE_ENABLE_SHADER=ON`, for example
@@ -21,15 +21,56 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
   docs/contracts/testing.md). `GTEST_SKIP()` is reported as SKIPPED.
 - Do not depend on loader, host, runtime or graphics.
 - Do not put semantic lowering code anywhere `src/shader_ref` could use it.
+- Keep shader code and `scale-shader` free of OS headers. Follow decision
+  `0004` for neutral interfaces and `_win32.cpp` helpers. T-801 owns the
+  shared process helper for tests of portable components.
 - LLVM 23.1.6 with AMDGPU is installed (`scripts/build-llvm-amdgpu.ps1`).
   LLVM cross-check tests still use `GTEST_SKIP()` on machines without it,
   never pass.
 
 ## Ready for review
 
-### T-703 — REVIEW
+### T-707 — REVIEW
 
-Review branch `codex/T-703-spirv`, based on `integration` at `e912520`.
+Review branch `codex/T-707-abi-v1`, based on `integration` at `bd738f1`.
+The [ABI v1 section](../../contracts/shader_abi.md#abi-v1--exec-masks-and-scalar-control-flow)
+defines wave32 EXEC and VCC updates, a forward-only scalar control-flow
+graph, lane-level pending loads, and output words preserved by inactive
+lanes. The case format adds required `initial_exec` and
+`initial_output_words` fields for `abi_version: 1`. Vulkan lowering keeps
+scalar control uniform and forms the compare mask within the workgroup.
+Review the zero-EXEC compare, mask restore, SCC updates and pending-load
+rules against T-711 before freezing the contract.
+
+```powershell
+git fetch origin integration
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset debug
+ctest --preset full
+cmake --preset release -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset release
+ctest --preset release-full
+# The ABI v1 assembly block was extracted to out/abi-v1-review/partial.s.
+llvm-mc -triple=amdgcn -mcpu=gfx1030 -mattr=+wavefrontsize32 -filetype=obj -o out/abi-v1-review/partial.o out/abi-v1-review/partial.s
+llvm-objdump --disassemble --mcpu=gfx1030 --mattr=+wavefrontsize32 out/abi-v1-review/partial.o
+git diff --cached --check
+```
+
+- The fetched integration tip matched the local starting point. Debug and
+  Release each passed all 212 CTest cases with zero skips.
+- LLVM 23.1.6 assembled and disassembled the example. The `s_cbranch_execz`
+  at byte offset `0x08` has displacement 4 dwords and targets the store at
+  `0x1c`. The separate restore probe checked `v_cmp_eq_u32_e32`,
+  `s_cbranch_scc0`, `s_cbranch_scc1`, `s_branch`, and `s_mov_b32 exec_lo`.
+- T-707 is a contract review. The runtime semantics and GPU lowering of
+  ABI v1 will be verified by their implementation tasks after the freeze.
+
+## Completed
+
+### T-703 — SPIR-V emitter and validation
+
+Approved and merged into `integration` at `ba5792c`.
 `scale::shader_spirv` writes SPIR-V 1.5 words directly for Vulkan 1.2. The
 public [spirv.h](../../../src/shader/include/scale/shader/spirv.h) exposes
 `emit_spirv(IrProgram)` and a module with the `requires_float32_rte` flag.
@@ -75,8 +116,6 @@ git diff --cached --check
 - With `spirv-val` unavailable in the isolated configure, seven emitter
   unit tests passed and three validation tests were SKIPPED. GPU execution
   and differential readback are T-720.
-
-## Completed
 
 ### T-702 — Shader IR v0
 
@@ -207,10 +246,10 @@ git diff --cached --check
 
 ## Next
 
-T-720 will use `emit_spirv` for the Vulkan run and compare measured outputs
-with the T-711 interpreter and manual expectations. T-711 consumes the
-frozen decoder interface and T-704 contract independently of the compiler.
+After the coordinator reviews T-707, start T-705 from `integration` and
+submit its public test-case header for a separate interface freeze. T-705
+targets the T-704 ABI v0 JSON. T-706 follows T-705.
 
 ## Requests to coordinator
 
-- Review the T-703 branch and confirm `spirv.h` for the T-720 runner.
+- Review and freeze the T-707 contract with the T-711 interpreter semantics.

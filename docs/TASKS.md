@@ -32,8 +32,11 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-703 | SPIR-V emitter + validation | Codex | DONE | T-702 | M7 |
 | T-705 | Shader test-case library (T-704 JSON) | Codex | READY | T-704 | M7 |
 | T-706 | `scale-shader` CLI (decode / compile / validate) | Codex | WAITING | T-705 | M7 |
-| T-707 | Shader ABI v1 contract: EXEC masks and control flow | Codex | READY | T-704 | M7 |
+| T-707 | Shader ABI v1 contract: EXEC masks and control flow | Codex | DONE | T-704 | M7 |
+| T-708 | Decoder for ABI v1 (decode.h v3: vcc_lo/exec_lo, VOPC, branches) | Codex | READY | T-707 | M7 |
+| T-709 | IR + SPIR-V for ABI v1 (EXEC masks, structured branches, VCC exchange) | Codex | WAITING | T-708 | M7 |
 | T-711 | RDNA2 reference interpreter | Claude | DONE | T-701 (interface), T-704 | M7 |
+| T-712 | Reference interpreter for ABI v1 | Claude | WAITING | T-708 (interface) | M7 |
 | T-720 | Differential runner: interpreter vs GPU | Claude | WAITING | T-601, T-703, T-711 | M7 |
 
 Unassigned backlog: title filesystem / path translation (M4), adapter
@@ -280,7 +283,8 @@ Library `scale::shader_testcase`: loads the T-704 JSON test-case format
 strictly. It rejects duplicate, missing or unknown fields, bad values,
 unsupported versions and out-of-contract dispatch, with named error codes
 (component `shader`, stage `testcase`). Output: a typed struct with code
-words, input words, expected words, output type and seed. Do not depend on
+words, input words, expected words, output type and seed, plus the ABI v1
+fields `initial_exec` and `initial_output_words` (T-707). Do not depend on
 `shader_ir`, `shader_spirv` or `shader_ref`. T-720 (Claude) and T-706 consume
 it. If you want a JSON library instead of a small strict parser, propose it
 in your HANDOFF first (AGENTS.md: pinned, justified dependency).
@@ -328,6 +332,33 @@ Needs a Linux machine or CI runner with Vulkan. Scope: configure presets for
 GCC/Clang plus Ninja, build the portable components, run their tests and
 the Vulkan GPU tests (SKIPPED without a device). This can't be marked done
 without real Linux runs.
+## T-708 — Decoder for ABI v1 (Codex)
+
+`decode.h` is frozen, so this starts with an **interface v3 proposal** as a
+separate REVIEW step: operand kinds (or an equivalent) for `vcc_lo` (106)
+and `exec_lo` (126), `Encoding::vopc`, the new opcodes (`v_cmp_eq_u32`,
+`v_cmp_lt_u32`, `s_and_saveexec_b32`, `s_cbranch_scc0/1`, `s_cbranch_execz`,
+`s_branch`), and a branch operand that carries the raw SIMM16 and the
+computed target dword. Keep `encoded` raw fields so T-712 can check
+independently. After the freeze: decoder implementation, LLVM cross-check
+coverage for every new form, and negative tests. Branch-target structure
+is a program check for the IR and interpreter, not the decoder.
+
+## T-709 — IR + SPIR-V for ABI v1 (Codex)
+
+Lower ABI v1 per `docs/contracts/shader_abi.md`: uniform EXEC/VCC/SCC/PC,
+static branch-structure checks (forward only, the single store and end on
+every path), a structured block dispatcher, per-lane guards, masked store,
+and the workgroup-memory VCC exchange with barriers in uniform control flow.
+spirv-val for every test program. GPU execution is T-720.
+
+## T-712 — Reference interpreter for ABI v1 (Claude)
+
+Extend `scale::shader_ref`: `initial_exec`, `initial_output_words`, per-lane
+pending loads, the empty-mask rule (a vector instruction with EXEC == 0
+reads no sources), VOPC compares writing full VCC, `s_and_saveexec_b32`,
+`exec_lo` moves, the four branches with a wave-uniform PC, and the same
+static path rules. Hand-computed tests, including both T-707 worked examples.
 ## T-711 — RDNA2 reference interpreter (Claude)
 
 `src/shader_ref/`, `scale::shader_ref`. Directly interprets decoded
