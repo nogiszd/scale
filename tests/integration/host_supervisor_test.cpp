@@ -138,9 +138,9 @@ TEST(Supervisor, RejectsRelativeAndMissingExecutables) {
     EXPECT_EQ(missing.error().code, "launch_failed");
 }
 
-TEST(Worker, GuestExecutionNotYetImplemented) {
+TEST(Worker, UnknownModeIsUsageError) {
     const auto r = run_supervised(LaunchRequest{worker_path(), {"fixture.exe"}, {}});
     ASSERT_TRUE(r.has_value());
     EXPECT_EQ(r->exit_code, 2u);
-    EXPECT_NE(r->err.data.find("not implemented yet (task T-202)"), std::string::npos);
+    EXPECT_NE(r->err.data.find("usage: scale_worker"), std::string::npos);
 }

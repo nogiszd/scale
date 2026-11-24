@@ -2,8 +2,12 @@
 //
 // usage: scale_worker --scale-report-handle=<hex> self-test <mode> [args]
 //
-// Guest execution is added in T-202. Until then only self-test modes exist;
-// they exercise every supervision path:
+//        scale_worker --scale-report-handle=<hex> run-fixture <path>
+//
+// run-fixture (T-202) maps a trusted fixture with scale::loader::map_image
+// and calls its entry; see run_fixture() below.
+//
+// Self-test modes exercise every supervision path:
 //   exit <n>            exit with code n
 //   access-violation    write through a null pointer (unhandled exception)
 //   hang                sleep forever (timeout)
@@ -14,11 +18,18 @@
 //   report <text>       write one line to the report channel
 //   spawn-orphan        start a hanging copy of itself, print its pid, exit
 //
-// Exit codes: the mode's own code, 2 for usage errors.
+// Exit codes: the mode's own code, 2 for usage errors, 3 (kWorkerLoadFailed)
+// when run-fixture rejects the image before its entry is called.
+
+#include "scale/common/text.h"
+#include "scale/loader/image_map.h"
+#include "scale/loader/pe_image.h"
 
 #include <windows.h>
 
 #include <cstdio>
+#include <filesystem>
+#include <format>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -26,6 +37,7 @@
 
 namespace {
 
+constexpr int kWorkerLoadFailed = 3;
 HANDLE g_report = nullptr;
 
 void write_all(HANDLE h, const char* data, std::size_t size) {
@@ -158,6 +170,49 @@ int self_test(const std::vector<std::string>& a) {
     return usage();
 }
 
+void report_error(const scale::Error& e) {
+    report_line("error component=" + e.component + " code=" + e.code + " message=" + e.message);
+}
+
+// Maps a trusted fixture with the fixture loader and calls its entry
+// (contract: int fixture_entry(void)). Reports each stage; the process exit
+// code is the entry's return value. Loader failures exit with
+// kWorkerLoadFailed and an `error` report line; the entry is never reached.
+int run_fixture(const std::string& path_utf8) {
+    report_line("stage start");
+    const auto wide = scale::to_wide(path_utf8);
+    if (!wide) {
+        report_error(wide.error());
+        return kWorkerLoadFailed;
+    }
+    const auto bytes = scale::loader::read_file(std::filesystem::path(*wide));
+    if (!bytes) {
+        report_error(bytes.error());
+        return kWorkerLoadFailed;
+    }
+    const scale::ByteView view(*bytes);
+    const auto image = scale::loader::inspect_pe(view);
+    if (!image) {
+        report_error(image.error());
+        return kWorkerLoadFailed;
+    }
+    report_line("stage inspected");
+    auto mapped = scale::loader::map_image(view, *image);
+    if (!mapped) {
+        report_error(mapped.error());
+        return kWorkerLoadFailed;
+    }
+    report_line(std::format("stage mapped base=0x{:x} delta={} relocations={}", mapped->base(),
+                            mapped->relocation_delta(), mapped->relocations_applied()));
+
+    using Entry = int (*)();
+    const auto entry = reinterpret_cast<Entry>(mapped->entry_point());
+    report_line("stage entry");
+    const int value = entry();
+    report_line(std::format("stage returned value={}", value));
+    return value;
+}
+
 }  // namespace
 
 int wmain(int argc, wchar_t** argv) {
@@ -176,7 +231,8 @@ int wmain(int argc, wchar_t** argv) {
     if (args.size() >= 2 && args[1] == "self-test") {
         return self_test(std::vector<std::string>(args.begin() + 2, args.end()));
     }
-    const char msg[] = "error: guest execution is not implemented yet (task T-202)\n";
-    write_all(::GetStdHandle(STD_ERROR_HANDLE), msg, sizeof(msg) - 1);
-    return 2;
+    if (args.size() == 3 && args[1] == "run-fixture") {
+        return run_fixture(args[2]);
+    }
+    return usage();
 }
