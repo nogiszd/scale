@@ -4,8 +4,9 @@ Role: architect and integration coordinator (sole merger to `integration`
 and `main`), CPU/runtime, reference interpreter, Vulkan backend,
 differential GPU verification.
 
-Last updated: 2026-11-24, after the T-730 merge (ABI v2 contract frozen at
-`05ba211`). Pushes need the maintainer's explicit request.
+Last updated: 2026-11-24, end of day, after the T-731 interface freeze merge
+(`f0b122e`). T-733 is in progress on an unmerged branch (see below).
+Pushes need the maintainer's explicit request.
 
 ## State of the project
 
@@ -19,17 +20,38 @@ CLI merged. Suites: `full`/`release-full` 189/189,
 
 ## Where to resume
 
-**Waiting for Codex:** T-731, the ABI v2 decoder and test-case fields. Its
-first step is an interface freeze (`decode.h` v4, `test_case.h` v2) as a
-separate REVIEW. When the maintainer says it is in review: check the new
-operand/encoding forms keep raw `encoded` fields (the interpreter re-derives
-them), merge the freeze, then start T-733. Do not start T-302 until the
-maintainer says so.
+**T-733 (mine), in progress** on branch `claude/T-733-interpreter-v2`
+(WIP commit `cbe03a6`, not merged). Done there: `AbiVersion::v2`,
+`run_abi_v2`/`AbiV2Dispatch` (constants), s0..s11 reserved under v2,
+raw-word checks for MUBUF, SMEM and `s_waitcnt` (all ABIs), SGPR pending
+state with `lgkmcnt(0)`, MUBUF immediate/SGPR offsets with the contract's
+three-way range rule, `store_collision`, store requires no pending VGPR or
+SGPR. It builds and the existing 59 shader tests pass.
 
+Still to do for T-733:
+1. `tests/unit/shader_ref/interpreter_v2_test.cpp`: the contract's worked
+   example (llvm-mc words in the contract; build the SMEM instruction as a
+   decoded struct, since the v4 decoder implementation is not merged yet),
+   expected words 1, 2, 4, 29, 31 = 7, 8, 0xa, 0x23, 4; lane 29 straddle
+   rejected (EXEC `0xf000000b`); missing scalar wait fails at the load's
+   soffset; EXEC 0 variant (all 0xdeadbeef) and its missing-wait variant
+   failing at the store; store collision; SMEM offset/destination/flag
+   rejections on an untaken path; v0/v1 reject SMEM and lgkmcnt; v2 rejects
+   s8..s11 as scalar values; raw-field decoder disagreements.
+2. Mutation checks (straddle rule, pending SGPR, collision, lgkm wait).
+3. **Runner guard before Codex adds v2 JSON cases:** `gpu_shader_differential`
+   treats any non-v1 case as v0, and `scale-shader`/`spirv_val_test` use
+   `case.v1`. When T-731's v2 JSON case lands, the runner must run
+   `run_abi_v2` and report the GPU part as SKIPPED until T-732/T-734 (the GPU
+   backend needs a third binding for constants, T-734).
+4. Docs per the rule file, then merge.
+
+**Waiting for Codex:** T-731 implementation (v4 decoder, test-case v2
+parsing, LLVM cross-check, v2 JSON case), then T-732. Codex has stopped for
+today. Do not start T-302 until the maintainer says so.
 ## My next tasks, in order
 
-1. **T-733** — reference interpreter for ABI v2 (contract approved; starts
-   at the T-731 interface freeze). Model the worked example and its three
+1. **T-733** — reference interpreter for ABI v2 (in progress, see above). Model the worked example and its three
    rejection variants (lane 29 straddle, missing scalar wait, empty-EXEC
    pending `s12` at the store), store collisions and scalar pending state.
 2. **T-734** — ABI v2 GPU differential cases (after T-732).
@@ -39,7 +61,7 @@ maintainer says so.
    CRT startup, DLL init), each with its own test executable.
 5. Graphics triangle slice (M6).
 
-Review queue: Codex T-731 (interface freeze first).
+Review queue: Codex T-731 implementation (interface freeze merged).
 
 ## Decisions to remember
 
