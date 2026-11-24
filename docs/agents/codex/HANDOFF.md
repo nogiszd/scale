@@ -33,10 +33,49 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-708 — REVIEW (decoder interface v3)
+### T-708 — REVIEW (decoder implementation)
 
-Review branch `codex/T-708-decoder-v3`, rebased on `integration` at
-`0dbd2c5`. [decode.h](../../../src/shader/include/scale/shader/decode.h)
+Review branch `codex/T-708-decoder-impl`, based on `integration` at
+`cc99433`. The decoder handles ABI v1 VOPC compares, scalar mask
+save and restore, and all four SOPP branches. The VOPC literal selector
+consumes one extra dword. The second source uses its full 8-bit VGPR index,
+including 255. Scalar mask forms allow `vcc_lo` only as a source for
+`s_and_saveexec_b32` and `s_mov_b32 exec_lo`. [AMD RDNA 2 ISA reference](https://docs.amd.com/v/u/en-US/rdna2-shader-instruction-set-architecture)
+
+The decoder returns signed branch targets even when they precede the
+stream, leave the stream, or land in a literal. IR and T-712 own the
+synthetic ABI branch-layout checks. The public header matches the
+interface frozen at `a3c4a2d` byte for byte.
+
+```powershell
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset debug --target unit_shader_decode integration_shader_llvm
+ctest --preset full -R 'unit_shader_decode|integration_shader_llvm|portable_components_have_no_os_headers' --output-on-failure
+cmake --build --preset debug
+ctest --preset full --output-on-failure
+cmake --preset release -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset release
+ctest --preset release-full --output-on-failure
+git diff a3c4a2d --exit-code -- src/shader/include/scale/shader/decode.h
+git diff --check
+```
+
+- The focused Debug run passed all 40 checks. The full Debug and Release
+  suites each passed 259 tests with zero skips, including the
+  portable-header and SPIR-V validation checks.
+- The new LLVM 23.1.6 cross-check assembles 28 wave32 instructions in
+  `tests/shader/decoder_v1_subset.s` and compares disassembly text,
+  offsets, raw words and the resolved branch labels.
+- Hand-encoded tests cover the raw operand fields, signed displacement
+  limits, and all four decoder error codes for ABI v1 forms.
+
+## Completed
+
+### T-708 — Decoder interface v3
+
+Approved and frozen on `integration` at `a3c4a2d`.
+[decode.h](../../../src/shader/include/scale/shader/decode.h)
 adds the ABI v1 opcodes, `Encoding::vopc`, and special register kinds for
 `vcc_lo` (106) and `exec_lo` (126). `CompareOperands` carries both
 encoded source fields. The VOPC opcode implies the `vcc_lo` destination.
@@ -69,8 +108,6 @@ ctest --preset release-full --output-on-failure
   with `-Wswitch -Werror=switch`. The same check identified unhandled
   enum values in `check_source()` and `Interpreter::step()` in the
   reference interpreter. Linux builds are unverified.
-
-## Completed
 
 ### T-705 — Loader implementation
 
@@ -348,13 +385,13 @@ git diff --cached --check
 
 ## Next
 
-Implement T-708 from current `integration` after the decoder interface
-freeze. Then start T-706 using `scale::shader_testcase`.
+After the T-708 implementation merge, start T-709 for ABI v1 IR and
+SPIR-V. T-706 follows and uses `scale::shader_testcase`.
 When next editing the shader ABI contract, update its instruction syntax
 citations to the pinned LLVM 23.x documentation.
 
 ## Requests to coordinator
 
-- Review the T-708 decoder interface v3 for the compiler and T-712.
+- Review and merge the T-708 decoder implementation for T-709 and T-712.
 - Cover the new enum values in T-712 or route them through the existing
   reference interpreter error paths for warning-as-error builds.

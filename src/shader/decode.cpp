@@ -3,6 +3,7 @@
 #include <bit>
 #include <format>
 #include <initializer_list>
+#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -11,9 +12,11 @@
 namespace scale::shader {
 namespace {
 
-// AMD RDNA 2 ISA reference (70648), sections 5.2, 6.2 and chapter 13.
+// AMD RDNA 2 ISA reference (70648), sections 5.2, 6.2 and chapters 12–13.
 constexpr std::size_t kDwordSize = sizeof(std::uint32_t);
 constexpr std::uint16_t kLastSgpr = 105;
+constexpr std::uint16_t kVccLoSelector = 106;
+constexpr std::uint16_t kExecLoSelector = 126;
 constexpr std::uint16_t kLiteralSelector = 255;
 constexpr std::uint16_t kFirstVgprSelector = 256;
 
@@ -70,7 +73,7 @@ public:
         if (word >> 28 == 0xb) return sopk(word);
         if (word >> 30 == 0b10) return sop2(word);
         if (word >> 25 == 0x3f) return vop1(word);
-        if (word >> 25 == 0x3e) return error("unsupported_encoding", "VOPC is outside the subset");
+        if (word >> 25 == 0x3e) return vopc(word);
         if (word >> 31 == 0) return vop2(word);
         if (word >> 26 == 0x35) return vop3(word);
         if (word >> 26 == 0x38) return mubuf(word);
@@ -107,6 +110,15 @@ private:
         return instruction_;
     }
 
+    Result<Operand> source_operand(std::uint16_t encoded, std::optional<std::uint32_t> literal) const {
+        if (encoded == kLiteralSelector && literal) {
+            return Operand{OperandKind::literal_constant, encoded, *literal};
+        }
+        const auto resolved = register_or_inline(encoded);
+        if (resolved) return *resolved;
+        return error("unsupported_operand", std::format("unsupported source selector 0x{:x}", encoded));
+    }
+
     Result<DecodedInstruction> alu(Encoding encoding, Opcode opcode, Operand destination,
                                    std::initializer_list<std::uint16_t> source_fields) {
         std::optional<std::uint32_t> literal;
@@ -124,18 +136,17 @@ private:
             return error("unsupported_operand", "scalar destination must be an SGPR");
         }
 
+        const bool reads_vcc = opcode == Opcode::s_and_saveexec_b32 || destination.kind == OperandKind::exec_lo;
         AluOperands operands{destination};
         for (const auto encoded : source_fields) {
             auto& source = operands.sources[operands.source_count];
             if (encoding == Encoding::vop2 && operands.source_count == 1) {
                 source = reg(OperandKind::vgpr, encoded);
-            } else if (encoded == kLiteralSelector) {
-                source = Operand{OperandKind::literal_constant, encoded, *literal};
+            } else if (reads_vcc && encoded == kVccLoSelector) {
+                source = reg(OperandKind::vcc_lo, encoded);
             } else {
-                const auto resolved = register_or_inline(encoded);
-                if (!resolved) {
-                    return error("unsupported_operand", std::format("unsupported source selector 0x{:x}", encoded));
-                }
+                auto resolved = source_operand(encoded, literal);
+                if (!resolved) return std::unexpected(std::move(resolved.error()));
                 source = *resolved;
             }
             ++operands.source_count;
@@ -146,9 +157,15 @@ private:
 
     Result<DecodedInstruction> sop1(std::uint32_t word) {
         const auto opcode = field(word, 8, 0xff);
-        if (opcode != 3) return unknown_opcode("SOP1", opcode);
-        return alu(Encoding::sop1, Opcode::s_mov_b32,
-                   reg(OperandKind::sgpr, field(word, 16, 0x7f)), {field(word, 0, 0xff)});
+        const auto dest = field(word, 16, 0x7f);
+        const auto src = field(word, 0, 0xff);
+        switch (opcode) {
+        case 3:
+            return alu(Encoding::sop1, Opcode::s_mov_b32,
+                       reg(dest == kExecLoSelector ? OperandKind::exec_lo : OperandKind::sgpr, dest), {src});
+        case 60: return alu(Encoding::sop1, Opcode::s_and_saveexec_b32, reg(OperandKind::sgpr, dest), {src});
+        default: return unknown_opcode("SOP1", opcode);
+        }
     }
 
     Result<DecodedInstruction> sop2(std::uint32_t word) {
@@ -179,6 +196,10 @@ private:
         case 1:
             if (immediate != 0) return error("unsupported_modifier", "s_endpgm immediate must be zero");
             return finish(Encoding::sopp, Opcode::s_endpgm);
+        case 2: return branch(Opcode::s_branch, immediate);
+        case 4: return branch(Opcode::s_cbranch_scc0, immediate);
+        case 5: return branch(Opcode::s_cbranch_scc1, immediate);
+        case 8: return branch(Opcode::s_cbranch_execz, immediate);
         case 12: {
             if (immediate & 0x80) return error("unsupported_modifier", "s_waitcnt reserved bit 7 is set");
             const auto vmcnt = (field(immediate, 14, 3) << 4) | field(immediate, 0, 0xf);
@@ -189,6 +210,17 @@ private:
         }
         default: return unknown_opcode("SOPP", opcode);
         }
+    }
+
+    DecodedInstruction branch(Opcode opcode, std::uint16_t immediate) {
+        // The next dword offset is at most the byte view's size divided by four.
+        // Confirm it fits a signed target with room for a positive SIMM16.
+        static_assert(std::cmp_less_equal(std::numeric_limits<std::size_t>::max() / kDwordSize,
+                                        std::numeric_limits<std::int64_t>::max() -
+                                            std::numeric_limits<std::int16_t>::max()));
+        const auto next = static_cast<std::int64_t>(instruction_.dword_offset) + instruction_.word_count;
+        instruction_.operands = BranchOperands{immediate, next + std::bit_cast<std::int16_t>(immediate)};
+        return finish(Encoding::sopp, opcode);
     }
 
     Result<DecodedInstruction> vop1(std::uint32_t word) {
@@ -207,16 +239,44 @@ private:
         }
     }
 
-    Result<DecodedInstruction> vector_e32(Encoding encoding, Opcode opcode, std::uint32_t word) {
-        const auto src0 = field(word, 0, 0x1ff);
+    Result<void> check_vector_e32_modifiers(std::uint16_t src0) {
         // DPP8, DPP8FI, SDWA and DPP16 use a separate second dword.
         if (src0 == 233 || src0 == 234 || src0 == 249 || src0 == 250) {
             if (!read_word()) return error("truncated_encoding", "missing DPP or SDWA dword");
             return error("unsupported_modifier", "DPP and SDWA are outside the subset");
         }
+        return {};
+    }
+
+    Result<DecodedInstruction> vector_e32(Encoding encoding, Opcode opcode, std::uint32_t word) {
+        const auto src0 = field(word, 0, 0x1ff);
+        auto modifiers = check_vector_e32_modifiers(src0);
+        if (!modifiers) return std::unexpected(std::move(modifiers.error()));
         const auto dest = reg(OperandKind::vgpr, field(word, 17, 0xff));
         if (encoding == Encoding::vop1) return alu(encoding, opcode, dest, {src0});
         return alu(encoding, opcode, dest, {src0, field(word, 9, 0xff)});
+    }
+
+    Result<DecodedInstruction> vopc(std::uint32_t word) {
+        const auto opcode = field(word, 17, 0xff);
+        Opcode decoded{};
+        switch (opcode) {
+        case 193: decoded = Opcode::v_cmp_lt_u32; break;
+        case 194: decoded = Opcode::v_cmp_eq_u32; break;
+        default: return unknown_opcode("VOPC", opcode);
+        }
+        const auto src0 = field(word, 0, 0x1ff);
+        auto modifiers = check_vector_e32_modifiers(src0);
+        if (!modifiers) return std::unexpected(std::move(modifiers.error()));
+        std::optional<std::uint32_t> literal;
+        if (src0 == kLiteralSelector) {
+            literal = read_word();
+            if (!literal) return error("truncated_encoding", "missing literal dword");
+        }
+        auto source = source_operand(src0, literal);
+        if (!source) return std::unexpected(std::move(source.error()));
+        instruction_.operands = CompareOperands{{*source, reg(OperandKind::vgpr, field(word, 9, 0xff))}};
+        return finish(Encoding::vopc, decoded);
     }
 
     Result<DecodedInstruction> vop3(std::uint32_t word) {

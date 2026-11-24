@@ -29,15 +29,16 @@ if(EXISTS "${SCALE_SHADER_LLVM_MC}" AND EXISTS "${SCALE_SHADER_LLVM_OBJDUMP}")
     if(llvm_mc_status STREQUAL "0" AND llvm_objdump_status STREQUAL "0" AND
             llvm_mc_version MATCHES "${amdgpu_target}" AND llvm_objdump_version MATCHES "${amdgpu_target}")
         set(llvm_reference_dir "${CMAKE_CURRENT_BINARY_DIR}")
-        foreach(test_program IN ITEMS add_lane_to_input decoder_subset)
+        foreach(test_program IN ITEMS add_lane_to_input decoder_subset decoder_v1_subset)
             set(assembly "${PROJECT_SOURCE_DIR}/tests/shader/${test_program}.s")
             set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${assembly}")
             set(object "${llvm_reference_dir}/${test_program}.o")
-            execute_process(COMMAND "${SCALE_SHADER_LLVM_MC}" -triple=amdgcn -mcpu=gfx1030
+            execute_process(COMMAND "${SCALE_SHADER_LLVM_MC}" -triple=amdgcn -mcpu=gfx1030 -mattr=+wavefrontsize32
                 -filetype=obj -o "${object}" "${assembly}"
                 RESULT_VARIABLE assemble_status ERROR_VARIABLE assemble_error TIMEOUT 10)
             if(assemble_status STREQUAL "0")
-                execute_process(COMMAND "${SCALE_SHADER_LLVM_OBJDUMP}" --disassemble --mcpu=gfx1030 "${object}"
+                execute_process(COMMAND "${SCALE_SHADER_LLVM_OBJDUMP}" --disassemble --mcpu=gfx1030
+                    --mattr=+wavefrontsize32 "${object}"
                     RESULT_VARIABLE disassemble_status OUTPUT_VARIABLE disassembly
                     ERROR_VARIABLE disassemble_error TIMEOUT 10)
                 if(NOT disassemble_status STREQUAL "0")
