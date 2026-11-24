@@ -14,9 +14,9 @@ and owners: docs/TASKS.md. Milestone states: docs/ROADMAP.md.
 
 ## My next tasks, in order
 
-1. **T-721** — differential runner on `tests/shader/*.json` through
-   `scale::shader_testcase`, replacing the T-720 inline cases. ABI v1 GPU
-   cases (`run_abi_v1` vs GPU) once Codex's T-709 lands.
+1. **T-721** (in progress) — JSON runner done (`tests/shader/cases/`). After
+   T-709: pass `initial_exec` to the lowering, so the three v1 cases run on
+   the GPU instead of SKIPPED.
 2. **T-301** — exception directory registration in the worker
    (`RtlAddFunctionTable`), test executable raising and handling SEH,
    native reference run, malformed-directory rejection.

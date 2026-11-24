@@ -20,11 +20,14 @@ scale_add_test(NAME gpu_vulkan_compute
 add_dependencies(gpu_vulkan_compute scale_gpu_test_shaders)
 target_compile_definitions(gpu_vulkan_compute PRIVATE "SCALE_TEST_SPIRV_SCALE3=\"${_scale3_spv}\"")
 
-# --- Differential runner: interpreter vs GPU (T-720) ---------------------------
-if(TARGET scale_shader_spirv AND TARGET scale_shader_ref)
+# --- Differential runner: interpreter vs GPU on JSON test cases (T-720, T-721) --
+if(TARGET scale_shader_spirv AND TARGET scale_shader_ref AND TARGET scale_shader_testcase)
     scale_add_test(NAME gpu_shader_differential
         SOURCES differential_test.cpp
         LIBS scale::graphics scale::shader_spirv scale::shader_ir scale::shader_decode scale::shader_ref
+             scale::shader_testcase
         LABELS gpu
         TIMEOUT 120)
+    target_compile_definitions(gpu_shader_differential PRIVATE
+        "SCALE_TEST_SHADER_CASES=\"${PROJECT_SOURCE_DIR}/tests/shader/cases\"")
 endif()
