@@ -6,7 +6,7 @@
   <p>
     <img src="https://img.shields.io/badge/platform-Windows%2011%20x64-454545?style=flat-square" alt="Windows 11 x64" />
     <img src="https://img.shields.io/badge/C%2B%2B-23-454545?style=flat-square" alt="C++23" />
-    <img src="https://img.shields.io/badge/backend-Vulkan%20(planned)-454545?style=flat-square" alt="Planned Vulkan backend" />
+    <img src="https://img.shields.io/badge/backend-Vulkan-454545?style=flat-square" alt="Vulkan backend" />
     <img src="https://img.shields.io/badge/status-early%20development-df3853?style=flat-square" alt="Early development" />
   </p>
   <p><a href="#development-status">Status</a> · <a href="#roadmap">Roadmap</a> · <a href="#getting-started">Getting started</a> · <a href="#command-line-interface">CLI</a> · <a href="#documentation">Documentation</a></p>
@@ -40,7 +40,7 @@ SCALE is being built as a complete translation layer that runs Xbox Series X|S e
 | Pillar | Milestones | Status | Scope |
 | :----- | :--------- | :----- | :---- |
 | **CPU execution and runtime** | M3–M5 | Next | Import binding through documented adapters, standard CRT startup, TLS, x64 unwinding/SEH and C++ exceptions, DLL initialization, system adapters with verified signatures, title filesystem with a writable data root, and a synthetic test title that combines them. |
-| **Shaders** | M7 | **In progress** | RDNA2 (gfx1030) recompiler to SPIR-V. **First compute slice verified on real hardware:** decoder, typed IR and SPIR-V, checked by an independent reference interpreter and on the GPU against hand-computed results. Next: EXEC masks and control flow (ABI v1), then wave operations, memory/resources and vertex/pixel stages. |
+| **Shaders** | M7 | **In progress** | RDNA2 (gfx1030) recompiler to SPIR-V. **First compute slice verified on real hardware:** decoder, typed IR and SPIR-V, checked by an independent reference interpreter and on the GPU against hand-computed results. EXEC masks and control flow (ABI v1): decoder and reference interpreter done, SPIR-V lowering and GPU verification next. Then wave operations, memory/resources and vertex/pixel stages. |
 | **Graphics** | M6, M8 | **In progress** | Vulkan host backend ([decision 0003](docs/decisions/0003-gpu-backend.md)): the compute harness runs on every Vulkan device and records its capabilities ([GPU targets](docs/contracts/gpu_targets.md)). Next: a verified triangle slice, then the console graphics API mapped onto Vulkan, with resources, descriptors, synchronization, presentation and pipelines built from translated shaders. |
 | **Audio, input and local data** | M9 | Planned | Interfaces demanded by verified test titles, built on public host APIs. Offline behavior is accurate, and unavailable services report documented errors. Nothing impersonates online services. |
 | **Running executables** | M10 | Gated | Authorized retail testing starts only after the readiness baseline in [AGENTS.md](AGENTS.md) is met. After that, compatibility improves blocker by blocker from observed evidence. Each executable is tracked per stage (inspected, loaded, initialized, menu, rendering, interactive). |

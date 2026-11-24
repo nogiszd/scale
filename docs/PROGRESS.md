@@ -7,7 +7,8 @@ Only recorded, executed results, newest first. Each entry describes the state at
 | Track | State |
 |---|---|
 | M0 Foundation, M1 PE inspector, M2 native execution | complete |
-| M7 shaders | first compute slice verified on hardware (ABI v0). ABI v1: contract (T-707), decoder (T-708) and reference interpreter (T-712) done and cross-checked against each other. IR + SPIR-V for v1 (T-709) and the `scale-shader` CLI (T-706) are next (Codex). Test-case library merged (T-705). |
+| M3 runtime fidelity | next: T-301 exception directory registration |
+| M7 shaders | first compute slice verified on hardware (ABI v0). ABI v1: contract (T-707), decoder (T-708) and reference interpreter (T-712) done and cross-checked against each other. Test-case library merged (T-705). Next: IR + SPIR-V for v1 (T-709), then the `scale-shader` CLI (T-706) (Codex); GPU runner on JSON cases with v1 GPU cases (T-721, Claude). |
 | M6 graphics | Vulkan compute harness with per-device fingerprints (T-601). Coverage: GPU class A2 only. |
 | Portability | groundwork done (T-801). Linux unverified (T-802 blocked). |
 
