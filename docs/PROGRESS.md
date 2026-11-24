@@ -2,6 +2,35 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-601 Vulkan compute harness and GPU target matrix (Claude)
+
+- `docs/contracts/gpu_targets.md` describes the properties that vary between
+  GPUs: subgroup size, float controls, limits, driver compiler, software
+  Vulkan. It defines target classes (A1 RDNA2, A2 RDNA3/4, N NVIDIA, I Intel,
+  S software) and requires every GPU test to run on every device, record a
+  capability fingerprint, declare requirements (SKIPPED if unmet) and compare
+  exactly. A coverage claim counts only classes with recorded runs.
+- `scale::graphics` (`src/graphics`, `SCALE_ENABLE_GRAPHICS`): portable
+  Vulkan-only compute harness. It enumerates devices with a fingerprint
+  (Vulkan 1.1/1.2/1.3 property chain) and dispatches a SPIR-V compute shader
+  with the ABI v0/v1 bindings (set 0: binding 0 input, binding 1 output),
+  using host-coherent buffers, a shader-write → host-read barrier, and a fence
+  with timeout. Objects are released in reverse order on every path.
+- New presets: `debug-all` / `release-all` (shader + graphics) with test
+  presets `gpu`, `full-all` and `release-full-all`. `gpu` now runs real tests.
+- `gpu_vulkan_compute` (3 cases, label gpu): a known GLSL shader
+  (`out[i] = in[i]*3 + i`, glslangValidator SDK 1.4.363.0 → SPIR-V, Vulkan
+  1.2 target), 2 workgroups x 32, inputs near 2^32, checked word for word.
+  Result on **AMD Radeon RX 9070 XT** | vendor 0x1002 device 0x7550 |
+  discrete | Vulkan 1.4.359 | AMD proprietary driver 26.10.1 (LLPC) |
+  subgroup 64 [32..64] | rte_f32, denorm preserve and ftz supported | 32 KiB
+  shared: PASS. With `VK_LAYER_KHRONOS_validation` (1.4.363, loader-confirmed
+  active): 0 validation messages.
+- Coverage: class A2 only. A1, N, I and S are NOT_TESTED.
+- This verifies host compute plumbing only. It is not console graphics API
+  support. Next: T-720 runs translated shaders on this harness and compares
+  them with the interpreter.
+
 ## 2026-11-24 — T-711 RDNA2 reference interpreter (Claude)
 
 - `scale::shader_ref` (`src/shader_ref`) interprets decoded gfx1030

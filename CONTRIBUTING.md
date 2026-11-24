@@ -171,6 +171,8 @@ a different file, add a one-line pointer to `AGENTS.md`, not a copy.
 
 ## 8. Reporting results and compatibility
 
+- **GPU coverage needs you.** If you have a GPU class that hasn't been tested yet (see [docs/contracts/gpu_targets.md](docs/contracts/gpu_targets.md): AMD RDNA2, NVIDIA, Intel, software Vulkan), run `ctest --preset gpu` and send the printed device fingerprint and results. Each new class becomes recorded coverage.
+
 - Record only executed results in `docs/PROGRESS.md`, newest first, with
   commands and counts.
 - Keep run reports (`scale run --report`) and traces out of the repository.
