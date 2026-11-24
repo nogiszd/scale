@@ -4,7 +4,7 @@ Role: architect and integration coordinator (sole merger to `integration`
 and `main`), CPU/runtime, reference interpreter, Vulkan backend,
 differential GPU verification.
 
-Last updated: 2026-11-24, at `integration` = `main` = `19b24fb` (local).
+Last updated: 2026-11-24, at `integration` = `main` = `f0d2927` (local; 13 commits ahead of `origin`).
 `origin` is at `e912520`, and the maintainer authorizes each push.
 
 ## State of the project
@@ -17,7 +17,7 @@ Last updated: 2026-11-24, at `integration` = `main` = `19b24fb` (local).
 | M7 Shader recompiler | in progress: T-704 ABI v0, T-701 decoder, T-702 IR and T-703 SPIR-V are done (Codex). **T-711 and T-720 are mine.** |
 | M6 Graphics | T-601 ready (mine) |
 
-Test totals at `19b24fb`: `ctest --preset full` 169/169, `release-full`
+Test totals (unchanged since the T-703 merge, `da29a41`): `ctest --preset full` 169/169, `release-full`
 169/169, and with `-DSCALE_ENABLE_SHADER=ON` (`out/build/debug-shader`)
 212/212.
 
