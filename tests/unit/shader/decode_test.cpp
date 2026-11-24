@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <initializer_list>
+#include <ostream>
 #include <span>
 #include <string_view>
 #include <variant>
@@ -48,6 +49,10 @@ struct AluVector {
     std::uint8_t word_count;
     AluOperands operands;
 };
+
+void PrintTo(const AluVector& vector, std::ostream* output) {
+    *output << vector.name;
+}
 
 // Hand-encoded using AMD RDNA 2 ISA reference 70648, tables 10, 66–69,
 // 76–79 and 82–83, and sections 12.7.1 and 12.8.1 for e64 opcode bases.

@@ -27,7 +27,7 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-701 — REVIEW
+### T-701 — REVIEW (full LLVM coverage)
 
 Review branch `codex/T-701-decoder-impl`, based on `integration` at `b1fb7a7`.
 `scale::shader_decode` is a static library enabled by `SCALE_ENABLE_SHADER=ON`.
@@ -51,6 +51,7 @@ cmake --preset release -DSCALE_ENABLE_SHADER=ON
 cmake --build --preset release
 ctest --preset release-full
 ctest --preset full -R '^integration_shader_llvm[.]' -V
+ctest --preset full -N -R 'AluDecode'
 cmake --preset debug -B out/build/shader-no-llvm -DSCALE_ENABLE_SHADER=ON `
     -DSCALE_SHADER_LLVM_MC=missing-llvm-mc `
     -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=out/build/debug/_deps/googletest-src
@@ -60,15 +61,22 @@ git diff --exit-code c4ce6f3 -- src/shader/include/scale/shader/decode.h
 git diff --cached --check
 ```
 
-- Debug and Release each passed 120/120 CTest cases with zero skips.
+- Debug and Release each passed 121/121 CTest cases with zero skips.
   There are 21 decoder unit cases, with hand-encoded positive coverage for
-  every opcode and negative coverage for all four error codes.
+  every opcode and negative coverage for all four error codes. CTest lists
+  the 13 parameterized ALU cases by name.
 - LLVM 23.1.6 `llvm-mc -triple=amdgcn -mcpu=gfx1030 -filetype=obj` assembled
-  the T-704 fixture at configure time. `llvm-objdump --disassemble --mcpu=gfx1030`
-  produced the reference listing. GoogleTest matched all five instruction
-  texts, five offsets and seven dwords in both configurations.
-- An isolated configure with a missing `llvm-mc` path reported the LLVM
-  case as SKIPPED in CTest. The frozen header is byte-identical to `c4ce6f3`.
+  the T-704 example and `tests/shader/decoder_subset.s` at configure time.
+  `llvm-objdump --disassemble --mcpu=gfx1030` produced both listings. In both
+  configurations GoogleTest matched text, offsets and raw words for all 33
+  subset instructions (55 dwords) and all five T-704 instructions (seven
+  dwords). The T-704 words also match the ABI contract. The subset fixture
+  exercises all 12 opcodes, the e32/e64 forms, register and constant sources,
+  signed immediates, wait counters and MUBUF load/store addressing fields.
+- Changing `0.5` to `0.75` in the generated LLVM listing failed the subset
+  comparison. Restoring the listing returned both comparisons to PASS.
+- An isolated configure with a missing `llvm-mc` path reported both LLVM
+  cases as SKIPPED in CTest. The frozen header is byte-identical to `c4ce6f3`.
 
 ## Completed
 
