@@ -6,7 +6,7 @@
 // Dependencies: none (no CRT, no imports).
 // Native reference: Windows runs the entry as the initial thread's start
 // routine; its return value became the process exit code in 30/30 observed
-// runs (Windows 11 26200). Scale's worker maps the image and calls the entry
+// runs (Windows 11 26200). SCALE's worker maps the image and calls the entry
 // directly; the result must match.
 
 extern "C" {

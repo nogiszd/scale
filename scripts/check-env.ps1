@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Reports which Scale toolchain components are available. Installs nothing.
+    Reports which SCALE toolchain components are available. Installs nothing.
 
 .DESCRIPTION
     Run after dot-sourcing scripts/vsenv.ps1:

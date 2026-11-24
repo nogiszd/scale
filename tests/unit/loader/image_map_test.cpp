@@ -1,4 +1,4 @@
-// T-202: Scale loader mapping. These tests map images and check memory
+// T-202: SCALE loader mapping. These tests map images and check memory
 // state; they never execute mapped code (execution happens only in the
 // worker, see tests/integration/native_execution_test.cpp).
 

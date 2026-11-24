@@ -1,6 +1,6 @@
 # Multi-Agent Development
 
-Scale supports concurrent development by Claude Code, Codex and other coding agents.
+SCALE supports concurrent development by Claude Code, Codex and other coding agents.
 
 ## Coordination
 

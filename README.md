@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="docs/logo-scale.svg" alt="Scale logo" width="132" />
-  <h1>Scale</h1>
+  <img src="docs/logo-scale.svg" alt="SCALE logo" width="132" />
+  <h1>SCALE</h1>
   <p><strong>Scarlett Compatibility and Layered Execution</strong></p>
   <p>An independent Windows x64 compatibility layer for Xbox Series X|S software.</p>
   <p>
@@ -16,12 +16,12 @@
 
 ## Overview
 
-Scale aims to execute compatible AMD64 machine code natively on Windows, provide the required platform runtime, translate graphics operations and recompile RDNA2 shaders to SPIR-V.
+SCALE aims to execute compatible AMD64 machine code natively on Windows, provide the required platform runtime, translate graphics operations and recompile RDNA2 shaders to SPIR-V.
 
 The project is developed incrementally, with an emphasis on correctness, reproducible tests and evidence-backed compatibility. Native execution, runtime fidelity, graphics translation and shader recompilation are core parts of the long-term architecture.
 
 > [!IMPORTANT]
-> Scale is in early development. No retail software is currently supported or tested. The capabilities listed as planned below are not implemented.
+> SCALE is in early development. No retail software is currently supported or tested. The capabilities listed as planned below are not implemented.
 
 ## Development status
 
@@ -159,12 +159,12 @@ The PE inspection interface is documented in [docs/contracts/inspect.md](docs/co
 
 ## Legal scope
 
-Scale is an independent project and is not affiliated with Microsoft or Xbox.
+SCALE is an independent project and is not affiliated with Microsoft or Xbox.
 
 The project uses public documentation and self-authored test material only. It does not implement package decryption, DRM bypass, entitlement spoofing or online service impersonation, and it ships no proprietary SDK files or games.
 
 ---
 
 <div align="center">
-  <sub>Scale · Scarlett Compatibility and Layered Execution</sub>
+  <sub>SCALE · Scarlett Compatibility and Layered Execution</sub>
 </div>

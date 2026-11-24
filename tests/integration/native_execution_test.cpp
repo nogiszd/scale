@@ -1,5 +1,5 @@
 // T-202: first native execution slice. Each test executable runs (a) natively under
-// Windows as the reference and (b) through scale_worker's Scale loader;
+// Windows as the reference and (b) through scale_worker's SCALE loader;
 // observable results must match the test executable's documented contract and each other.
 
 #include "scale/common/text.h"

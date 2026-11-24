@@ -7,7 +7,7 @@ scale run <executable> [--report <path>] [--timeout-ms <n>]
 Runs a **trusted, self-authored test executable** in a supervised worker process
 (`scale_worker.exe`, which must sit next to `scale.exe`). This is not a
 general executable runner. The test executable must use the custom entry contract
-`int test_entry(void)` and stay within the Scale loader's subset
+`int test_entry(void)` and stay within the SCALE loader's subset
 (docs/decisions/0002-native-image-loading.md). Guest arguments (`-- args`)
 are rejected because the entry contract has no parameters.
 
