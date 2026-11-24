@@ -3,6 +3,12 @@ scale_add_test(NAME unit_shader_decode
     LIBS scale::shader_decode
     LABELS quick)
 
+# --- Shader IR v0 (T-702) ---------------------------------------------------
+scale_add_test(NAME unit_shader_ir
+    SOURCES ir_test.cpp
+    LIBS scale::shader_ir
+    LABELS quick)
+
 scale_add_test(NAME integration_shader_llvm
     SOURCES decode_llvm_test.cpp
     LIBS scale::shader_decode
