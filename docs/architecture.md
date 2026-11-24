@@ -6,7 +6,7 @@
 |---|---|---|---|---|
 | `src/common` | `scale::common` | Windows SDK | Claude | present |
 | `src/diagnostics` | `scale::diagnostics` | common | Claude | present |
-| `src/loader` | `scale::loader` | common, diagnostics | Gemini (inspection, T-101) and Claude (image loading, T-202+) | planned |
+| `src/loader` | `scale::loader` | common, diagnostics | Claude | planned |
 | `src/host` | `scale::host` | loader, runtime, diagnostics | Claude | planned |
 | `src/runtime` | `scale::runtime` | loader, filesystem, diagnostics | Claude | planned |
 | `src/filesystem` | `scale::filesystem` | common | unassigned | planned (M4) |

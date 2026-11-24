@@ -1,20 +1,121 @@
-# Build trees (one per preset, per worktree)
+# =============================================================================
+# Scale .gitignore
+# =============================================================================
+
+# ---- Build trees ------------------------------------------------------------
+# Presets build into out/build/<preset>; keep any ad-hoc build dirs out too.
 /out/
 /build/
+/build-*/
+/cmake-build-*/
 CMakeUserPresets.json
 
-# Local run reports and traces: never committed (AGENTS.md)
+# CMake artifacts if someone configures in-source by mistake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+DartConfiguration.tcl
+/Testing/
+compile_commands.json
+_deps/
+build.ninja
+.ninja_deps
+.ninja_log
+rules.ninja
+
+# ---- Package managers / fetched dependencies ---------------------------------
+/vcpkg_installed/
+/.vcpkg-root
+/third_party/_fetched/
+
+# ---- Compiler / linker outputs ----------------------------------------------
+# Fixtures and tools are built from source; never commit binaries.
+*.obj
+*.o
+*.lib
+*.a
+*.exp
+*.ilk
+*.pdb
+*.idb
+*.ipdb
+*.iobj
+*.pch
+*.ipch
+*.res
+*.tlog
+*.lastbuildstate
+*.exe
+*.dll
+*.so
+*.dylib
+*.sys
+*.efi
+*.map
+*.dmp
+*.mdmp
+
+# Generated shader binaries (fixtures are generated from source at build time)
+*.spv
+*.hsaco
+*.co
+
+# ---- Local run output -------------------------------------------------------
+# Run reports and traces stay local (AGENTS.md diagnostics policy).
 /reports/
 report.json
 *.trace
+*.etl
+*.log
 
-# Editor / IDE
-.vs/
-.vscode/
-.idea/
-*.user
-
-# Never commit proprietary binaries or title material
+# ---- Proprietary / title material: never commit ------------------------------
 /titles/
+/retail/
 *.xvc
 *.msixvc
+*.xvd
+*.appx
+*.msix
+*.msixbundle
+*.appxbundle
+
+# ---- Secrets ----------------------------------------------------------------
+.env
+.env.*
+*.pfx
+*.pem
+*.key
+*.snk
+
+# ---- Editors and IDEs -------------------------------------------------------
+.vs/
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.user
+*.suo
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+*.code-workspace
+*.swp
+*~
+
+# ---- Agent tooling (local state only) ----------------------------------------
+.claude/settings.local.json
+.claude/worktrees/
+
+# ---- Scripting --------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+
+# ---- OS ---------------------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store

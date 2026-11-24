@@ -77,36 +77,24 @@ The repository is the shared source of truth. Development must not depend on ind
 - Shader regression testing.
 - Shader compiler integration with the Vulkan backend.
 
-### Gemini — PE Inspection and Platform Foundations
-
-- PE32+ inspector library and its malformed-input coverage (M1).
-- Self-authored PE fixture images and dumpbin comparison.
-- `scale inspect` command.
-- Later candidates (coordinator assigns): title filesystem and path
-  translation (M4), loader feature fixtures (M3).
-
-Claude consumes the inspector's public header for native execution (M2).
-After T-101 merges, Claude adds image-loading files to `src/loader/` without
-modifying Gemini's inspection files.
-
 ## Git Workflow
 
-The repository is local-only. There is no remote. Every agent uses its own
-worktree of the same repository.
+The repository is local-only. There is no remote. Codex works in its own
+worktree of the same repository. Claude (coordinator) works in the main
+checkout on its own task branches.
 
 Branches:
 
 - `main`: verified, merged state. Coordinator only.
 - `integration`: the coordinator merges REVIEW branches here and runs the full
   suite, then fast-forwards `main`.
-- `<agent>/<task-id>-<slug>`, e.g. `gemini/T-101-pe-inspector`: one branch per
+- `<agent>/<task-id>-<slug>`, e.g. `codex/T-701-decoder`: one branch per
   task, created from the current `integration`.
 
 Worktree setup (run once per agent from the main checkout):
 
 ```powershell
-git worktree add ..\scale-wt\codex  -b codex/T-704-shader-abi    integration
-git worktree add ..\scale-wt\gemini -b gemini/T-101-pe-inspector integration
+git worktree add ..\scale-wt\codex -b codex/T-704-shader-abi integration
 ```
 
 Each worktree has its own `out/` build tree, so builds never collide. To start

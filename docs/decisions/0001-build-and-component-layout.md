@@ -15,7 +15,8 @@ Status: accepted (2026-11-24, T-000)
   deliverables.
 - The reference interpreter lives in `src/shader_ref`, separate from the
   compiler in `src/shader`, and may depend only on the decoder.
-- A minimal in-tree test harness; no GoogleTest. Exit code 77 maps to SKIPPED.
+- ~~A minimal in-tree test harness; no GoogleTest.~~ Superseded 2026-11-24:
+  AGENTS.md requires GoogleTest (pinned) via CTest. Migration is T-001.
 
 ## Rationale
 

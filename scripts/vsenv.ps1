@@ -17,6 +17,21 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Reload machine and user environment variables from the registry so tools
+# installed after this shell (or its parent process) started are visible,
+# e.g. the Vulkan SDK or LLVM. Session only; nothing is written back.
+foreach ($scope in 'Machine', 'User') {
+    $vars = [Environment]::GetEnvironmentVariables($scope)
+    foreach ($name in $vars.Keys) {
+        if ($name -in 'Path', 'PSModulePath', 'PATHEXT') { continue }
+        Set-Item -Path "env:$name" -Value $vars[$name]
+    }
+}
+$env:Path = @(
+    [Environment]::GetEnvironmentVariable('Path', 'Machine'),
+    [Environment]::GetEnvironmentVariable('Path', 'User')
+) -join ';'
+
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 if (-not (Test-Path $vswhere)) {
     throw "vswhere.exe not found at '$vswhere'. Install Visual Studio Build Tools with the 'Desktop development with C++' workload."

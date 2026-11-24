@@ -13,4 +13,4 @@ source.
 | https://registry.khronos.org/vulkan/ | Vulkan, SPIR-V (M6/M7) | — |
 | https://github.com/KhronosGroup/SPIRV-Tools | spirv-val (M7) | — |
 | https://github.com/microsoft/GDK, https://github.com/microsoft/Xbox-GDK-Samples | Public GDK context only; not console ABI evidence | — |
-| https://github.com/ivall/xcl | Architectural reference only; no code copied | — |
+| https://github.com/ivall/xcl | Reference; public source may be studied, no code copied or translated | — |

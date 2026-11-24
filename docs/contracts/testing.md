@@ -1,5 +1,9 @@
 # Testing contract
 
+> **Transition:** AGENTS.md now requires GoogleTest. The in-tree harness
+> described below is temporary and will be removed by T-001. Do not write new
+> tests against `scale_test.h`. Wait for T-001 to land and use GoogleTest.
+
 CTest is the only runner. Helpers are in `cmake/ScaleTesting.cmake` and the
 harness is in `tests/support/scale_test.h`.
 

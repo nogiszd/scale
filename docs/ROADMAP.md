@@ -12,7 +12,7 @@ deliverables, not a strict serial order.
 | M3 Imports and Windows runtime fidelity | Imports/ordinals/forwarders, delay load, CRT startup, TLS, SEH/C++ EH, DLL init | — | not planned yet |
 | M4 Adapters and filesystem | Adapter registry, title root + data root, path translation | backlog | — |
 | M5 Integration and diagnostics | report.json completeness, synthetic test title | — | — |
-| M6 Graphics slice | Vulkan compute/triangle via synthetic adapter | T-601 | blocked: Vulkan SDK |
+| M6 Graphics slice | Vulkan compute/triangle via synthetic adapter | T-601 | ready after T-001 |
 | M7 RDNA2 shader recompiler | ABI contract, decoder, IR, SPIR-V, interpreter, differential GPU tests | T-701..T-720 | ready (T-704, T-701) |
 | M8 Graphics integration | Compiler → pipeline creation | — | — |
 | M9 Audio, input, local data | Interfaces demanded by verified tests | — | — |
@@ -20,8 +20,8 @@ deliverables, not a strict serial order.
 
 ## Parallel tracks after M0
 
-- **CPU/runtime:** Gemini on M1, Claude on M2 (worker first, then loader
-  slices once the T-101 header is frozen).
+- **CPU/runtime:** Claude on M1 and M2 (inspector and worker first, then
+  loader slices).
 - **Shader:** Codex on the T-704 ABI contract and the T-701 decoder. Claude
   starts the T-711 interpreter once the decoder header is frozen.
 - **Graphics:** Claude, T-601, as soon as the Vulkan SDK is installed.

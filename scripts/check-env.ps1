@@ -52,8 +52,8 @@ Write-Host '== Graphics / shader tracks (needed from M6/M7) =='
 Report 'graphics' 'vulkaninfo' { param($p) & $p --summary 2>&1 | Select-String 'deviceName|driverName|apiVersion' | Select-Object -First 3 | ForEach-Object { $_.Line.Trim() } } 'Installed with the GPU driver or the Vulkan SDK' $false
 Report 'graphics' 'spirv-val'  $firstLine 'Install the LunarG Vulkan SDK: https://vulkan.lunarg.com/sdk/home#windows (or winget install KhronosGroup.VulkanSDK)' $false
 Report 'graphics' 'glslangValidator' $firstLine 'Part of the LunarG Vulkan SDK' $false
-Report 'shader'   'llvm-mc'      $firstLine 'LLVM with AMDGPU target: winget install LLVM.LLVM, or https://github.com/llvm/llvm-project/releases' $false
-Report 'shader'   'llvm-objdump' $firstLine 'Same LLVM distribution as llvm-mc' $false
+Report 'shader'   'llvm-mc'      $firstLine 'Build with AMDGPU: .\scripts\build-llvm-amdgpu.ps1 -AddToUserPath (official Windows releases lack AMDGPU)' $false
+Report 'shader'   'llvm-objdump' $firstLine 'Built by scripts/build-llvm-amdgpu.ps1' $false
 
 $mc = Get-Command llvm-mc -ErrorAction SilentlyContinue
 if ($mc) {
@@ -61,7 +61,7 @@ if ($mc) {
     if ($targets -match 'amdgcn') {
         Write-Host '[ok]      shader     AMDGPU target registered in llvm-mc'
     } else {
-        Write-Host '[absent]  shader     llvm-mc lacks the AMDGPU (amdgcn) target; use an LLVM build with AMDGPU enabled'
+        Write-Host "[absent]  shader     llvm-mc at $($mc.Source) lacks the AMDGPU (amdgcn) target; run scripts/build-llvm-amdgpu.ps1"
     }
 }
 if ($env:VULKAN_SDK) { Write-Host "[ok]      graphics   VULKAN_SDK=$env:VULKAN_SDK" } else { Write-Host '[absent]  graphics   VULKAN_SDK is not set' }

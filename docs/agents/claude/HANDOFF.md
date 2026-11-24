@@ -9,10 +9,11 @@ interpreter, Vulkan backend.
 
 ## Current / next
 
-- T-201 worker process supervisor (READY).
-- Review gates: T-101 header freeze (Gemini), T-701 `decode.h` freeze and
+- T-001 GoogleTest migration (waiting on dependency install), then T-101
+  PE inspector and T-201 worker supervisor.
+- Review gates: T-701 `decode.h` freeze and
   T-704 ABI contract (Codex).
-- T-601 is blocked until the Vulkan SDK is installed.
+- T-601 is ready (Vulkan SDK 1.4.363.0 installed).
 
 ## Notes
 

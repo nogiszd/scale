@@ -2,6 +2,23 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — Toolchain: Vulkan SDK and LLVM AMDGPU (Claude)
+
+- Vulkan SDK 1.4.363.0 installed by the user. `scripts/vsenv.ps1` now reloads
+  machine and user environment variables from the registry, so tools
+  installed after the shell started are found.
+- The official LLVM 23.1.6 Windows release (`clang+llvm-23.1.6-x86_64-pc-windows-msvc`)
+  was checked and **does not register AMDGPU** (targets: AArch64, ARM, BPF,
+  NVPTX, RISC-V, WebAssembly, x86). The winget package lacks `llvm-mc`.
+  The prebuilt copy was removed.
+- Added `scripts/build-llvm-amdgpu.ps1`. It verifies the pinned source SHA-256,
+  builds only `llvm-mc` and `llvm-objdump` with `LLVM_TARGETS_TO_BUILD=AMDGPU`
+  (1061 build steps, MSVC 19.52), installs them and checks a gfx1030 encoding.
+  Ran it end to end with `-AddToUserPath -Clean`. Its output is recorded in
+  the environment table below.
+- `.\scripts\check-env.ps1`: every CPU, graphics and shader tool is present,
+  and the AMDGPU target is registered.
+
 ## 2026-11-24 — T-000 Foundation scaffold (Claude)
 
 ### Environment (verified)
@@ -16,8 +33,8 @@ Only recorded, executed results. Newest first.
 | Ninja | 1.13.2 (VS-bundled) |
 | Git | 2.50.1.windows.1 |
 | GPU | AMD Radeon RX 9070 XT, AMD proprietary driver, Vulkan API 1.4.359 (driver 2.0.416), from `vulkaninfo --summary` |
-| Vulkan SDK | **absent**: no `spirv-val`, `glslangValidator`, `VULKAN_SDK` |
-| LLVM AMDGPU | **absent**: no `llvm-mc`, `llvm-objdump`. VS-bundled LLVM has only clang-format/clang-tidy |
+| Vulkan SDK | 1.4.363.0 at `C:\VulkanSDK\1.4.363.0`; `spirv-val` SPIRV-Tools v2026.4, `glslangValidator` 16.6.0 (installed by the user, 2026-11-24) |
+| LLVM AMDGPU | 23.1.6, `llvm-mc` + `llvm-objdump` only, targets amdgcn/amdgpu/r600, built from source by `scripts/build-llvm-amdgpu.ps1` into `%LOCALAPPDATA%\Programs\LLVM-AMDGPU\23.1.6\bin` (user PATH). Check: `v_add_nc_u32_e32 v0, v1, v2` -> `[0x01,0x05,0x00,0x4a]`, `s_endpgm` -> `[0x00,0x00,0x81,0xbf]` (gfx1030) |
 | Python | 3.13 (optional, unused) |
 
 Note: Strawberry Perl puts CMake 3.29.2 and Ninja 1.12.0 on the user PATH
@@ -64,6 +81,7 @@ dumpbin /headers out\build\debug\bin\scale.exe
 
 ### Next
 
-Parallel tasks in `docs/TASKS.md`: T-101 (Gemini), T-201 (Claude), T-704 and
+T-001 (GoogleTest migration) first, then parallel tasks in `docs/TASKS.md`:
+T-101 and T-201 (Claude), T-704 and
 T-701 (Codex). T-601 and the LLVM cross-check in T-701 wait on tool
 installation.

@@ -15,18 +15,19 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | ID | Title | Owner | Status | Depends on | Milestone |
 |---|---|---|---|---|---|
 | T-000 | Foundation scaffold | Claude | DONE | — | M0 |
-| T-101 | PE32+ inspector library | Gemini | READY | T-000 | M1 |
-| T-102 | PE fixture images + dumpbin comparison | Gemini | WAITING | T-101 | M1 |
-| T-103 | `scale inspect` command | Gemini | WAITING | T-101 | M1 |
+| T-001 | Replace in-tree test harness with GoogleTest | Claude | WAITING (GoogleTest acquisition method) | T-000 | M0 |
+| T-101 | PE32+ inspector library | Claude | READY | T-000 | M1 |
+| T-102 | PE fixture images + dumpbin comparison | Claude | WAITING | T-101 | M1 |
+| T-103 | `scale inspect` command | Claude | WAITING | T-101 | M1 |
 | T-201 | Worker process supervisor | Claude | READY | T-000 | M2 |
-| T-202 | First native fixture, reference run, loader decision | Claude | WAITING | T-101 (interface), T-201 | M2 |
+| T-202 | First native fixture, reference run, loader decision | Claude | WAITING | T-101, T-201 | M2 |
 | T-203 | `scale run`, relocated-data fixture, report.json | Claude | WAITING | T-202 | M2 |
 | T-204 | Missing synthetic import diagnostic | Claude | WAITING | T-203 | M2/M3 |
-| T-601 | Vulkan compute plumbing harness | Claude | BLOCKED (Vulkan SDK) | T-000 | M6 |
+| T-601 | Vulkan compute plumbing harness | Claude | READY | T-001 | M6 |
 | T-704 | Synthetic shader ABI v0 contract | Codex | READY | T-000 | M7 |
-| T-701 | gfx1030 decoder (first subset) | Codex | READY (LLVM cross-check BLOCKED) | T-000 | M7 |
+| T-701 | gfx1030 decoder (first subset) | Codex | READY | T-001 | M7 |
 | T-702 | Shader IR v0 | Codex | WAITING | T-701, T-704 | M7 |
-| T-703 | SPIR-V emitter + validation | Codex | WAITING / BLOCKED (Vulkan SDK) | T-702 | M7 |
+| T-703 | SPIR-V emitter + validation | Codex | WAITING | T-702 | M7 |
 | T-711 | RDNA2 reference interpreter | Claude | WAITING | T-701 (interface), T-704 | M7 |
 | T-720 | Differential runner: interpreter vs GPU | Claude | WAITING | T-601, T-703, T-711 | M7 |
 
@@ -40,7 +41,6 @@ Dependent work starts from a **frozen public header** that has been merged to
 
 | Interface | Producer | Consumer | Freeze deliverable |
 |---|---|---|---|
-| `src/loader/include/scale/loader/pe_image.h` | Gemini (T-101) | Claude (T-202) | Header + `inspect_pe` signature merged first, as a small PR |
 | `src/shader/include/scale/shader/decode.h` | Codex (T-701) | Claude (T-711) | Decoded instruction struct + `decode()` signature merged first |
 | `docs/contracts/shader_abi.md` | Codex (T-704) | Claude (T-711, T-720) | Contract reviewed by Claude, then merged |
 
@@ -77,7 +77,29 @@ docs/PROGRESS.md.
 
 ---
 
-## T-101 — PE32+ inspector library (Gemini)
+## T-001 — Replace in-tree test harness with GoogleTest (Claude)
+
+Required by AGENTS.md (testing policy). Must land before any other task adds
+tests, so new tests are written against GoogleTest from the start.
+
+- Obtain a pinned GoogleTest release reproducibly. The method (FetchContent
+  with a fixed tag and hash, or a vcpkg manifest) is decided once the user
+  finishes installing dependencies. Record the version in docs/PROGRESS.md.
+- Delete `tests/support/scale_test.h`, `scale_test_main.cpp`, the skip
+  probe and `scale_add_test`'s custom main. `scale_add_test` becomes a thin
+  wrapper: link `GTest::gtest_main`, call `gtest_discover_tests` with labels
+  and timeout.
+- Port the existing `unit_common` and `unit_diagnostics` cases unchanged in
+  meaning.
+- Prove that `GTEST_SKIP()` is reported as CTest SKIPPED (not PASS) and that a
+  failing case fails CTest, with a self-test.
+- Keep `scale_add_command_test` for CLI and process-level checks.
+- Update `docs/contracts/testing.md`.
+
+**Acceptance:** `ctest --preset full` and `release-full` are green, with the
+same coverage as before and per-case CTest entries.
+
+## T-101 — PE32+ inspector library (Claude)
 
 **Paths owned:** `src/loader/` (inspection files: `pe_image.*`, `pe_*`),
 `tests/unit/loader/`, the `unit_loader` block in `tests/unit/CMakeLists.txt`.
@@ -89,7 +111,7 @@ public header. Define your own fixed-layout parsing with `scale::ByteView`.
 
 1. Library `scale::loader` via `scale_add_library(loader SOURCES ... DEPS
    scale::common scale::diagnostics)`.
-2. Public API (freeze this first, see above):
+2. Public API:
    `scale::Result<PeImage> inspect_pe(scale::ByteView file)` and
    `scale::Result<PeImage> inspect_pe_file(const std::filesystem::path&,
    std::uint64_t max_size)`. Reading the file uses a size cap and opens
@@ -121,7 +143,7 @@ overflowing RVAs/sizes, a PE32 (0x10B) image, an i386 machine, an
 unterminated import name and an import descriptor list that exceeds the limit.
 `ctest --preset full` is green in Debug and Release.
 
-## T-102 — PE fixture images + dumpbin comparison (Gemini)
+## T-102 — PE fixture images + dumpbin comparison (Claude)
 
 **Paths owned:** `tests/fixtures/pe/`, the `pe fixtures` block in
 `tests/integration/CMakeLists.txt`.
@@ -136,7 +158,7 @@ imported names/ordinals with the inspector output (via a small test
 executable that links `scale::loader`). If dumpbin is not found, the test is
 SKIPPED, not PASS. **Acceptance:** comparison test passes on this machine.
 
-## T-103 — `scale inspect <file> [--json]` (Gemini)
+## T-103 — `scale inspect <file> [--json]` (Claude)
 
 **Paths owned:** `tools/scale/inspect_command.{h,cpp}`, the handler line in
 `commands.cpp`, the `inspect` block in `tests/integration/CMakeLists.txt`.
@@ -168,7 +190,7 @@ Self-authored `fixture_ret42` with an explicit custom entry contract
 returns 42. A decision record covers OS loader facilities vs. custom mapping.
 Minimum image loading in the worker: section permissions, bounds, entry
 invocation. Unsupported directories are rejected explicitly. Consumes the
-frozen T-101 header.
+T-101 inspector.
 
 ## T-203 — `scale run`, relocated data, report.json (Claude)
 
@@ -185,10 +207,10 @@ and a fatal `runtime/import_resolution/unresolved_import` with `module`,
 `symbol`, `importing_module` and `import_kind`. Negative test only; no adapter
 is implemented.
 
-## T-601 — Vulkan compute plumbing harness (Claude) — BLOCKED
+## T-601 — Vulkan compute plumbing harness (Claude)
 
-Blocked on the LunarG Vulkan SDK (headers, loader import library,
-`spirv-val`, `glslangValidator`). Once installed: `src/graphics` minimal
+Uses the Vulkan SDK 1.4.363.0 (headers, loader import library, `spirv-val`,
+`glslangValidator`). `src/graphics` minimal
 instance/device/compute pipeline. Run a known GLSL→SPIR-V compute shader built
 at configure time, read it back and verify exact values. Label `gpu`. Report
 the device, driver and SDK version. A missing device is SKIPPED.

@@ -22,9 +22,14 @@ results and `docs/TASKS.md` for the work registry.
   (MSVC x64 toolset, Windows SDK, bundled CMake and Ninja)
 - Git
 
-Graphics and shader tracks will additionally need the LunarG Vulkan SDK and an
-LLVM distribution with the AMDGPU target. `scripts/check-env.ps1` reports what
-is present.
+Graphics and shader tracks additionally need:
+
+- the LunarG Vulkan SDK (https://vulkan.lunarg.com/sdk/home#windows)
+- `llvm-mc` and `llvm-objdump` with the AMDGPU target. The official LLVM
+  Windows releases and winget package lack it, so build them from pinned
+  source: `.\scripts\build-llvm-amdgpu.ps1 -AddToUserPath` (10-30 min, no admin).
+
+`scripts/check-env.ps1` reports what is present.
 
 ## Build and test
 
