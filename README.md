@@ -9,7 +9,7 @@
     <img src="https://img.shields.io/badge/backend-Vulkan%20(planned)-454545?style=flat-square" alt="Planned Vulkan backend" />
     <img src="https://img.shields.io/badge/status-early%20development-df3853?style=flat-square" alt="Early development" />
   </p>
-  <p><a href="#development-status">Status</a> · <a href="#getting-started">Getting started</a> · <a href="#command-line-interface">CLI</a> · <a href="#documentation">Documentation</a></p>
+  <p><a href="#development-status">Status</a> · <a href="#roadmap">Roadmap</a> · <a href="#getting-started">Getting started</a> · <a href="#command-line-interface">CLI</a> · <a href="#documentation">Documentation</a></p>
 </div>
 
 ---
@@ -30,10 +30,22 @@ The project is developed incrementally, with an emphasis on correctness, reprodu
 | M0        | Foundation        | **Complete** | Build system, CLI skeleton, diagnostics contract and CTest infrastructure.               |
 | M1        | PE inspector      | **Complete** | `scale::loader`, read-only PE32+ inspection and test executables compared against `dumpbin`.     |
 | M2        | Native execution  | **Complete** | Supervised worker, image loader, `scale run` with `report.json`, unresolved-import diagnostics. |
-| M6        | Graphics          | Planned      | Vulkan graphics harness; requires Vulkan SDK (T-601).                                    |
-| M7        | Shader recompiler | Planned      | RDNA2 decoding, IR and SPIR-V output; requires LLVM AMDGPU and Vulkan SDK (T-701–T-705). |
 
 For verified results, see [Development progress](docs/PROGRESS.md). For the complete milestone scope and work registry, see the [Roadmap](docs/ROADMAP.md) and [Tasks](docs/TASKS.md).
+
+## Roadmap
+
+SCALE is being built as a complete translation layer that runs Xbox Series X|S games on Windows. The game's AMD64 code runs natively on the host CPU. Everything else it expects from the console is supplied by SCALE: system services, graphics, shaders, audio and input. Every pillar is required, and a game is only considered working once all of them do their part.
+
+| Pillar | Milestones | Status | Scope |
+| :----- | :--------- | :----- | :---- |
+| **CPU execution and runtime** | M3–M5 | Next | Import binding through documented adapters, standard CRT startup, TLS, x64 unwinding/SEH and C++ exceptions, DLL initialization, system adapters with verified signatures, title filesystem with a writable data root, and a synthetic test title that combines them. |
+| **Shaders** | M7 | **In progress** | RDNA2 (gfx1030) recompiler to SPIR-V. Decoder, typed IR and validated SPIR-V output for the first compute subset are done. Next: an independent reference interpreter and GPU differential verification, then control flow, EXEC masks, wave operations, memory/resources and vertex/pixel stages. |
+| **Graphics** | M6, M8 | Planned | Vulkan host backend ([decision 0003](docs/decisions/0003-gpu-backend.md)): first a verified compute/triangle slice, then the console graphics API mapped onto Vulkan, with resources, descriptors, synchronization, presentation and pipelines built from translated shaders. |
+| **Audio, input and local data** | M9 | Planned | Interfaces demanded by verified test titles, built on public host APIs. Offline behavior is accurate, and unavailable services report documented errors. Nothing impersonates online services. |
+| **Running games** | M10 | Gated | Authorized retail testing starts only after the readiness baseline in [AGENTS.md](AGENTS.md) is met. After that, compatibility improves blocker by blocker from observed evidence. Each title is tracked per stage (inspected, loaded, initialized, menu, rendering, gameplay). |
+
+Nothing on this roadmap is implemented beyond what the status tables show. Broad game compatibility is the goal, not a promise.
 
 ## Getting started
 
