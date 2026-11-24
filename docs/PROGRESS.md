@@ -8,11 +8,33 @@ Only recorded, executed results, newest first. Each entry describes the state at
 |---|---|
 | M0 Foundation, M1 PE inspector, M2 native execution | complete |
 | M3 runtime fidelity | next: T-301 exception directory registration |
-| M7 shaders | first compute slice verified on hardware (ABI v0). ABI v1: contract (T-707), decoder (T-708) and reference interpreter (T-712) done and cross-checked against each other. Test-case library merged (T-705). Next: IR + SPIR-V for v1 (T-709), then the `scale-shader` CLI (T-706) (Codex); ABI v1 GPU cases are authored and wait for T-709 (T-721). |
+| M7 shaders | ABI v0 and ABI v1 (EXEC masks, scalar branches) verified on hardware: decoder, IR, SPIR-V, reference interpreter and GPU agree on 10 JSON test cases (T-701..T-712, T-720, T-721). Next: `scale-shader` CLI (T-706, Codex). |
 | M6 graphics | Vulkan compute harness with per-device fingerprints (T-601). Coverage: GPU class A2 only. |
 | Portability | groundwork done (T-801). Linux unverified (T-802 blocked). |
 
-Latest suite totals: `full`/`release-full` 173/173, `full-all`/`release-full-all` 284/284 (3 SKIPPED: ABI v1 GPU part, T-709), `gpu` 11/11 (8 passed, 3 SKIPPED, RX 9070 XT).
+Latest suite totals: `full`/`release-full` 173/173, `full-all`/`release-full-all` 299/299, `gpu` 14/14 (RX 9070 XT), no skips.
+
+## 2026-11-24 — T-709 merged; ABI v1 verified on hardware (T-721 done) (Claude)
+
+- Reviewed and merged Codex's T-709: `lower_ir_v1(decoded, initial_exec)`
+  checks every operand form and the forward control-flow graph;
+  `emit_spirv(const IrProgramV1&)` emits a workgroup-uniform dispatcher loop,
+  per-lane EXEC guards, a masked store and a workgroup-memory VCC exchange
+  with barriers. `initial_exec` is compiled into the module. spirv-val passes
+  for every v1 case. Codex added `v1_exec_restore_compare` and
+  `v1_zero_exec_f32`.
+- `gpu_shader_differential` now compiles ABI v1 cases with `lower_ir_v1`. The
+  interpreter run stays the pre-dispatch check of reads, waits and the float
+  domain. All 10 cases (4 ABI v0, 6 ABI v1) PASS on the RX 9070 XT: GPU,
+  interpreter and manual expected words agree. No skips.
+- Mutation checks on the emitter, observed by the GPU cases: ignoring
+  `initial_exec` fails 4 cases; inverting the `execz` condition fails 2;
+  breaking the per-lane EXEC guard fails 5. Inverting the SCC written by
+  `s_and_saveexec_b32` was **not** caught at first, because no case branched
+  on that SCC. New case `v1_saveexec_scc_branch` (llvm-mc 23.1.6 words,
+  hand-computed: EXEC 0xff → lanes 4–7 = 5..8) catches it.
+- `ctest`: full/release-full 173/173, full-all/release-full-all 299/299,
+  gpu 14/14, 0 skipped.
 
 ## 2026-11-24 — T-721 Differential runner on JSON test cases (Claude, in progress)
 

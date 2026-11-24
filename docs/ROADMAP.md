@@ -14,7 +14,7 @@ deliverables, not a strict serial order. Tasks and owners are in
 | M4 Adapters and filesystem | Adapter registry, title root + writable data root, path translation | — | backlog |
 | M5 Integration and diagnostics | report.json completeness, synthetic test title | — | not started |
 | M6 Graphics slice | Vulkan compute harness (done), then a verified triangle through a synthetic adapter | T-601 | compute done, triangle not started |
-| M7 RDNA2 shader recompiler | ABI contracts, decoder, IR, SPIR-V, reference interpreter, GPU differential tests | T-701..T-721 | ABI v0 slice verified on GPU; ABI v1 decoder + interpreter done; v1 IR/SPIR-V (T-709) and tools (T-706, T-721) next |
+| M7 RDNA2 shader recompiler | ABI contracts, decoder, IR, SPIR-V, reference interpreter, GPU differential tests | T-701..T-721 | ABI v0 and v1 (EXEC masks, scalar branches) verified on GPU; `scale-shader` CLI (T-706) next |
 | M8 Graphics integration | Translated shaders → pipeline creation, translation cache (decision 0005) | — | not started |
 | M9 Audio, input, local data | Interfaces demanded by verified tests | — | not started |
 | M10 Retail readiness gate | See AGENTS.md | — | not started |
@@ -22,9 +22,8 @@ deliverables, not a strict serial order. Tasks and owners are in
 
 ## Current tracks
 
-- **Shaders (Codex):** T-709 IR + SPIR-V for ABI v1, then T-706 `scale-shader` CLI.
-- **Shaders, verification (Claude):** T-721 GPU differential runner on shared
-  JSON test cases (done); ABI v1 GPU cases run once T-709 lands.
+- **Shaders (Codex):** T-706 `scale-shader` CLI. The next ABI extension
+  (wave operations or memory/resources) needs a contract task first.
 - **CPU/runtime (Claude):** T-301 exception directory (`RtlAddFunctionTable`)
   with a test executable that throws and catches, then the remaining M3
   features one at a time.
