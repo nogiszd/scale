@@ -69,6 +69,7 @@ if(SCALE_ENABLE_SHADER)
     # are separate components with separate owners; see docs/TASKS.md.
     scale_add_component(src/shader REQUIRED)
     scale_add_component(src/shader_ref)
+    scale_add_component(tools/scale_shader REQUIRED)
 endif()
 if(SCALE_ENABLE_GRAPHICS)
     scale_add_component(src/graphics REQUIRED)
