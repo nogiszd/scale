@@ -27,14 +27,17 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-701 — interface freeze
+### T-701 — interface freeze v2 ready
 
 Review branch `codex/T-701-decoder`, based on `integration` at `016d6fd`.
 The public [decoder interface](../../../src/shader/include/scale/shader/decode.h)
 declares `decode(ByteView)` and the owned instruction representation. It
 preserves encoding, raw dwords and stream offsets, with typed payloads for
-ALU operands, wait counters and MUBUF operands. The interpreter and compiler
-can consume the same decoded stream and validate the synthetic ABI themselves.
+ALU operands, wait counters and MUBUF operands. `AluOperands` has room for
+three sources and retains `source_count`. `Operand::encoded` preserves the
+raw field alongside the resolved value so the interpreter can independently
+verify inline constants. The interpreter and compiler can consume the same
+decoded stream and validate the synthetic ABI themselves.
 With `SCALE_ENABLE_SHADER=ON`, `scale::shader_decode` is a CMake interface
 target that exports the header and `scale::common`. The implementation will
 turn it into a static library with the same target name. `decode()` is a
@@ -56,7 +59,9 @@ git diff --cached --check
 
 - Debug and Release each passed all 83 existing CTest cases with zero skips.
 - The scratch CMake consumer under ignored `out/interface-freeze/` compiled
-  with `scale::shader_decode` and asserted the `decode()` signature.
+  with `scale::shader_decode`. It checked the `decode()` signature, the
+  three-source array and count, and the raw field's type and ability to
+  retain 9-bit and 16-bit values alongside resolved values.
 - `llvm-mc -triple=amdgcn -mcpu=gfx1030 -show-encoding` accepted the proposed
   opcode forms, including e32/e64 moves and adds, `v_mul_lo_u32`, and both
   T-704 MUBUF instructions. Decoder behavior and the LLVM disassembly
@@ -98,10 +103,11 @@ git diff --cached --check
 
 ## Next
 
-After the coordinator freezes the interface, implement the first subset and
-the GoogleTest cases. Include hand-encoded vectors and a cross-check of the
-T-704 example using both `llvm-mc` and `llvm-objdump`. T-711 can start from
-the frozen header and the merged ABI contract.
+After the coordinator merges the v2 interface, start the implementation on
+a new branch from `integration`. Implement the first subset and GoogleTest
+cases, including hand-encoded vectors and a cross-check of the T-704 example
+using both `llvm-mc` and `llvm-objdump`. T-711 can start from the frozen
+header and the merged ABI contract.
 
 ## Requests to coordinator
 

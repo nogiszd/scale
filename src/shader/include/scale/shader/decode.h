@@ -49,6 +49,10 @@ enum class OperandKind : std::uint8_t {
 
 struct Operand {
     OperandKind kind{};
+    // Unsigned bits of the raw source or destination field, such as a 9-bit
+    // VOP source, an 8-bit SSRC, or the 16-bit s_movk_i32 immediate.
+    // For a literal, this is the selector in the source field.
+    std::uint16_t encoded{};
     // Zero-based register index, or the full 32-bit constant bit pattern.
     // The immediate in s_movk_i32 is already sign-extended.
     std::uint32_t value{};
@@ -56,8 +60,8 @@ struct Operand {
 
 struct AluOperands {
     Operand destination;  // SGPR or VGPR
-    std::array<Operand, 2> sources{};  // Valid entries are in ISA source order.
-    std::uint8_t source_count{};
+    std::array<Operand, 3> sources{};  // In ISA source order.
+    std::uint8_t source_count{};  // Number of valid entries at the start of sources.
 };
 
 // Thresholds from the gfx1030 s_waitcnt instruction.
