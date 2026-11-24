@@ -27,9 +27,46 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
+### T-701 — interface freeze
+
+Review branch `codex/T-701-decoder`, based on `integration` at `016d6fd`.
+The public [decoder interface](../../../src/shader/include/scale/shader/decode.h)
+declares `decode(ByteView)` and the owned instruction representation. It
+preserves encoding, raw dwords and stream offsets, with typed payloads for
+ALU operands, wait counters and MUBUF operands. The interpreter and compiler
+can consume the same decoded stream and validate the synthetic ABI themselves.
+With `SCALE_ENABLE_SHADER=ON`, `scale::shader_decode` is a CMake interface
+target that exports the header and `scale::common`. The implementation will
+turn it into a static library with the same target name. `decode()` is a
+declaration at this checkpoint.
+
+Verification on Windows x64, MSVC 19.52.37029, Windows SDK 10.0.26100.0.
+
+```powershell
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset debug
+ctest --preset full
+cmake --preset release -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset release
+ctest --preset release-full
+cmake --build out/interface-freeze/build --target shader_decode_interface_check
+git diff --cached --check
+```
+
+- Debug and Release each passed all 83 existing CTest cases with zero skips.
+- The scratch CMake consumer under ignored `out/interface-freeze/` compiled
+  with `scale::shader_decode` and asserted the `decode()` signature.
+- `llvm-mc -triple=amdgcn -mcpu=gfx1030 -show-encoding` accepted the proposed
+  opcode forms, including e32/e64 moves and adds, `v_mul_lo_u32`, and both
+  T-704 MUBUF instructions. Decoder behavior and the LLVM disassembly
+  comparison belong to the implementation increment.
+
+## Completed
+
 ### T-704 — Synthetic shader ABI v0
 
-Review branch `codex/T-704-shader-abi`, commit `T-704: define synthetic shader ABI v0`.
+Commit `b629d89` from `codex/T-704-shader-abi`, approved and merged.
 The [contract](../../contracts/shader_abi.md) defines one logical wave32,
 the initial registers, two opaque MUBUF resource tuples, their Vulkan storage
 buffer bindings, and the JSON test-case format. The first program uses
@@ -61,14 +98,11 @@ git diff --cached --check
 
 ## Next
 
-After review, read `integration:docs/TASKS.md` and create the decoder branch
-with `git switch -c codex/T-701-decoder integration`. Prepare the public
-`decode.h` interface for the coordinator to freeze before implementing the
-first subset. Use the T-704 MUBUF forms for the memory instructions and
-cross-check the decoded fixture against LLVM. T-702 and T-711 consume the
-reviewed ABI contract. T-711 also needs the frozen decoder interface.
+After the coordinator freezes the interface, implement the first subset and
+the GoogleTest cases. Include hand-encoded vectors and a cross-check of the
+T-704 example using both `llvm-mc` and `llvm-objdump`. T-711 can start from
+the frozen header and the merged ABI contract.
 
 ## Requests to coordinator
 
-- Review the dispatch and JSON contract for T-711 and T-720 and merge T-704
-  into `integration` when approved.
+- Review and freeze `decode.h` on `integration` for T-711.
