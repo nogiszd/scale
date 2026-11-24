@@ -35,6 +35,11 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-707 | Shader ABI v1 contract: EXEC masks and control flow | Codex | DONE | T-704 | M7 |
 | T-708 | Decoder for ABI v1 (decode.h v3) | Codex | DONE | T-707 | M7 |
 | T-709 | IR + SPIR-V for ABI v1 | Codex | DONE | T-708 | M7 |
+| T-730 | Shader ABI v2 contract: memory and resources | Codex | READY | T-707 | M7 |
+| T-731 | Decoder and test-case fields for ABI v2 | Codex | WAITING | T-730 | M7 |
+| T-732 | IR + SPIR-V for ABI v2 | Codex | WAITING | T-731 | M7 |
+| T-733 | Reference interpreter for ABI v2 | Claude | WAITING | T-730, T-731 (interfaces) | M7 |
+| T-734 | ABI v2 GPU differential cases | Claude | WAITING | T-732, T-733 | M7 |
 | T-711 | RDNA2 reference interpreter (ABI v0) | Claude | DONE | T-701, T-704 | M7 |
 | T-712 | Reference interpreter for ABI v1 | Claude | DONE | T-708 | M7 |
 | T-720 | Differential runner: interpreter vs GPU (inline ABI v0 cases) | Claude | DONE | T-601, T-703, T-711 | M7 |
@@ -81,19 +86,38 @@ The files below are shared. Make only the edits listed.
 
 ## Open tasks
 
-### T-706 — `scale-shader` CLI (Codex)
+### T-730 — Shader ABI v2 contract: memory and resources (Codex)
 
-**Paths owned:** `tools/scale_shader/`, its test block.
+**Paths owned:** `docs/contracts/shader_abi.md` (new v2 section).
 
-A standalone tool, independent of the native execution host (AGENTS.md):
-`scale-shader decode <case.json|words>` prints the decoded instructions,
-`scale-shader compile <case.json> -o <out.spv>` runs decode → IR → SPIR-V,
-and `scale-shader validate <out.spv>` runs spirv-val if present (SKIPPED
-otherwise). Uses `scale::shader_testcase`. Exit codes follow the `scale` CLI
-convention. **Acceptance:** CLI tests on the T-704 and T-707 cases and on
-malformed input. Natural home for the opt-in shader debug mode (decision
-0005).
+Contract first, no code; same rules as T-707 (cite the RDNA2 ISA document
+70648 and LLVM AMDGPUUsage, mark every rule as a synthetic ABI decision).
+Scope:
+- MUBUF beyond ABI v0: nonzero immediate offsets, an SGPR `soffset`, and
+  per-lane addresses computed by the program instead of only `v1 = 4*lane`.
+- Out-of-range buffer accesses: define the behavior only as far as the ISA
+  documents it for the descriptor the ABI fixes (e.g. loads returning 0,
+  stores dropped). Anything not documented is rejected before dispatch by
+  the interpreter's pre-check, never assumed.
+- Scalar memory: a third, read-only constant buffer, `s_load_dword` /
+  `s_buffer_load_dword` (pick what the ISA and LLVM support for gfx1030 and
+  justify it), and `s_waitcnt lgkmcnt(0)` with pending-scalar-load rules
+  analogous to the v1 per-lane pending rule.
+- How the extra buffer maps to Vulkan/SPIR-V, and the JSON test-case fields
+  (constant buffer words, `abi_version: 2`).
+**Acceptance:** Claude reviews and approves; then T-731..T-734 start.
 
+### T-731 — Decoder and test-case fields for ABI v2 (Codex, WAITING on T-730)
+
+Freeze `decode.h` v4 (SMEM encoding, MUBUF offset fields already present
+where possible) and `test_case.h` v2 fields first, as separate interface
+steps. Then implementation, LLVM cross-check for every new form, negative
+tests.
+
+### T-732 — IR + SPIR-V for ABI v2 (Codex, WAITING on T-731)
+
+Lower ABI v2 per the contract, spirv-val on every case, new v2 cases in
+`tests/shader/cases/`.
 ### T-302 — TLS directory: static TLS and callbacks (Claude)
 
 Support the TLS directory in the worker for test executables: allocate the
@@ -149,6 +173,7 @@ Evidence, commands and results for each are in docs/PROGRESS.md.
 - **T-711** Reference interpreter (`scale::shader_ref`) for ABI v0.
 - **T-712** Reference interpreter for ABI v1, cross-checked against the v3
   decoder.
+- **T-706** `scale-shader` CLI: decode / compile / validate, v0 and v1.
 - **T-709** IR + SPIR-V for ABI v1 (`lower_ir_v1(decoded, initial_exec)`,
   structured dispatcher, EXEC guards, workgroup VCC exchange).
 - **T-720** First differential slice: interpreter and GPU agree with manual

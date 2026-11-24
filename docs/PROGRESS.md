@@ -8,11 +8,29 @@ Only recorded, executed results, newest first. Each entry describes the state at
 |---|---|
 | M0 Foundation, M1 PE inspector, M2 native execution | complete |
 | M3 runtime fidelity | exception directory validated and registered; SEH dispatch verified natively and under SCALE (T-301). Next: TLS (T-302). |
-| M7 shaders | ABI v0 and ABI v1 (EXEC masks, scalar branches) verified on hardware: decoder, IR, SPIR-V, reference interpreter and GPU agree on 10 JSON test cases (T-701..T-712, T-720, T-721). Next: `scale-shader` CLI (T-706, Codex). |
+| M7 shaders | ABI v0 and ABI v1 (EXEC masks, scalar branches) verified on hardware: decoder, IR, SPIR-V, reference interpreter and GPU agree on 10 JSON test cases (T-701..T-712, T-720, T-721). `scale-shader` CLI done (T-706). Next: ABI v2 contract, memory and resources (T-730, Codex). |
 | M6 graphics | Vulkan compute harness with per-device fingerprints (T-601). Coverage: GPU class A2 only. |
 | Portability | groundwork done (T-801). Linux unverified (T-802 blocked). |
 
-Latest suite totals: `full`/`release-full` 189/189, `full-all`/`release-full-all` 315/315, `gpu` 14/14 (RX 9070 XT), no skips.
+Latest suite totals: `full`/`release-full` 189/189, `full-all`/`release-full-all` 334/334, `gpu` 14/14 (RX 9070 XT), no skips.
+
+## 2026-11-24 — T-706 merged: `scale-shader` CLI (Claude, review)
+
+- Reviewed and merged Codex's `scale-shader` (`tools/scale_shader`, built with
+  `SCALE_ENABLE_SHADER`): `decode <case.json|words...>`, `compile <case.json>
+  -o <out.spv>` (v0 `lower_ir`, v1 `lower_ir_v1` with the case's
+  `initial_exec`), `validate <out.spv>` (spirv-val from PATH or VULKAN_SDK,
+  module on stdin; a missing validator prints SKIPPED and exits 1). Output is
+  staged and renamed, and the input case is never overwritten. OS code is in
+  `_win32`/`_posix` files (POSIX unverified). The root `CMakeLists.txt` change
+  is the single approved line.
+- 18 CLI tests (decode, compile + validate for T-704/T-707 cases including a
+  non-ASCII output path, initial EXEC changes the module, malformed JSON,
+  word, truncated encoding, bad arguments, input protection, missing and
+  malformed module, validator absent). Mutations caught: ignoring the
+  validator's exit code, ignoring `initial_exec`.
+- Next shader work defined: ABI v2 (memory and resources), T-730..T-734.
+- `ctest`: full/release-full 189/189, full-all/release-full-all 334/334, gpu 14/14.
 
 ## 2026-11-24 — T-301 Exception directory registration (Claude)
 
