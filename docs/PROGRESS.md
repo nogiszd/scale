@@ -1,6 +1,17 @@
 # Progress
 
-Only recorded, executed results. Newest first.
+Only recorded, executed results, newest first. Each entry describes the state at the time it was written. Open work and its order are tracked in [TASKS.md](TASKS.md), not here.
+
+## Current state (updated 2026-11-24)
+
+| Track | State |
+|---|---|
+| M0 Foundation, M1 PE inspector, M2 native execution | complete |
+| M7 shaders | first compute slice verified on hardware (ABI v0). ABI v1 contract merged (T-707). Test-case library merged (T-705). `decode.h` v3 frozen (T-708 interface), decoder implementation in progress (Codex). |
+| M6 graphics | Vulkan compute harness with per-device fingerprints (T-601). Coverage: GPU class A2 only. |
+| Portability | groundwork done (T-801). Linux unverified (T-802 blocked). |
+
+Latest suite totals: `full`/`release-full` 173/173, `full-all`/`release-full-all` 247/247, `gpu` 4/4 (RX 9070 XT).
 
 ## 2026-11-24 — T-801 Portability groundwork (Claude)
 
@@ -19,8 +30,8 @@ Only recorded, executed results. Newest first.
 - Tests: the Windows-only kernel32 inspection case moved to
   `pe_image_win32_test.cpp`. Temp names no longer use `GetCurrentProcessId`.
   A shared tool runner (`tests/support/run_tool.h`, Win32 and POSIX)
-  replaces `_wpopen` in the dumpbin test. Codex's `spirv_val_test` will
-  migrate. The new CTest `portable_components_have_no_os_headers` checks 32
+  replaces `_wpopen` in the dumpbin test. Codex migrated `spirv_val_test`
+  in the T-708 branch. The new CTest `portable_components_have_no_os_headers` checks 32
   files, and inserting `<windows.h>` into `run_report.cpp` makes it fail as
   intended.
 - `ctest` after a clean rebuild: full/release-full 173/173 (169 + 4 new),
@@ -55,8 +66,7 @@ Only recorded, executed results. Newest first.
 - Limitations: one GPU class (A2). The RTE tie case can't tell RTE apart
   from a device whose default is already RTE, so a device that ignored the
   execution mode but rounds to nearest-even by default would still pass.
-  Cases are inline C++ until T-705 provides the shared JSON loader. ABI v1
-  (EXEC masks, branches) comes next (T-708, T-709, T-712).
+  Cases are inline C++. The shared JSON loader (T-705) arrived later.
 - `ctest`: full/release-full 169/169, full-all/release-full-all 232/232, gpu 4/4.
 
 ## 2026-11-24 — T-601 Vulkan compute harness and GPU target matrix (Claude)
@@ -85,8 +95,7 @@ Only recorded, executed results. Newest first.
   active): 0 validation messages.
 - Coverage: class A2 only. A1, N, I and S are NOT_TESTED.
 - This verifies host compute plumbing only. It is not console graphics API
-  support. Next: T-720 runs translated shaders on this harness and compares
-  them with the interpreter.
+  support.
 
 ## 2026-11-24 — T-711 RDNA2 reference interpreter (Claude)
 
@@ -115,7 +124,6 @@ Only recorded, executed results. Newest first.
   and it now catches the mutation.
 - `ctest`: full/release-full 169/169. Shader builds: Debug 228/228, Release
   228/228.
-- Next: T-601 (Vulkan harness), then T-720 (interpreter vs GPU readback).
 
 ## 2026-11-24 — Project name written as SCALE (Claude)
 
@@ -123,7 +131,7 @@ The project name is now written **SCALE** in prose, documentation, comments
 and user-visible messages (`SCALE component: …`, `scale help` header).
 Identifiers stay lowercase: the `scale` command and `scale version` output,
 `tool.name = "scale"` in reports, the `scale::` namespace, `scale_*` targets
-and file names. Codex-owned shader documents will follow in Codex's branch.
+and file names. Codex's shader documents followed in T-707.
 
 ## 2026-11-24 — T-204 Unresolved import diagnostics — M2 complete (Claude)
 
@@ -180,8 +188,8 @@ old names as historical record. Mapping:
 | loader messages "not supported by the fixture loader" | "not supported by the loader yet" |
 
 No behavior changed; the trusted, self-authored scope and the custom entry
-contract stay the same. Codex-owned shader documents still say "fixture" for
-shader test cases. Codex will update them in its own branch.
+contract stay the same. Codex changed its shader documents to "test case" /
+"test program" in T-702.
 
 Verification after a clean rebuild: `ctest --preset full` 157/157,
 `release-full` 157/157, `-DSCALE_ENABLE_SHADER=ON` 180/180.
@@ -251,9 +259,9 @@ Verification after a clean rebuild: `ctest --preset full` 157/157,
   `integration_native_fixture` (5): native reference = 42, worker = 42 and
   equal to the reference with all stages, imports/DLL/missing file rejected
   before entry.
-- Limitations: one fixture with a custom entry. Relocated-data execution is
-  T-203. There is no `scale run` CLI yet (T-203). Imports, TLS, exceptions and
-  CRT entry points are unsupported and rejected.
+- Limitations at the time: one fixture with a custom entry. Relocated data and
+  `scale run` followed in T-203. Imports, TLS, exceptions and CRT entry points
+  are unsupported and rejected.
 
 ## 2026-11-24 — T-201 Worker process supervisor (Claude)
 
@@ -347,8 +355,8 @@ Verification after a clean rebuild: `ctest --preset full` 157/157,
 - Mutation check: with the relocation block-size validation disabled, the
   suite aborts. Restored afterwards; all cases pass.
 - `ctest --preset full` and `release-full`: 83/83 passed, zero warnings.
-- Not yet compared against dumpbin (T-102). Unwind data, exports and delay
-  imports are not parsed.
+- Compared against dumpbin in T-102. Unwind data, exports and delay imports
+  are not parsed.
 
 ## 2026-11-24 — T-001 GoogleTest migration (Claude)
 
@@ -440,15 +448,7 @@ dumpbin /headers out\build\debug\bin\scale.exe
   self-tests. `scale_add_command_test` checks exact exit codes.
 - Docs: architecture, contracts, task registry, multi-agent workflow.
 
-### Limitations
+### Limitations at the time
 
-- No PE parsing, execution, graphics or shader code yet. This is
-  infrastructure only.
-- The `gpu` preset has no tests.
-
-### Next
-
-T-001 (GoogleTest migration) first, then parallel tasks in `docs/TASKS.md`:
-T-101 and T-201 (Claude), T-704 and
-T-701 (Codex). T-601 and the LLVM cross-check in T-701 wait on tool
-installation.
+- Infrastructure only: no PE parsing, execution, graphics or shader code.
+- The `gpu` preset had no tests until T-601.
