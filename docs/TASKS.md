@@ -16,9 +16,9 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 |---|---|---|---|---|---|
 | T-000 | Foundation scaffold | Claude | DONE | — | M0 |
 | T-001 | Replace in-tree test harness with GoogleTest | Claude | DONE | T-000 | M0 |
-| T-101 | PE32+ inspector library | Claude | READY | T-000 | M1 |
-| T-102 | PE fixture images + dumpbin comparison | Claude | WAITING | T-101 | M1 |
-| T-103 | `scale inspect` command | Claude | WAITING | T-101 | M1 |
+| T-101 | PE32+ inspector library | Claude | DONE | T-000 | M1 |
+| T-102 | PE fixture images + dumpbin comparison | Claude | READY | T-101 | M1 |
+| T-103 | `scale inspect` command | Claude | READY | T-101 | M1 |
 | T-201 | Worker process supervisor | Claude | READY | T-000 | M2 |
 | T-202 | First native fixture, reference run, loader decision | Claude | WAITING | T-101, T-201 | M2 |
 | T-203 | `scale run`, relocated-data fixture, report.json | Claude | WAITING | T-202 | M2 |

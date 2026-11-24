@@ -2,6 +2,26 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-101 PE32+ inspector library (Claude)
+
+- `scale::loader` (`src/loader`): `inspect_pe(ByteView)` and
+  `inspect_pe_file(path, max_size)`. It parses and validates the DOS, COFF
+  and PE32+ optional headers, alignment, sections, all 16 data directories
+  (bounds), imports (by name with hint, by ordinal, IAT fallback), the
+  base-relocation summary by type, TLS (with callback RVAs) and the
+  exception directory (RUNTIME_FUNCTION count). Delay-import, export, load
+  config and the remaining directories are reported as present only. Limits
+  and the 30 error codes are documented in `pe_image.h`.
+- `unit_loader` (48 cases, label quick): a test-side PE builder
+  (`tests/unit/loader/pe_builder.h`) builds valid images; every error code
+  has a negative case. Also includes a read-only inspection of
+  `%SystemRoot%\System32\kernel32.dll`.
+- Mutation check: with the relocation block-size validation disabled, the
+  suite aborts. Restored afterwards; all cases pass.
+- `ctest --preset full` and `release-full`: 83/83 passed, zero warnings.
+- Not yet compared against dumpbin (T-102). Unwind data, exports and delay
+  imports are not parsed.
+
 ## 2026-11-24 — T-001 GoogleTest migration (Claude)
 
 - GoogleTest **1.18.0** via `FetchContent`, from
