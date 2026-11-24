@@ -69,6 +69,8 @@ The CLI supervisor starts a separate unprivileged worker process for native exec
 
 ## Windows development environment
 
+Windows is the first platform; Linux is a planned future platform (Vulkan backend). Follow [decision 0004](docs/decisions/0004-platform-portability.md): keep shader, graphics, diagnostics and PE inspection code free of OS headers, isolate OS-specific code in `_win32.cpp` files behind platform-neutral headers, and do not claim Linux support until it has been built and tested on Linux.
+
 Required initially: Windows 11 x64 (Windows 10 support is not an initial requirement), Git, Visual Studio C++ Build Tools with MSVC x64 and Windows SDK, CMake and Ninja. Use a Developer PowerShell or x64 Native Tools environment. An installed Visual Studio IDE is optional. Python 3 is optional for scripting; tests use GoogleTest run through CTest. Do not install Rust, GDKX, Vulkan, LLVM, Z3 or other large dependencies for the CPU milestone unless there is a concrete need.
 
 Check `git --version`, `cmake --version`, `ninja --version`, `Get-Command cl, link, dumpbin`, and the compiler/SDK architecture. Do not auto-install software or alter machine-wide settings; report missing tools and exact suggested installation steps. Set up Debug and Release presets using Ninja and the initialized MSVC environment. Verify C++23 features actually used are supported by the installed compiler; avoid unsupported features or experimental compiler switches unless justified.

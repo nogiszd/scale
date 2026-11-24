@@ -103,7 +103,7 @@ with stable `component/code` identifiers. Diagnostics follow
 [docs/contracts/diagnostics.md](docs/contracts/diagnostics.md). Tests are
 GoogleTest via `scale_add_test` (see
 [docs/contracts/testing.md](docs/contracts/testing.md)). Each test has exactly
-one label: `quick`, `integration` or `gpu`. Test executables are source built
+one label: `quick`, `integration` or `gpu`. Windows is the first platform and Linux a planned one: follow [decision 0004](docs/decisions/0004-platform-portability.md). No OS headers in shader, graphics, diagnostics or PE inspection code, and OS-specific code goes in `_win32.cpp` files behind platform-neutral headers. Test executables are source built
 by CMake under `tests/executables/`. Binaries are never committed.
 
 ## 5. Hand a task over
