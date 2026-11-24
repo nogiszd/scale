@@ -205,7 +205,8 @@ private:
             const auto vmcnt = (field(immediate, 14, 3) << 4) | field(immediate, 0, 0xf);
             instruction_.operands = WaitCounters{static_cast<std::uint8_t>(vmcnt),
                                                  static_cast<std::uint8_t>(field(immediate, 4, 7)),
-                                                 static_cast<std::uint8_t>(field(immediate, 8, 0x3f))};
+                                                 static_cast<std::uint8_t>(field(immediate, 8, 0x3f)),
+                                                 static_cast<std::uint16_t>(immediate)};
             return finish(Encoding::sopp, Opcode::s_waitcnt);
         }
         default: return unknown_opcode("SOPP", opcode);

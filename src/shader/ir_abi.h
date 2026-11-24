@@ -44,6 +44,7 @@ inline std::string_view opcode_name(Opcode opcode) {
     case Opcode::s_cbranch_scc1: return "s_cbranch_scc1";
     case Opcode::s_cbranch_execz: return "s_cbranch_execz";
     case Opcode::s_branch: return "s_branch";
+    case Opcode::s_buffer_load_dword: return "s_buffer_load_dword";
     }
     return "unknown opcode";
 }

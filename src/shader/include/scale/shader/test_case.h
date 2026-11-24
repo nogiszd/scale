@@ -15,6 +15,7 @@ namespace scale::shader {
 enum class ShaderTestAbiVersion : std::uint8_t {
     v0 = 0,
     v1 = 1,
+    v2 = 2,
 };
 
 enum class ShaderTestOutputType : std::uint8_t {
@@ -29,6 +30,11 @@ struct ShaderTestCaseV1 {
     ShaderTestLaneWords initial_output_words{};
 };
 
+struct ShaderTestCaseV2 {
+    ShaderTestCaseV1 initial_state;  // Both inherited JSON fields remain required.
+    std::array<std::uint32_t, 32> constant_words{};  // Increasing byte-offset order.
+};
+
 struct ShaderTestCase {
     std::string name;
     std::vector<std::uint32_t> code_words;  // Dwords in instruction stream order.
@@ -36,9 +42,12 @@ struct ShaderTestCase {
     ShaderTestLaneWords expected_output_words{};
     ShaderTestOutputType output_type{};
     std::optional<std::uint32_t> seed;  // JSON null for manual inputs.
-    std::optional<ShaderTestCaseV1> v1;  // Both v1 fields are required together.
+    // Exactly one is present for its corresponding ABI version. Both are empty for v0.
+    std::optional<ShaderTestCaseV1> v1;
+    std::optional<ShaderTestCaseV2> v2;
 
     [[nodiscard]] constexpr ShaderTestAbiVersion abi_version() const noexcept {
+        if (v2) return ShaderTestAbiVersion::v2;
         return v1 ? ShaderTestAbiVersion::v1 : ShaderTestAbiVersion::v0;
     }
 };

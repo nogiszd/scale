@@ -36,9 +36,9 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-708 | Decoder for ABI v1 (decode.h v3) | Codex | DONE | T-707 | M7 |
 | T-709 | IR + SPIR-V for ABI v1 | Codex | DONE | T-708 | M7 |
 | T-730 | Shader ABI v2 contract: memory and resources | Codex | DONE | T-707 | M7 |
-| T-731 | Decoder and test-case fields for ABI v2 | Codex | READY | T-730 | M7 |
+| T-731 | Decoder and test-case fields for ABI v2 | Codex | IN_PROGRESS (interfaces frozen) | T-730 | M7 |
 | T-732 | IR + SPIR-V for ABI v2 | Codex | WAITING | T-731 | M7 |
-| T-733 | Reference interpreter for ABI v2 | Claude | WAITING | T-730, T-731 (interfaces) | M7 |
+| T-733 | Reference interpreter for ABI v2 | Claude | IN_PROGRESS | T-730, T-731 (interfaces) | M7 |
 | T-734 | ABI v2 GPU differential cases | Claude | WAITING | T-732, T-733 | M7 |
 | T-711 | RDNA2 reference interpreter (ABI v0) | Claude | DONE | T-701, T-704 | M7 |
 | T-712 | Reference interpreter for ABI v1 | Claude | DONE | T-708 | M7 |
@@ -57,9 +57,9 @@ Dependent work starts from a **frozen public interface** merged to
 
 | Interface | Producer | Consumers | State |
 |---|---|---|---|
-| `src/shader/include/scale/shader/decode.h` | Codex | Claude (`shader_ref`), Codex (IR) | **Frozen** v3 (`9ebc332`), implemented (T-708) |
+| `src/shader/include/scale/shader/decode.h` | Codex | Claude (`shader_ref`), Codex (IR) | **Frozen** v4 (`755af8f`: SMEM `s_buffer_load_dword`, raw MUBUF/SMEM fields, `WaitCounters::simm16`); v3 implemented (T-708), v4 implementation in T-731 |
 | `docs/contracts/shader_abi.md` | Codex | Claude (`shader_ref`, T-721, T-733), Codex (IR, SPIR-V) | **Frozen** v0 (`b629d89`) + v1 (`a5ef811`) + v2 (`05ba211`) |
-| `src/shader/include/scale/shader/test_case.h` | Codex | Claude (T-721), Codex (T-706) | **Frozen** (`e8ca799`, v0 + v1 fields) |
+| `src/shader/include/scale/shader/test_case.h` | Codex | Claude (T-721, T-734), Codex (T-706) | **Frozen** v2 (`e9e8e67`: `ShaderTestCase::v2` with `initial_state` + `constant_words`; v1 fields `e8ca799`) |
 
 A change to a frozen interface needs a coordinator-approved note in this file.
 

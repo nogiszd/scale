@@ -446,10 +446,12 @@ an untaken path.
 
 AMD document 70648 §§7.1–7.2, 7.5 and 12.6 distinguish the two
 base operands, describe scalar buffer offsets and specify the dword
-load. LLVM 23.1.6 assembles both opcodes for `gfx1030`; the buffer
-form uses the unsigned `offset20u` immediate syntax.
+load. LLVM 23.1.6 assembles both opcodes for `gfx1030`. The LLVM 18.1.6
+syntax reference names the buffer form's unsigned immediate
+`offset20u`. The pinned 23.1.6 encoding definition gives its field layout.
 [AMD RDNA 2 ISA reference](https://docs.amd.com/v/u/en-US/rdna2-shader-instruction-set-architecture)
-[LLVM GFX1030 SMEM syntax](https://releases.llvm.org/18.1.6/docs/AMDGPU/AMDGPUAsmGFX1030.html#smem)
+[LLVM 18.1.6 GFX1030 SMEM syntax](https://releases.llvm.org/18.1.6/docs/AMDGPU/AMDGPUAsmGFX1030.html#smem)
+[LLVM 23.1.6 GFX10 SMEM encoding](https://github.com/llvm/llvm-project/blob/llvmorg-23.1.6/llvm/lib/Target/AMDGPU/SMInstructions.td#L1105-L1163)
 
 **Synthetic ABI decision.** The scalar load reads `constant_words[imm / 4]`
 once logically per wave, even with an empty EXEC mask. It preserves
