@@ -30,7 +30,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-701 | gfx1030 decoder (first subset) | Codex | DONE | T-001 | M7 |
 | T-702 | Shader IR v0 | Codex | DONE | T-701, T-704 | M7 |
 | T-703 | SPIR-V emitter + validation | Codex | DONE | T-702 | M7 |
-| T-705 | Shader test-case library (T-704 JSON) | Codex | IN_PROGRESS (interface frozen) | T-704 | M7 |
+| T-705 | Shader test-case library (T-704 JSON) | Codex | REVIEW | T-704 | M7 |
 | T-706 | `scale-shader` CLI (decode / compile / validate) | Codex | WAITING | T-705 | M7 |
 | T-707 | Shader ABI v1 contract: EXEC masks and control flow | Codex | DONE | T-704 | M7 |
 | T-708 | Decoder for ABI v1 (decode.h v3: vcc_lo/exec_lo, VOPC, branches) | Codex | READY | T-707 | M7 |
