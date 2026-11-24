@@ -1,5 +1,7 @@
 #include "commands.h"
 
+#include "inspect_command.h"
+
 #include "scale/common/version.h"
 
 #include <array>
@@ -37,7 +39,7 @@ int cmd_help(Args args);
 constexpr std::array kCommands = {
     Command{"help", "help", "Show available commands", "", &cmd_help},
     Command{"version", "version", "Print the Scale version", "", &cmd_version},
-    Command{"inspect", "inspect <file> [--json]", "Inspect a PE32+ image (read-only)", "T-103", nullptr},
+    Command{"inspect", "inspect <file> [--json]", "Inspect a PE32+ image (read-only)", "", &cmd_inspect},
     Command{"run", "run <trusted-fixture.exe> [-- args]", "Execute a trusted fixture in a worker process",
             "T-203", nullptr},
 };

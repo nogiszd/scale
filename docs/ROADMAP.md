@@ -7,7 +7,7 @@ deliverables, not a strict serial order.
 | Milestone | Scope | Tasks | State |
 |---|---|---|---|
 | M0 Foundation | CMake/presets, CLI skeleton, diagnostics contract, CTest | T-000 | done |
-| M1 PE inspector | Read-only bounded PE32+ AMD64 inspection, `scale inspect` | T-101..T-103 | ready |
+| M1 PE inspector | Read-only bounded PE32+ AMD64 inspection, `scale inspect` | T-101..T-103 | done |
 | M2 Native execution slice | Worker, custom-entry fixture, relocated fixture, `scale run`, missing-import diagnostic | T-201..T-204 | ready (T-201) |
 | M3 Imports and Windows runtime fidelity | Imports/ordinals/forwarders, delay load, CRT startup, TLS, SEH/C++ EH, DLL init | — | not planned yet |
 | M4 Adapters and filesystem | Adapter registry, title root + data root, path translation | backlog | — |

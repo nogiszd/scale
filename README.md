@@ -7,7 +7,7 @@ today. Nothing beyond what it lists is implemented.
 | Track | Status |
 |---|---|
 | Foundation (M0) | Build, CLI skeleton, diagnostics contract, CTest infrastructure |
-| PE inspector (M1) | Not implemented (T-101..T-103) |
+| PE inspector (M1) | Done: `scale::loader` inspector, fixtures compared against dumpbin, `scale inspect` |
 | Native execution (M2) | Not implemented (T-201..T-204) |
 | Graphics (M6) | Not implemented; needs Vulkan SDK (T-601) |
 | Shader recompiler (M7) | Not implemented; needs LLVM AMDGPU + Vulkan SDK (T-701..T-705) |
@@ -58,7 +58,7 @@ Optional components: `-DSCALE_ENABLE_SHADER=ON`, `-DSCALE_ENABLE_GRAPHICS=ON`.
 ```text
 scale help
 scale version
-scale inspect <file> [--json]           (not implemented, T-103)
+scale inspect <file> [--json]           (read-only PE32+ inspection; docs/contracts/inspect.md)
 scale run <trusted-fixture.exe> [-- args]  (not implemented, T-203)
 ```
 

@@ -2,6 +2,25 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-103 `scale inspect` — M1 complete (Claude)
+
+- `scale inspect <file> [--json]` (`tools/scale/inspect_command.cpp`) prints a
+  human-readable summary or the JSON schema v1 from `docs/contracts/inspect.md`.
+  A rejected file gives exit 1 with `component/code: message` and, with
+  `--json`, an error document. Usage errors exit 2.
+- 9 new CLI tests (label integration): text and JSON output on the T-102
+  fixtures, a malformed file, a missing file and usage errors. The old
+  not-implemented test now targets `run` (T-203).
+- Observed: shell tools in this environment halve backslashes, so several
+  regex escapes were silently lost and some patterns matched too loosely.
+  Fixed by writing the file directly. A deliberately wrong expectation was
+  confirmed to fail the check script.
+- `ctest --preset full` and `release-full`: 98/98 passed, zero warnings.
+- **M1 acceptance:** bounded PE32+ AMD64 inspector with a negative test per
+  error code (T-101), fixture metadata compared against dumpbin (T-102),
+  `scale inspect` with `--json` (T-103). Delay imports, exports and unwind
+  data are reported as present only and not parsed. Nothing is executed.
+
 ## 2026-11-24 — T-102 PE fixtures and dumpbin comparison (Claude)
 
 - `tests/fixtures/pe`: three no-CRT fixtures with an explicit `/ENTRY`,
