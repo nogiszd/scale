@@ -7,11 +7,26 @@ Only recorded, executed results, newest first. Each entry describes the state at
 | Track | State |
 |---|---|
 | M0 Foundation, M1 PE inspector, M2 native execution | complete |
-| M7 shaders | first compute slice verified on hardware (ABI v0). ABI v1: contract (T-707) and reference interpreter (T-712) done. Test-case library merged (T-705). `decode.h` v3 frozen; v3 decoder implementation in progress (Codex, T-708), then IR + SPIR-V for v1 (T-709). |
+| M7 shaders | first compute slice verified on hardware (ABI v0). ABI v1: contract (T-707), decoder (T-708) and reference interpreter (T-712) done and cross-checked against each other. IR + SPIR-V for v1 (T-709) and the `scale-shader` CLI (T-706) are next (Codex). Test-case library merged (T-705). |
 | M6 graphics | Vulkan compute harness with per-device fingerprints (T-601). Coverage: GPU class A2 only. |
 | Portability | groundwork done (T-801). Linux unverified (T-802 blocked). |
 
-Latest suite totals: `full`/`release-full` 173/173, `full-all`/`release-full-all` 259/259, `gpu` 4/4 (RX 9070 XT).
+Latest suite totals: `full`/`release-full` 173/173, `full-all`/`release-full-all` 277/277, `gpu` 4/4 (RX 9070 XT).
+
+## 2026-11-24 — T-708 merged; decoder ↔ interpreter cross-check for ABI v1 (Claude)
+
+- Reviewed and merged Codex's v3 decoder (T-708): VOPC compares (193 = lt,
+  194 = eq), `s_and_saveexec_b32` (SOP1 60), `s_mov_b32 exec_lo`, and SOPP
+  branches (2/4/5/8) with 64-bit targets. `vcc_lo` is accepted only where the
+  contract allows it. Its new LLVM cross-check (`decoder_v1_subset.s`) passes.
+  A swapped-compare mutation is caught by both the unit test and the LLVM
+  test.
+- New `ShaderRefV1Decoded` tests (2) decode the real llvm-mc words for the
+  T-707 example, the SCC/branch program and the EXEC-restore program with the
+  v3 decoder, then run them through `scale::shader_ref`. The interpreter
+  re-derives selectors and branch targets from raw words, and both agree.
+  Results match the hand-computed contract values.
+- `ctest`: full 173/173, full-all/release-full-all 277/277, gpu 4/4.
 
 ## 2026-11-24 — T-712 Reference interpreter for shader ABI v1 (Claude)
 
