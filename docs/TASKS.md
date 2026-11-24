@@ -25,10 +25,10 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-204 | Missing synthetic import diagnostic | Claude | WAITING | T-203 | M2/M3 |
 | T-601 | Vulkan compute plumbing harness | Claude | READY | T-001 | M6 |
 | T-704 | Synthetic shader ABI v0 contract | Codex | DONE | T-000 | M7 |
-| T-701 | gfx1030 decoder (first subset) | Codex | REVIEW | T-001 | M7 |
+| T-701 | gfx1030 decoder (first subset) | Codex | IN_PROGRESS (interface frozen at c4ce6f3) | T-001 | M7 |
 | T-702 | Shader IR v0 | Codex | WAITING | T-701, T-704 | M7 |
 | T-703 | SPIR-V emitter + validation | Codex | WAITING | T-702 | M7 |
-| T-711 | RDNA2 reference interpreter | Claude | WAITING | T-701 (interface), T-704 | M7 |
+| T-711 | RDNA2 reference interpreter | Claude | READY | T-701 (interface), T-704 | M7 |
 | T-720 | Differential runner: interpreter vs GPU | Claude | WAITING | T-601, T-703, T-711 | M7 |
 
 Unassigned backlog: title filesystem / path translation (M4), adapter
@@ -41,8 +41,8 @@ Dependent work starts from a **frozen public header** that has been merged to
 
 | Interface | Producer | Consumer | Freeze deliverable |
 |---|---|---|---|
-| `src/shader/include/scale/shader/decode.h` | Codex (T-701) | Claude (T-711) | Decoded instruction struct + `decode()` signature merged first |
-| `docs/contracts/shader_abi.md` | Codex (T-704) | Claude (T-711, T-720) | Contract reviewed by Claude, then merged |
+| `src/shader/include/scale/shader/decode.h` | Codex (T-701) | Claude (T-711) | **Frozen** at `c4ce6f3` (v2: 3 sources, raw `encoded` field) |
+| `docs/contracts/shader_abi.md` | Codex (T-704) | Claude (T-711, T-720) | **Frozen** at `d4886a5` (ABI v0) |
 
 A change to a frozen interface after the freeze needs a coordinator-approved
 note in this file.
