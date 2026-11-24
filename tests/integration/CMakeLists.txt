@@ -30,3 +30,24 @@ scale_add_command_test(NAME cli_unimplemented_command_reports_task
     EXPECT_EXIT 3
     EXPECT_OUTPUT "command 'inspect' is not implemented yet \\(task T-103\\)"
     LABELS integration)
+
+# --- PE fixtures vs dumpbin (T-102) --------------------------------------------
+get_filename_component(_scale_linker_dir "${CMAKE_LINKER}" DIRECTORY)
+find_program(SCALE_DUMPBIN dumpbin HINTS "${_scale_linker_dir}" NO_CACHE)
+if(SCALE_DUMPBIN)
+    message(STATUS "dumpbin for PE comparison: ${SCALE_DUMPBIN}")
+else()
+    message(STATUS "dumpbin not found: PE comparison tests will be SKIPPED")
+    set(SCALE_DUMPBIN "")
+endif()
+
+scale_add_test(NAME integration_pe_dumpbin
+    SOURCES pe_dumpbin_test.cpp
+    LIBS scale::loader scale::common
+    LABELS integration)
+add_dependencies(integration_pe_dumpbin fixture_exit fixture_lib fixture_ordinal)
+target_compile_definitions(integration_pe_dumpbin PRIVATE
+    "SCALE_DUMPBIN_PATH=\"${SCALE_DUMPBIN}\""
+    "SCALE_FIXTURE_EXIT=\"$<TARGET_FILE:fixture_exit>\""
+    "SCALE_FIXTURE_LIB=\"$<TARGET_FILE:fixture_lib>\""
+    "SCALE_FIXTURE_ORDINAL=\"$<TARGET_FILE:fixture_ordinal>\"")
