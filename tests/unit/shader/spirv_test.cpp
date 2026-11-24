@@ -1,3 +1,4 @@
+#include "case_program.h"
 #include "spirv_test_programs.h"
 
 #include <gtest/gtest.h>
@@ -113,6 +114,68 @@ TEST(ShaderSpirv, EmitsScalarCarryAndPreservesWordCopies) {
     EXPECT_NE(find_opcode(code, 176), code.end());  // OpULessThan
     EXPECT_NE(find_opcode(code, 83), code.end());  // OpCopyObject
     EXPECT_NE(find_opcode(code, 132), code.end());  // OpIMul
+}
+
+TEST(ShaderSpirvV1, EmbedsInitialExecAndUsesWorkgroupBarrierScopes) {
+    const auto shader_case = read_shader_case("t707_exec_ff_lanes_4_to_7");
+    ASSERT_TRUE(shader_case.has_value()) << shader_case.error().to_string();
+    ASSERT_TRUE(shader_case->v1);
+    const auto decoded = decode(scale::ByteView(std::as_bytes(std::span(shader_case->code_words))));
+    ASSERT_TRUE(decoded.has_value()) << decoded.error().to_string();
+    const auto ir = lower_ir_v1(*decoded, shader_case->v1->initial_exec);
+    ASSERT_TRUE(ir.has_value()) << ir.error().to_string();
+    const auto module = emit_spirv(*ir);
+    ASSERT_TRUE(module.has_value()) << module.error().to_string();
+    EXPECT_FALSE(module->requires_float32_rte);
+    const auto code = instructions(*module);
+
+    const auto entry = find_opcode(code, 15);
+    ASSERT_NE(entry, code.end());
+    ASSERT_EQ(entry->size(), 9u);  // Lane index, two buffers, and the shared scratch array.
+    const auto scratch = (*entry)[8];
+    EXPECT_TRUE(std::ranges::any_of(code, [=](auto inst) {
+        return inst.size() == 4 && (inst[0] & 0xffffu) == 59 && inst[2] == scratch && inst[3] == 4;
+    }));
+    EXPECT_EQ(std::ranges::count_if(code, [](auto inst) {
+        return inst.size() == 4 && (inst[0] & 0xffffu) == 71 && inst[2] == 33;  // Binding
+    }), 2);
+    EXPECT_NE(find_opcode(code, 246), code.end());  // OpLoopMerge
+    EXPECT_NE(find_opcode(code, 247), code.end());  // OpSelectionMerge
+    EXPECT_NE(find_opcode(code, 251), code.end());  // OpSwitch
+
+    const auto integer = find_opcode(code, 21);  // OpTypeInt
+    ASSERT_NE(integer, code.end());
+    ASSERT_GE(integer->size(), 2u);
+    const auto u32 = (*integer)[1];
+    std::size_t barriers = 0;
+    for (const auto inst : code) {
+        if ((inst.front() & 0xffffu) != 224) continue;  // OpControlBarrier
+        ASSERT_EQ(inst.size(), 4u);
+        EXPECT_TRUE(contains(code, 43, {u32, inst[1], 2}));  // Workgroup execution scope
+        EXPECT_TRUE(contains(code, 43, {u32, inst[2], 2}));  // Workgroup memory scope
+        EXPECT_TRUE(contains(code, 43, {u32, inst[3], 0x108}));  // AcquireRelease | WorkgroupMemory
+        ++barriers;
+    }
+    EXPECT_EQ(barriers, 2u);
+
+    const auto zero_exec = lower_ir_v1(*decoded, 0);
+    ASSERT_TRUE(zero_exec.has_value()) << zero_exec.error().to_string();
+    const auto zero_module = emit_spirv(*zero_exec);
+    ASSERT_TRUE(zero_module.has_value()) << zero_module.error().to_string();
+    EXPECT_NE(zero_module->words, module->words);
+}
+
+TEST(ShaderSpirvV1Reject, RejectsTooManyDispatcherCases) {
+    std::vector<Word> words(16'383, 0xbf820000);  // Each branch targets the following instruction.
+    words.insert(words.end(), {0xe0701000, 0x80010001, 0xbf810000});  // Store v0 and end.
+    const auto decoded = decode(scale::ByteView(std::as_bytes(std::span(words))));
+    ASSERT_TRUE(decoded.has_value()) << decoded.error().to_string();
+    const auto ir = lower_ir_v1(*decoded, 0xffffffffu);
+    ASSERT_TRUE(ir.has_value()) << ir.error().to_string();
+    ASSERT_EQ(ir->blocks().size(), 16'384u);
+    const auto module = emit_spirv(*ir);
+    ASSERT_FALSE(module.has_value());
+    EXPECT_EQ(module.error().code, "spirv_limit_exceeded");
 }
 
 void expect_failure(const IrProgram& program, std::string_view code) {

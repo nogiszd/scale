@@ -33,10 +33,62 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-708 — REVIEW (decoder implementation)
+### T-709 — REVIEW (ABI v1 IR and SPIR-V)
 
-Review branch `codex/T-708-decoder-impl`, based on `integration` at
-`cc99433`. The decoder handles ABI v1 VOPC compares, scalar mask
+Review branch `codex/T-709-shader-abi-v1`, based on `integration` at
+`e068577`. The lowering checks every decoded operand form, including
+unreachable code, and resolves forward branch targets to basic blocks.
+All paths reach the one store immediately before `s_endpgm`. The emitter
+uses a workgroup-uniform loop and switch, private register slots that
+survive joins, and structured EXEC guards around lane operations. Each
+compare combines per-lane bits through a 32-dword workgroup array with a
+barrier before reading and another before reuse.
+[Khronos SPIR-V specification](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html)
+
+For T-721 and T-706, call `lower_ir_v1(decoded, case.v1->initial_exec)`
+for ABI v1, check the result, then call the `emit_spirv(const IrProgramV1&)`
+overload. `initial_exec` is compiled into the module, including when zero.
+The runner uploads `case.v1->initial_output_words` in the existing output
+binding and checks executed register reads, waits and floating-point
+domains on the independent interpreter path before dispatch. ABI v0 uses
+`lower_ir(decoded)` and `emit_spirv(const IrProgram&)`.
+
+The two T-707 cases and the SCC/unconditional branch case come from T-721.
+Added `v1_exec_restore_compare` for repeated VCC exchanges, a compare
+under empty EXEC, and VGPR preservation after restoration. Added
+`v1_zero_exec_f32` for a uniform branch on the zero entry mask followed by
+activation and masked floating-point arithmetic.
+
+```powershell
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset debug
+ctest --preset full --output-on-failure
+cmake --preset release -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset release
+ctest --preset release-full --output-on-failure
+$gtest_source = (Resolve-Path out/build/debug/_deps/googletest-src).Path
+cmake --preset debug-all "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=$gtest_source"
+cmake --build --preset debug-all --target gpu_shader_differential
+ctest --preset gpu -V -R 'gpu_shader_differential.*(t707_|v1_)'
+```
+
+- Shader-enabled Debug and Release passed 285 tests each with zero skips.
+  All five ABI v1 JSON programs passed `spirv-val --target-env vulkan1.2`
+  (SPIRV-Tools 2026.4, Vulkan SDK 1.4.363.0). The portable-header check passed.
+- LLVM 23.1.6 assembled the documented T-707 program for gfx1030 wave32.
+  Its disassembly dwords matched both existing T-707 JSON files.
+- The T-721 interpreter matched all five ABI v1 golden outputs. CTest
+  reported those differential cases as SKIPPED because the runner still
+  calls the ABI v0 entry point. ABI v1 hardware execution awaits the T-721
+  API wiring.
+
+## Completed
+
+### T-708 — Decoder implementation
+
+Merged into `integration` at `21471e9` (implementation `06c2c4a`). The
+decoder handles ABI v1 VOPC compares, scalar mask
 save and restore, and all four SOPP branches. The VOPC literal selector
 consumes one extra dword. The second source uses its full 8-bit VGPR index,
 including 255. Scalar mask forms allow `vcc_lo` only as a source for
@@ -69,8 +121,6 @@ git diff --check
   offsets, raw words and the resolved branch labels.
 - Hand-encoded tests cover the raw operand fields, signed displacement
   limits, and all four decoder error codes for ABI v1 forms.
-
-## Completed
 
 ### T-708 — Decoder interface v3
 
@@ -385,13 +435,11 @@ git diff --cached --check
 
 ## Next
 
-After the T-708 implementation merge, start T-709 for ABI v1 IR and
-SPIR-V. T-706 follows and uses `scale::shader_testcase`.
+Start T-706 from current `integration` after the T-709 merge. Use
+`scale::shader_testcase` and select the lowering API by the case ABI version.
 When next editing the shader ABI contract, update its instruction syntax
 citations to the pinned LLVM 23.x documentation.
 
 ## Requests to coordinator
 
-- Review and merge the T-708 decoder implementation for T-709 and T-712.
-- Cover the new enum values in T-712 or route them through the existing
-  reference interpreter error paths for warning-as-error builds.
+- Review T-709 and wire the ABI v1 lowering call into the T-721 runner.

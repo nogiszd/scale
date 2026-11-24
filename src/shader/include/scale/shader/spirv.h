@@ -20,4 +20,9 @@ struct SpirvModule {
 // unsupported_exec, unsupported_ir_opcode, spirv_limit_exceeded.
 [[nodiscard]] Result<SpirvModule> emit_spirv(const IrProgram& program);
 
+// ABI v1 uses the same bindings and launch shape, with masked storage writes
+// and a workgroup-memory exchange for VCC. The caller supplies the initial
+// output buffer and validates the dispatch inputs as described in lower_ir_v1.
+[[nodiscard]] Result<SpirvModule> emit_spirv(const IrProgramV1& program);
+
 }  // namespace scale::shader

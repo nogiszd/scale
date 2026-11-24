@@ -2,6 +2,7 @@
 
 #include <format>
 #include <initializer_list>
+#include <map>
 #include <span>
 #include <string_view>
 #include <utility>
@@ -22,7 +23,10 @@ enum class Op : std::uint16_t {
     Function = 54, FunctionEnd = 56, Variable = 59, Load = 61, Store = 62,
     AccessChain = 65, Decorate = 71, MemberDecorate = 72, CopyObject = 83,
     Bitcast = 124, IAdd = 128, FAdd = 129, IMul = 132, FMul = 133, UDiv = 134,
-    ULessThan = 176, Label = 248, Return = 253,
+    LogicalNot = 168, Select = 169, IEqual = 170, INotEqual = 171, ULessThan = 176,
+    ShiftLeftLogical = 196, BitwiseOr = 197, BitwiseAnd = 199, ControlBarrier = 224,
+    LoopMerge = 246, SelectionMerge = 247, Label = 248, Branch = 249,
+    BranchConditional = 250, Switch = 251, Return = 253, Unreachable = 255,
 };
 
 constexpr Word kMagic = 0x07230203;
@@ -36,7 +40,12 @@ constexpr Word kCompute = 5;
 constexpr Word kLocalSize = 17;
 constexpr Word kRteMode = 4462;
 constexpr Word kInput = 1;
+constexpr Word kWorkgroup = 4;
+constexpr Word kFunction = 7;
 constexpr Word kStorageBuffer = 12;
+constexpr Word kWorkgroupScope = 2;
+constexpr Word kAcquireReleaseWorkgroupMemory = 0x8 | 0x100;
+constexpr std::size_t kMaxSwitchCases = 16'383;
 constexpr Word kBlock = 2;
 constexpr Word kArrayStride = 6;
 constexpr Word kBuiltIn = 11;
@@ -53,42 +62,17 @@ constexpr Word kWordBytes = 4;
 constexpr IrValueType kLaneWord{IrType::u32, IrLanes::per_lane};
 constexpr IrValueType kUniformFlag{IrType::flag, IrLanes::uniform};
 
-void write(Words& section, Op opcode, std::initializer_list<Word> operands) {
+void write(Words& section, Op opcode, std::span<const Word> operands) {
     section.push_back((static_cast<Word>(operands.size() + 1) << 16) | static_cast<Word>(opcode));
-    section.insert(section.end(), operands);
+    section.insert(section.end(), operands.begin(), operands.end());
 }
 
-class Emitter {
-public:
-    explicit Emitter(const IrProgram& program)
-        : program_(program), ids_(program.instructions.size()), scc_(program.entry_scc) {}
+void write(Words& section, Op opcode, std::initializer_list<Word> operands) {
+    write(section, opcode, std::span(operands));
+}
 
-    Result<SpirvModule> run() {
-        if (program_.instructions.size() < 2 || program_.instructions.back().opcode != IrOpcode::end ||
-                program_.instructions[program_.instructions.size() - 2].opcode != IrOpcode::store_output) {
-            return fail("shader", "invalid_ir", "SPIR-V emission requires a terminal output store and end");
-        }
-        if (!is_constant(program_.exec, IrType::mask32, 0xffffffffu)) {
-            return fail("shader", "unsupported_exec", "SPIR-V emission requires an all-active wave32 EXEC mask");
-        }
-        if (!is_constant(program_.vcc, IrType::mask32, 0) || !is_constant(program_.entry_scc, IrType::flag, 0)) {
-            return fail("shader", "invalid_ir", "SPIR-V emission requires zero VCC and clear entry SCC");
-        }
-
-        declare_interface();
-        for (index_ = 0; index_ < program_.instructions.size(); ++index_) {
-            const auto& instruction = program_.instructions[index_];
-            if (auto result = emit(instruction); !result) return std::unexpected(std::move(result.error()));
-            // A single IR instruction allocates at most three fresh IDs.
-            if (next_id_ > kMaxIdBound) return error("spirv_limit_exceeded", "SPIR-V result ID bound exceeded");
-        }
-        if (scc_ != program_.exit_scc) {
-            return fail("shader", "invalid_ir", "SPIR-V emission found an inconsistent exit SCC value");
-        }
-        return finish();
-    }
-
-private:
+class ModuleBuilder {
+protected:
     Word id() { return next_id_++; }
 
     template <class... Args>
@@ -142,13 +126,20 @@ private:
         return f32_;
     }
 
-    SpirvModule finish() {
+    void require_float_rte(Word result) {
+        requires_rte_ = true;
+        write(annotations_, Op::Decorate, {result, kNoContraction});
+    }
+
+    SpirvModule finish(Word scratch = 0) {
         Words module{kMagic, kVersion, 0, next_id_, 0};
         write(module, Op::Capability, {kShader});
         if (requires_rte_) write(module, Op::Capability, {kRteCapability});
         write(module, Op::MemoryModel, {kLogical, kGlsl450});
         // The literal string "main" is four bytes followed by a NUL word.
-        write(module, Op::EntryPoint, {kCompute, main_, 0x6e69616d, 0, lane_index_, input_, output_});
+        Words entry{kCompute, main_, 0x6e69616d, 0, lane_index_, input_, output_};
+        if (scratch != 0) entry.push_back(scratch);
+        write(module, Op::EntryPoint, entry);
         write(module, Op::ExecutionMode, {main_, kLocalSize, kWaveSize, 1, 1});
         if (requires_rte_) write(module, Op::ExecutionMode, {main_, kRteMode, 32});
         module.insert(module.end(), annotations_.begin(), annotations_.end());
@@ -157,6 +148,54 @@ private:
         return {std::move(module), requires_rte_};
     }
 
+    Words annotations_;
+    Words declarations_;
+    Words body_;
+    Word next_id_ = 1;
+    Word u32_{};
+    Word flag_{};
+    Word f32_{};
+    Word zero_{};
+    Word word_bytes_{};
+    Word word_pointer_{};
+    Word lane_index_{};
+    Word input_{};
+    Word output_{};
+    Word main_{};
+    bool requires_rte_{};
+};
+
+class Emitter : private ModuleBuilder {
+public:
+    explicit Emitter(const IrProgram& program)
+        : program_(program), ids_(program.instructions.size()), scc_(program.entry_scc) {}
+
+    Result<SpirvModule> run() {
+        if (program_.instructions.size() < 2 || program_.instructions.back().opcode != IrOpcode::end ||
+                program_.instructions[program_.instructions.size() - 2].opcode != IrOpcode::store_output) {
+            return fail("shader", "invalid_ir", "SPIR-V emission requires a terminal output store and end");
+        }
+        if (!is_constant(program_.exec, IrType::mask32, 0xffffffffu)) {
+            return fail("shader", "unsupported_exec", "SPIR-V emission requires an all-active wave32 EXEC mask");
+        }
+        if (!is_constant(program_.vcc, IrType::mask32, 0) || !is_constant(program_.entry_scc, IrType::flag, 0)) {
+            return fail("shader", "invalid_ir", "SPIR-V emission requires zero VCC and clear entry SCC");
+        }
+
+        declare_interface();
+        for (index_ = 0; index_ < program_.instructions.size(); ++index_) {
+            const auto& instruction = program_.instructions[index_];
+            if (auto result = emit(instruction); !result) return std::unexpected(std::move(result.error()));
+            // A single IR instruction allocates at most three fresh IDs.
+            if (next_id_ > kMaxIdBound) return error("spirv_limit_exceeded", "SPIR-V result ID bound exceeded");
+        }
+        if (scc_ != program_.exit_scc) {
+            return fail("shader", "invalid_ir", "SPIR-V emission found an inconsistent exit SCC value");
+        }
+        return finish();
+    }
+
+private:
     std::unexpected<Error> error(std::string_view code, std::string_view detail) const {
         const auto offset = program_.instructions[index_].dword_offset;
         if (offset) return fail("shader", code, std::format("SPIR-V emission at dword 0x{:x}: {}", *offset, detail));
@@ -219,10 +258,7 @@ private:
             const auto type_id = type == IrType::f32 ? float_type() : u32_;
             ids_[index_] = define(body_, opcode, type_id, first, ids_[instruction.inputs[1]]);
         }
-        if (type == IrType::f32) {
-            requires_rte_ = true;
-            write(annotations_, Op::Decorate, {ids_[index_], kNoContraction});
-        }
+        if (type == IrType::f32) require_float_rte(ids_[index_]);
         return {};
     }
 
@@ -340,27 +376,316 @@ private:
     IrValueId scc_;
     std::optional<IrValueId> last_wait_;
     std::optional<IrValueId> last_load_;
-    Words annotations_;
-    Words declarations_;
-    Words body_;
-    Word next_id_ = 1;
-    Word u32_{};
-    Word flag_{};
-    Word f32_{};
-    Word zero_{};
-    Word word_bytes_{};
-    Word word_pointer_{};
-    Word lane_index_{};
-    Word input_{};
-    Word output_{};
-    Word main_{};
-    bool requires_rte_{};
+};
+
+class EmitterV1 : private ModuleBuilder {
+public:
+    explicit EmitterV1(const IrProgramV1& program) : program_(program) {}
+
+    Result<SpirvModule> run() {
+        const auto blocks = program_.blocks();
+        if (blocks.empty()) return fail("shader", "invalid_ir", "ABI v1 IR has no entry block");
+        if (blocks.size() > kMaxSwitchCases) {
+            return fail("shader", "spirv_limit_exceeded", "ABI v1 dispatcher exceeds the OpSwitch case limit");
+        }
+
+        declare_interface();
+        declare_wave_state();
+        initialize_wave();
+
+        Words labels;
+        labels.reserve(blocks.size());
+        for (std::size_t i = 0; i < blocks.size(); ++i) labels.push_back(id());
+
+        const auto header = id();
+        const auto dispatch = id();
+        const auto invalid_pc = id();
+        const auto dispatch_merge = id();
+        const auto next_iteration = id();
+        const auto exit = id();
+        const auto exit_pc = constant(static_cast<Word>(blocks.size()));
+
+        write(body_, Op::Branch, {header});
+        write(body_, Op::Label, {header});
+        const auto pc = load(pc_);
+        const auto running = define(body_, Op::INotEqual, flag_, pc, exit_pc);
+        write(body_, Op::LoopMerge, {exit, next_iteration, 0});
+        write(body_, Op::BranchConditional, {running, dispatch, exit});
+
+        write(body_, Op::Label, {dispatch});
+        write(body_, Op::SelectionMerge, {dispatch_merge, 0});
+        Words cases{pc, invalid_pc};
+        cases.reserve(2 + labels.size() * 2);
+        for (std::size_t i = 0; i < labels.size(); ++i) {
+            cases.push_back(static_cast<Word>(i));
+            cases.push_back(labels[i]);
+        }
+        write(body_, Op::Switch, cases);
+
+        write(body_, Op::Label, {invalid_pc});
+        write(body_, Op::Unreachable, {});  // All PC values come from checked IR branches.
+
+        for (std::size_t i = 0; i < blocks.size(); ++i) {
+            const auto& block = blocks[i];
+            write(body_, Op::Label, {labels[i]});
+            for (const auto& op : block.operations) {
+                emit_operation(op);
+                if (next_id_ > kMaxIdBound) {
+                    return fail("shader", "spirv_limit_exceeded",
+                                std::format("SPIR-V ID bound exceeded at dword 0x{:x}", op.dword_offset));
+                }
+            }
+            const auto target = block.jump ? jump_target(*block.jump) : exit_pc;
+            write(body_, Op::Store, {pc_, target});
+            write(body_, Op::Branch, {dispatch_merge});
+        }
+
+        write(body_, Op::Label, {dispatch_merge});
+        write(body_, Op::Branch, {next_iteration});
+        write(body_, Op::Label, {next_iteration});
+        write(body_, Op::Branch, {header});
+        write(body_, Op::Label, {exit});
+        write(body_, Op::Return, {});
+        write(body_, Op::FunctionEnd, {});
+        if (next_id_ > kMaxIdBound) return fail("shader", "spirv_limit_exceeded", "SPIR-V ID bound exceeded");
+        return finish(scratch_);
+    }
+
+private:
+    static bool is_compare(IrV1Opcode opcode) {
+        return opcode == IrV1Opcode::compare_eq || opcode == IrV1Opcode::compare_lt;
+    }
+
+    Word constant(Word bits) {
+        if (bits == 0) return zero_;
+        const auto [it, inserted] = constants_.try_emplace(bits);
+        if (inserted) it->second = define(declarations_, Op::Constant, u32_, bits);
+        return it->second;
+    }
+
+    Word& slot(IrV1Register reg) {
+        switch (reg.kind) {
+        case IrV1RegisterKind::sgpr: return sgprs_[reg.index];
+        case IrV1RegisterKind::vgpr: return vgprs_[reg.index];
+        case IrV1RegisterKind::exec: return exec_;
+        case IrV1RegisterKind::vcc: return vcc_;
+        }
+        std::unreachable();
+    }
+
+    void declare_register(IrV1Register reg) {
+        auto& pointer = slot(reg);
+        if (pointer == 0) pointer = define(body_, Op::Variable, local_word_pointer_, kFunction);
+    }
+
+    void declare_wave_state() {
+        local_word_pointer_ = declare_type(Op::TypePointer, kFunction, u32_);
+        const auto local_flag_pointer = declare_type(Op::TypePointer, kFunction, flag_);
+        pc_ = define(body_, Op::Variable, local_word_pointer_, kFunction);
+        scc_ = define(body_, Op::Variable, local_flag_pointer, kFunction);
+        declare_register({IrV1RegisterKind::exec});
+        declare_register({IrV1RegisterKind::vcc});
+        declare_register({IrV1RegisterKind::vgpr, 0});
+        declare_register({IrV1RegisterKind::vgpr, 1});
+
+        bool has_compare = false;
+        for (const auto& block : program_.blocks()) {
+            for (const auto& op : block.operations) {
+                if (op.destination) declare_register(*op.destination);
+                for (const auto& input : op.inputs) {
+                    if (const auto* reg = std::get_if<IrV1Register>(&input)) declare_register(*reg);
+                }
+                has_compare = has_compare || is_compare(op.opcode);
+            }
+        }
+        if (has_compare) {
+            const auto array = declare_type(Op::TypeArray, u32_, constant(kWaveSize));
+            const auto pointer = declare_type(Op::TypePointer, kWorkgroup, array);
+            scratch_word_pointer_ = declare_type(Op::TypePointer, kWorkgroup, u32_);
+            scratch_ = define(declarations_, Op::Variable, pointer, kWorkgroup);
+        }
+    }
+
+    void initialize_wave() {
+        // Function variables are private to each invocation. The scalar
+        // state stays identical because only uniform operations change it.
+        write(body_, Op::Store, {pc_, zero_});
+        write(body_, Op::Store, {exec_, constant(program_.initial_exec())});
+        write(body_, Op::Store, {vcc_, zero_});
+        const auto clear = define(declarations_, Op::ConstantFalse, flag_);
+        write(body_, Op::Store, {scc_, clear});
+        lane_ = load(lane_index_);
+        lane_bit_ = define(body_, Op::ShiftLeftLogical, u32_, constant(1), lane_);
+        write(body_, Op::Store, {vgprs_[0], lane_});
+        const auto byte_offset = define(body_, Op::IMul, u32_, lane_, word_bytes_);
+        write(body_, Op::Store, {vgprs_[1], byte_offset});
+    }
+
+    Word load(Word pointer) { return define(body_, Op::Load, u32_, pointer); }
+
+    Word read(const IrV1Operand& operand) {
+        if (const auto* reg = std::get_if<IrV1Register>(&operand)) return load(slot(*reg));
+        return constant(std::get<Word>(operand));
+    }
+
+    Word jump_target(const IrV1Jump& jump) {
+        const auto taken = constant(static_cast<Word>(jump.taken));
+        if (jump.condition == IrV1Condition::always) return taken;
+
+        Word condition{};
+        if (jump.condition == IrV1Condition::exec_zero) {
+            condition = define(body_, Op::IEqual, flag_, load(exec_), zero_);
+        } else {
+            condition = define(body_, Op::Load, flag_, scc_);
+            if (jump.condition == IrV1Condition::scc_clear) {
+                condition = define(body_, Op::LogicalNot, flag_, condition);
+            }
+        }
+        return define(body_, Op::Select, u32_, condition, taken, constant(static_cast<Word>(jump.fallthrough)));
+    }
+
+    template <class Emit>
+    void if_active(Emit emit) {
+        const auto bit = define(body_, Op::BitwiseAnd, u32_, load(exec_), lane_bit_);
+        const auto active = define(body_, Op::INotEqual, flag_, bit, zero_);
+        const auto active_arm = id();
+        const auto merge = id();
+        write(body_, Op::SelectionMerge, {merge, 0});
+        write(body_, Op::BranchConditional, {active, active_arm, merge});
+        write(body_, Op::Label, {active_arm});
+        emit();
+        write(body_, Op::Branch, {merge});
+        write(body_, Op::Label, {merge});
+    }
+
+    void exchange_barrier() {
+        const auto scope = constant(kWorkgroupScope);
+        const auto semantics = constant(kAcquireReleaseWorkgroupMemory);
+        write(body_, Op::ControlBarrier, {scope, scope, semantics});
+    }
+
+    void emit_compare(const IrV1Operation& op) {
+        const auto cell = define(body_, Op::AccessChain, scratch_word_pointer_, scratch_, lane_);
+        write(body_, Op::Store, {cell, zero_});
+        if_active([&] {
+            const auto first = read(op.inputs[0]);
+            const auto second = read(op.inputs[1]);
+            const auto compare = op.opcode == IrV1Opcode::compare_eq ? Op::IEqual : Op::ULessThan;
+            const auto matches = define(body_, compare, flag_, first, second);
+            const auto contribution = define(body_, Op::Select, u32_, matches, lane_bit_, zero_);
+            write(body_, Op::Store, {cell, contribution});
+        });
+        // Every invocation reaches both barriers, including inactive lanes.
+        exchange_barrier();
+        Word mask = zero_;
+        for (Word lane = 0; lane < kWaveSize; ++lane) {
+            const auto address = define(body_, Op::AccessChain, scratch_word_pointer_, scratch_, constant(lane));
+            mask = define(body_, Op::BitwiseOr, u32_, mask, load(address));
+        }
+        exchange_barrier();
+        write(body_, Op::Store, {slot(*op.destination), mask});
+    }
+
+    void emit_operation(const IrV1Operation& op) {
+        if (is_compare(op.opcode)) {
+            emit_compare(op);
+        } else if (op.lanes == IrLanes::per_lane) {
+            if_active([&] { emit_body(op); });
+        } else {
+            emit_body(op);
+        }
+    }
+
+    Word arithmetic(const IrV1Operation& op, Op opcode) {
+        const auto lhs = read(op.inputs[0]);
+        const auto rhs = read(op.inputs[1]);
+        if (opcode == Op::FAdd || opcode == Op::FMul) {
+            const auto type = float_type();
+            const auto a = define(body_, Op::Bitcast, type, lhs);
+            const auto b = define(body_, Op::Bitcast, type, rhs);
+            const auto result = define(body_, opcode, type, a, b);
+            require_float_rte(result);
+            return define(body_, Op::Bitcast, u32_, result);
+        }
+        const auto result = define(body_, opcode, u32_, lhs, rhs);
+        if (op.opcode == IrV1Opcode::uadd_scc) {
+            const auto carry = define(body_, Op::ULessThan, flag_, result, lhs);
+            write(body_, Op::Store, {scc_, carry});
+        }
+        return result;
+    }
+
+    void emit_body(const IrV1Operation& op) {
+        switch (op.opcode) {
+        case IrV1Opcode::wait_vmem:
+            // The interpreter validates the guest wait before dispatch.
+            // Synchronous SPIR-V loads already supply each invocation's data.
+            return;
+        case IrV1Opcode::store_output: {
+            const auto address = define(body_, Op::AccessChain, word_pointer_, output_, zero_, lane_);
+            write(body_, Op::Store, {address, read(op.inputs[0])});
+            return;
+        }
+        case IrV1Opcode::save_exec: {
+            const auto old = load(exec_);
+            const auto mask = define(body_, Op::BitwiseAnd, u32_, old, read(op.inputs[0]));
+            const auto nonempty = define(body_, Op::INotEqual, flag_, mask, zero_);
+            write(body_, Op::Store, {slot(*op.destination), old});
+            write(body_, Op::Store, {exec_, mask});
+            write(body_, Op::Store, {scc_, nonempty});
+            return;
+        }
+        case IrV1Opcode::load_input: {
+            const auto address = define(body_, Op::AccessChain, word_pointer_, input_, zero_, lane_);
+            write(body_, Op::Store, {slot(*op.destination), load(address)});
+            return;
+        }
+        case IrV1Opcode::copy:
+            write(body_, Op::Store, {slot(*op.destination), read(op.inputs[0])});
+            return;
+        case IrV1Opcode::uadd:
+        case IrV1Opcode::uadd_scc:
+            write(body_, Op::Store, {slot(*op.destination), arithmetic(op, Op::IAdd)});
+            return;
+        case IrV1Opcode::umul:
+            write(body_, Op::Store, {slot(*op.destination), arithmetic(op, Op::IMul)});
+            return;
+        case IrV1Opcode::fadd:
+            write(body_, Op::Store, {slot(*op.destination), arithmetic(op, Op::FAdd)});
+            return;
+        case IrV1Opcode::fmul:
+            write(body_, Op::Store, {slot(*op.destination), arithmetic(op, Op::FMul)});
+            return;
+        case IrV1Opcode::compare_eq:
+        case IrV1Opcode::compare_lt:
+            break;  // The compare exchange surrounds its own EXEC guard.
+        }
+        std::unreachable();
+    }
+
+    const IrProgramV1& program_;
+    std::array<Word, 106> sgprs_{};
+    std::array<Word, 256> vgprs_{};
+    std::map<Word, Word> constants_;
+    Word local_word_pointer_{};
+    Word scratch_word_pointer_{};
+    Word scratch_{};
+    Word pc_{};
+    Word exec_{};
+    Word vcc_{};
+    Word scc_{};
+    Word lane_{};
+    Word lane_bit_{};
 };
 
 }  // namespace
 
 Result<SpirvModule> emit_spirv(const IrProgram& program) {
     return Emitter(program).run();
+}
+
+Result<SpirvModule> emit_spirv(const IrProgramV1& program) {
+    return EmitterV1(program).run();
 }
 
 }  // namespace scale::shader
