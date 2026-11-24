@@ -5,8 +5,8 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 ## Start here
 
 1. Read `AGENTS.md`, `docs/MULTI_AGENT.md`, `docs/architecture.md`,
-   `docs/contracts/testing.md`, the decisions `0003` and `0004`, and the
-   current task registry on `integration`.
+   `docs/contracts/testing.md`, decisions `0003`–`0005`, and the current
+   task registry on `integration`.
 2. Use the existing Codex worktree. Start each task branch from the current
    `integration` after the coordinator's review checkpoint.
 3. Build with `-DSCALE_ENABLE_SHADER=ON`, for example
@@ -24,23 +24,59 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 - Keep shader code and `scale-shader` free of OS headers. Follow decision
   `0004` for neutral interfaces and `_win32.cpp` helpers. T-801 owns the
   shared process helper for tests of portable components.
+- Keep the translator free of global state so first-use translation can
+  run on a background thread. Decision `0005` places scheduling, cache
+  keys, runtime diagnostics and opt-in debug validation in M8.
 - LLVM 23.1.6 with AMDGPU is installed (`scripts/build-llvm-amdgpu.ps1`).
   LLVM cross-check tests still use `GTEST_SKIP()` on machines without it,
   never pass.
 
 ## Ready for review
 
-### T-707 — REVIEW
+### T-705 — REVIEW (interface freeze)
 
-Review branch `codex/T-707-abi-v1`, based on `integration` at `bd738f1`.
+Review branch `codex/T-705-testcase`, based on `integration` at `d93cf1e`.
+The public [test_case.h](../../../src/shader/include/scale/shader/test_case.h)
+defines owning types for the v0 and v1 JSON case format. The v1-only
+`initial_exec` and `initial_output_words` are one optional record. Its
+presence selects ABI v1, including with an explicit zero EXEC mask.
+The header declares a UTF-8 parser and a file loader with a caller-supplied
+byte limit. It names the schema, dispatch and file errors for reporting at
+stage `testcase`. With `SCALE_ENABLE_SHADER=ON`, the interface target
+`scale::shader_testcase` exports the header and `scale::common`. The loader
+and parser definitions are the implementation increment after the freeze.
+
+```powershell
+git fetch origin integration
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset debug
+ctest --preset full
+cmake --preset release -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset release
+ctest --preset release-full
+cmake --build out/testcase-interface-freeze/build --target shader_testcase_interface_check
+git diff --cached --check
+```
+
+- Local `integration` contained the fetched tip and four newer commits,
+  including the ABI v1 contract. Debug and Release each passed all 228
+  existing tests with zero skips.
+- A scratch CMake consumer compiled against `scale::shader_testcase` and
+  checked the parser and loader signatures, the 32-word lane array, and
+  the paired v1 fields.
+
+## Completed
+
+### T-707 — Shader ABI v1 contract
+
+Approved and merged into `integration` at `d93cf1e`.
 The [ABI v1 section](../../contracts/shader_abi.md#abi-v1--exec-masks-and-scalar-control-flow)
 defines wave32 EXEC and VCC updates, a forward-only scalar control-flow
 graph, lane-level pending loads, and output words preserved by inactive
 lanes. The case format adds required `initial_exec` and
 `initial_output_words` fields for `abi_version: 1`. Vulkan lowering keeps
 scalar control uniform and forms the compare mask within the workgroup.
-Review the zero-EXEC compare, mask restore, SCC updates and pending-load
-rules against T-711 before freezing the contract.
 
 ```powershell
 git fetch origin integration
@@ -65,8 +101,6 @@ git diff --cached --check
   `s_cbranch_scc0`, `s_cbranch_scc1`, `s_branch`, and `s_mov_b32 exec_lo`.
 - T-707 is a contract review. The runtime semantics and GPU lowering of
   ABI v1 will be verified by their implementation tasks after the freeze.
-
-## Completed
 
 ### T-703 — SPIR-V emitter and validation
 
@@ -246,10 +280,12 @@ git diff --cached --check
 
 ## Next
 
-After the coordinator reviews T-707, start T-705 from `integration` and
-submit its public test-case header for a separate interface freeze. T-705
-targets the T-704 ABI v0 JSON. T-706 follows T-705.
+After the T-705 interface review, start the T-708 `decode.h` v3 proposal
+from current `integration` and stop for its independent freeze. Then take
+T-705, T-708, T-709 and T-706 in that order, starting each from current
+`integration`. When next editing the shader ABI contract, update its
+instruction syntax citations to the pinned LLVM 23.x documentation.
 
 ## Requests to coordinator
 
-- Review and freeze the T-707 contract with the T-711 interpreter semantics.
+- Review and freeze the T-705 header for T-720 and T-706.
