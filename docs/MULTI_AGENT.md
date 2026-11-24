@@ -79,9 +79,12 @@ The repository is the shared source of truth. Development must not depend on ind
 
 ## Git Workflow
 
-The repository is local-only. There is no remote. Codex works in its own
-worktree of the same repository. Claude (coordinator) works in the main
-checkout on its own task branches.
+The canonical remote is `origin` (https://github.com/nogiszd/scale). Only
+the maintainer decides what gets pushed. Codex works in its own worktree of
+the same local repository. Claude (coordinator) works in the main checkout on
+its own task branches. External contributors follow
+[CONTRIBUTING.md](../CONTRIBUTING.md): fork or branch, work in a worktree,
+and open pull requests against `integration`.
 
 Branches:
 

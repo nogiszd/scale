@@ -151,6 +151,7 @@ The PE inspection interface is documented in [docs/contracts/inspect.md](docs/co
 | [Roadmap](docs/ROADMAP.md)                  | Milestones and implementation scope                |
 | [Development progress](docs/PROGRESS.md)    | Verified results and commands                      |
 | [Task registry](docs/TASKS.md)              | Work items for parallel development                |
+| [Contributing](CONTRIBUTING.md)             | How to join the pipeline: tasks, branches, review  |
 | [Multi-agent workflow](docs/MULTI_AGENT.md) | Coordination and integration rules                 |
 | [Contracts](docs/contracts/)                | Shared interfaces, diagnostics and testing         |
 | [Research](docs/research/)                  | Known unknowns and technical references            |
