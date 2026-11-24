@@ -1,0 +1,8 @@
+scale_add_library(diagnostics
+    SOURCES
+        json_writer.cpp
+        diagnostic_log.cpp
+        run_report.cpp
+    DEPS
+        scale::common
+)

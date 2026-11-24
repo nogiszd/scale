@@ -1,0 +1,20 @@
+# Build trees (one per preset, per worktree)
+/out/
+/build/
+CMakeUserPresets.json
+
+# Local run reports and traces: never committed (AGENTS.md)
+/reports/
+report.json
+*.trace
+
+# Editor / IDE
+.vs/
+.vscode/
+.idea/
+*.user
+
+# Never commit proprietary binaries or title material
+/titles/
+*.xvc
+*.msixvc
