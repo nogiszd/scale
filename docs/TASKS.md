@@ -36,7 +36,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-708 | Decoder for ABI v1 (decode.h v3: vcc_lo/exec_lo, VOPC, branches) | Codex | IN_PROGRESS (interface v3 frozen) | T-707 | M7 |
 | T-709 | IR + SPIR-V for ABI v1 (EXEC masks, structured branches, VCC exchange) | Codex | WAITING | T-708 | M7 |
 | T-711 | RDNA2 reference interpreter | Claude | DONE | T-701 (interface), T-704 | M7 |
-| T-712 | Reference interpreter for ABI v1 | Claude | READY | T-708 (interface) | M7 |
+| T-712 | Reference interpreter for ABI v1 | Claude | DONE | T-708 (interface) | M7 |
 | T-720 | Differential runner: interpreter vs GPU | Claude | DONE (inline cases; JSON via T-705 next) | T-601, T-703, T-711 | M7 |
 
 Unassigned backlog: title filesystem / path translation (M4), adapter

@@ -14,6 +14,9 @@
 // raw words, and any disagreement with the decoder's resolved value is an
 // error (`decoder_disagreement`).
 //
+// ABI v1 (docs/contracts/shader_abi.md, T-707) adds EXEC masks, VOPC compares,
+// s_and_saveexec_b32, exec_lo moves and forward scalar branches (T-712).
+//
 // Errors use component "shader_ref" and these codes:
 //   unsupported_instruction  opcode or operand form outside the modeled subset
 //   decoder_disagreement     decoded operand value contradicts its raw encoding
@@ -66,10 +69,16 @@ struct Buffers {
 // EXEC = all 32 lanes, VCC = 0, SCC = 0, everything else undefined.
 [[nodiscard]] WaveState abi_v0_entry_state();
 
-// Executes one instruction. s_endpgm only marks the program as ended.
+enum class AbiVersion { v0, v1 };
+
+// Executes one non-branch instruction. s_endpgm only marks the program as
+// ended. Branches change the program counter and are executed by run_abi_*.
+// Under ABI v0, the ABI v1 instructions (VOPC, s_and_saveexec_b32, exec_lo
+// writes, branches) are `unsupported_abi`.
 class Interpreter {
 public:
-    Interpreter(WaveState state, Buffers buffers) : state_(state), buffers_(buffers) {}
+    Interpreter(WaveState state, Buffers buffers, AbiVersion abi = AbiVersion::v0)
+        : state_(state), buffers_(buffers), abi_(abi) {}
 
     [[nodiscard]] Result<void> step(const shader::DecodedInstruction& instruction);
 
@@ -77,11 +86,14 @@ public:
     [[nodiscard]] const Buffers& buffers() const noexcept { return buffers_; }
     [[nodiscard]] bool ended() const noexcept { return ended_; }
     [[nodiscard]] std::size_t stores() const noexcept { return stores_; }
+    // Lanes of each VGPR with a load still pending (cleared by s_waitcnt vmcnt(0)).
+    [[nodiscard]] std::uint32_t pending_lanes(std::size_t vgpr) const noexcept { return pending_lanes_[vgpr]; }
 
 private:
     WaveState state_;
     Buffers buffers_;
-    std::bitset<kVgprCount> pending_load_;
+    AbiVersion abi_;
+    std::array<std::uint32_t, kVgprCount> pending_lanes_{};
     bool ended_ = false;
     std::size_t stores_ = 0;
 };
@@ -93,9 +105,28 @@ struct DispatchResult {
     WaveState final_state;
 };
 
-// Runs a complete ABI v0 program: straight-line code, exactly one output store,
-// terminated by s_endpgm as the last instruction.
+// Static program checks shared by both ABI versions, applied to every
+// instruction whether or not a test case executes it:
+//   - dword offsets are contiguous and match each instruction's word count;
+//   - the only s_endpgm is last, and the only output store directly precedes it;
+//   - every operand agrees with its raw encoding and is allowed for its opcode;
+//   - (v1) every branch target, recomputed from the raw SIMM16, is the first
+//     dword of a later instruction no further than the store (forward only,
+//     never bypassing the store). Under v0 any branch is rejected.
+[[nodiscard]] Result<void> check_program(std::span<const shader::DecodedInstruction> program, AbiVersion abi);
+
+// ABI v0 program: EXEC = all lanes, output buffer starts zeroed.
 [[nodiscard]] Result<DispatchResult> run_abi_v0(std::span<const shader::DecodedInstruction> program,
                                                 const BufferWords& input);
+
+struct AbiV1Dispatch {
+    std::uint32_t initial_exec = 0xFFFFFFFFu;  // test case `initial_exec`
+    BufferWords initial_output{};              // test case `initial_output_words`
+};
+
+// ABI v1 program: EXEC masks and forward scalar branches. The number of
+// executed instructions is bounded by the program size (acyclic control flow).
+[[nodiscard]] Result<DispatchResult> run_abi_v1(std::span<const shader::DecodedInstruction> program,
+                                                const BufferWords& input, const AbiV1Dispatch& dispatch);
 
 }  // namespace scale::shader_ref
