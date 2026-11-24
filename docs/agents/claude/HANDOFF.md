@@ -14,17 +14,14 @@ and owners: docs/TASKS.md. Milestone states: docs/ROADMAP.md.
 
 ## My next tasks, in order
 
-1. **T-721** (in progress) — JSON runner done (`tests/shader/cases/`). After
-   T-709: pass `initial_exec` to the lowering, so the three v1 cases run on
-   the GPU instead of SKIPPED.
-2. **T-301** — exception directory registration in the worker
+1. **T-301** — exception directory registration in the worker
    (`RtlAddFunctionTable`), test executable raising and handling SEH,
    native reference run, malformed-directory rejection.
-3. Remaining M3 features one at a time (TLS, import binding through
+2. Remaining M3 features one at a time (TLS, import binding through
    adapters, CRT startup, DLL init), each with its own test executable.
-4. Graphics triangle slice (M6) after T-721.
+3. Graphics triangle slice (M6).
 
-Review queue: Codex T-709, then T-706.
+Review queue: Codex T-706. Then decide the next shader ABI extension with Codex (contract first).
 
 ## Decisions to remember
 
@@ -70,8 +67,7 @@ Review queue: Codex T-709, then T-706.
 
 ## Open items
 
-- Codex's HANDOFF still lists T-708 under "Ready for review"; Codex updates
-  it in its T-709 branch.
+- (none)
 
 ## Requests to coordinator
 

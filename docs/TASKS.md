@@ -37,7 +37,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-711 | RDNA2 reference interpreter (ABI v0) | Claude | DONE | T-701, T-704 | M7 |
 | T-712 | Reference interpreter for ABI v1 | Claude | DONE | T-708 | M7 |
 | T-720 | Differential runner: interpreter vs GPU (inline ABI v0 cases) | Claude | DONE | T-601, T-703, T-711 | M7 |
-| T-721 | Differential runner on JSON test cases, ABI v1 GPU cases | Claude | IN_PROGRESS (JSON runner done; v1 GPU part waits for T-709) | T-705, T-720, T-709 | M7 |
+| T-721 | Differential runner on JSON test cases, ABI v1 GPU cases | Claude | DONE | T-705, T-720, T-709 | M7 |
 | T-801 | Portability groundwork (decision 0004) | Claude | DONE | T-000 | infra |
 | T-802 | Linux build/test environment and CI | unassigned | BLOCKED (no Linux environment) | T-801 | infra |
 
@@ -77,23 +77,7 @@ The files below are shared. Make only the edits listed.
 
 ## Open tasks
 
-### T-709 — IR + SPIR-V for ABI v1 (Codex)
-
-**Paths owned:** `src/shader/` (IR and SPIR-V files), `tests/unit/shader/`,
-`tests/shader/`.
-
-Lower ABI v1 per `docs/contracts/shader_abi.md`: uniform EXEC/VCC/SCC/PC,
-static branch-structure checks (forward only, the single store and end on
-every path), a structured block dispatcher, per-lane guards, masked store,
-and the workgroup-memory VCC exchange with barriers in uniform control flow.
-No subgroup-size assumptions. spirv-val on every test program. The ABI v1
-GPU cases already exist in `tests/shader/cases/` (`t707_*`,
-`v1_scc_and_unconditional_branches`); add more there in the same format. The
-case's `initial_exec` reaches the translated program without an extra
-binding (contract), so document how the lowering API takes it. GPU
-execution itself is T-721.
-
-### T-706 — `scale-shader` CLI (Codex, after T-709)
+### T-706 — `scale-shader` CLI (Codex)
 
 **Paths owned:** `tools/scale_shader/`, its test block.
 
@@ -105,21 +89,6 @@ otherwise). Uses `scale::shader_testcase`. Exit codes follow the `scale` CLI
 convention. **Acceptance:** CLI tests on the T-704 and T-707 cases and on
 malformed input. Natural home for the opt-in shader debug mode (decision
 0005).
-
-### T-721 — Differential runner on JSON test cases (Claude)
-
-Done so far: `gpu_shader_differential` loads every `tests/shader/cases/*.json`
-through `scale::shader_testcase`, one CTest test per case. ABI v0 cases run
-on the interpreter and the GPU. ABI v1 cases run the interpreter checks and
-SKIP the GPU part with the T-709 reason until the compiler lowers ABI v1.
-Remaining: pass `initial_exec` to the lowering once T-709 defines it.
-
-Original scope: replace the T-720 inline cases with JSON test cases loaded
-through `scale::shader_testcase`. Run each case on `scale::shader_ref` (`run_abi_v0`
-or `run_abi_v1`) and on the GPU, and compare both with the manual expected
-values. After T-709: ABI v1 cases including partial initial EXEC. Records
-device, driver, tools and seed; label `gpu`; software devices labelled
-`software_gpu` (docs/contracts/gpu_targets.md).
 
 ### T-301 — Exception directory registration (Claude)
 
@@ -171,7 +140,11 @@ Evidence, commands and results for each are in docs/PROGRESS.md.
 - **T-711** Reference interpreter (`scale::shader_ref`) for ABI v0.
 - **T-712** Reference interpreter for ABI v1, cross-checked against the v3
   decoder.
+- **T-709** IR + SPIR-V for ABI v1 (`lower_ir_v1(decoded, initial_exec)`,
+  structured dispatcher, EXEC guards, workgroup VCC exchange).
 - **T-720** First differential slice: interpreter and GPU agree with manual
   values on 4 inline ABI v0 cases (RX 9070 XT).
+- **T-721** Differential runner on `tests/shader/cases/*.json`, one CTest
+  test per case; all 10 cases (4 ABI v0, 6 ABI v1) agree with the interpreter and manual values on the GPU.
 - **T-801** Portable `scale::common`, platform gating, portable test tool
   runner, no-OS-headers check.

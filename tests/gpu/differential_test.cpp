@@ -38,7 +38,7 @@ namespace {
 
 constexpr std::uint64_t kMaxCaseBytes = 64 * 1024;
 // Guards against a missing or emptied case directory passing as "no tests".
-constexpr std::size_t kMinimumCases = 7;
+constexpr std::size_t kMinimumCases = 10;
 
 // The parameter prints as the case name, so CTest names stay short and
 // machine-independent (gtest_discover_tests uses the printed value).
@@ -127,18 +127,20 @@ TEST_P(Differential, InterpreterAndGpuAgreeWithExpectedValues) {
         EXPECT_EQ(ref->output_written, 0xFFFFFFFFu);
     }
 
-    // (b) compiler: IR -> SPIR-V
-    const auto ir = scale::shader::lower_ir(*decoded);
-    if (v1 && !ir) {
-        GTEST_SKIP() << "interpreter checks passed; GPU part not run: the compiler does not lower ABI v1 yet (T-709): "
-                     << ir.error().to_string();
-    }
-    ASSERT_TRUE(ir.has_value()) << ir.error().to_string();
-    if (v1) {
-        FAIL() << "the compiler lowered an ABI v1 case, but this runner does not pass initial_exec to the GPU yet "
-                  "(T-721 follow-up after T-709)";
-    }
-    const auto module = scale::shader::emit_spirv(*ir);
+    // (b) compiler: IR -> SPIR-V. The interpreter run above is the contract's
+    // pre-dispatch check of executed reads, waits and the float domain.
+    // ABI v1 compiles initial_exec into the module; the initial output words
+    // go through the output binding.
+    const auto module = [&]() -> scale::Result<scale::shader::SpirvModule> {
+        if (v1) {
+            const auto ir = scale::shader::lower_ir_v1(*decoded, c.v1->initial_exec);
+            if (!ir) return std::unexpected(ir.error());
+            return scale::shader::emit_spirv(*ir);
+        }
+        const auto ir = scale::shader::lower_ir(*decoded);
+        if (!ir) return std::unexpected(ir.error());
+        return scale::shader::emit_spirv(*ir);
+    }();
     ASSERT_TRUE(module.has_value()) << module.error().to_string();
 
     std::size_t gpu_runs = 0;
