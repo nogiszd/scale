@@ -21,6 +21,7 @@ enum class Encoding : std::uint8_t {
     vop3,
     mubuf,
     vopc,
+    smem,
 };
 
 // Equivalent e32 and e64 forms share an opcode. Encoding distinguishes them.
@@ -45,6 +46,7 @@ enum class Opcode : std::uint8_t {
     s_cbranch_scc1,
     s_cbranch_execz,
     s_branch,
+    s_buffer_load_dword,
 };
 
 enum class OperandKind : std::uint8_t {
@@ -94,6 +96,7 @@ struct WaitCounters {
     std::uint8_t vmcnt{};
     std::uint8_t expcnt{};
     std::uint8_t lgkmcnt{};
+    std::uint16_t simm16{};  // Raw field, including both pieces of vmcnt.
 };
 
 // Untyped dword MUBUF with OFFEN set, IDXEN clear and optional flags clear.
@@ -101,8 +104,17 @@ struct BufferOperands {
     std::uint8_t data_vgpr{};  // Load destination or store source.
     std::uint8_t address_vgpr{};
     std::uint8_t resource_sgpr_base{};  // First index of the four-SGPR tuple.
-    Operand scalar_offset_bytes;  // SGPR or inline constant.
-    std::uint16_t immediate_offset_bytes{};
+    Operand scalar_offset_bytes;  // SGPR or inline constant, with raw SOFFSET in encoded.
+    std::uint16_t immediate_offset_bytes{};  // Raw unsigned 12-bit OFFSET.
+};
+
+// Immediate-offset SMEM s_buffer_load_dword with optional flags clear.
+struct ScalarBufferOperands {
+    std::uint8_t destination_sgpr{};  // Raw 7-bit SDATA, also the SGPR index.
+    std::uint8_t encoded_sbase{};  // Raw 6-bit SBASE.
+    std::uint8_t resource_sgpr_base{};  // First index of the tuple, twice SBASE.
+    std::uint8_t encoded_soffset{};  // Raw 7-bit SOFFSET, selector 125 (null).
+    std::uint32_t immediate_offset_bytes{};  // Raw 21-bit OFFSET, nonnegative for this opcode.
 };
 
 struct DecodedInstruction {
@@ -112,12 +124,12 @@ struct DecodedInstruction {
     std::array<std::uint32_t, 3> raw_words{};  // Includes the literal when present.
     std::uint8_t word_count{};  // Number of valid raw_words, from 1 to 3.
     // monostate for s_endpgm (immediate zero), WaitCounters for s_waitcnt,
-    // BufferOperands for MUBUF, AluOperands for arithmetic, moves and
-    // s_and_saveexec_b32, CompareOperands for VOPC, and BranchOperands for SOPP
-    // branches.
+    // BufferOperands for MUBUF, ScalarBufferOperands for SMEM, AluOperands for
+    // arithmetic, moves and s_and_saveexec_b32, CompareOperands for VOPC, and
+    // BranchOperands for SOPP branches.
     // Implicit operands and effects, such as SCC for s_add_u32, follow Opcode.
     std::variant<std::monostate, AluOperands, WaitCounters, BufferOperands,
-                 CompareOperands, BranchOperands> operands;
+                 CompareOperands, BranchOperands, ScalarBufferOperands> operands;
 };
 
 // Decode the entire little-endian gfx1030 instruction stream in order,
