@@ -25,6 +25,7 @@ separate REVIEW. When the maintainer says it is in review: check the new
 operand/encoding forms keep raw `encoded` fields (the interpreter re-derives
 them), merge the freeze, then start T-733. Do not start T-302 until the
 maintainer says so.
+
 ## My next tasks, in order
 
 1. **T-733** — reference interpreter for ABI v2 (contract approved; starts
