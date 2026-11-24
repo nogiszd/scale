@@ -20,7 +20,7 @@ below assumes it.
   unknown functions or return fake success. Unsupported behavior must fail
   with a named error. Record missing evidence in
   [docs/research/KNOWN_UNKNOWNS.md](docs/research/KNOWN_UNKNOWNS.md).
-- **Own your code.** Other projects, including XCL, may be studied but not
+- **Own your code.** Other projects may be studied but not
   copied or translated line by line.
 - **Tests or it didn't happen.** A feature is done when its contract is
   documented, it builds without warnings, and its positive and negative tests
