@@ -14,7 +14,7 @@ deliverables, not a strict serial order. Tasks and owners are in
 | M4 Adapters and filesystem | Adapter registry, title root + writable data root, path translation | — | backlog |
 | M5 Integration and diagnostics | report.json completeness, synthetic test title | — | not started |
 | M6 Graphics slice | Vulkan compute harness (done), then a verified triangle through a synthetic adapter | T-601 | compute done, triangle not started |
-| M7 RDNA2 shader recompiler | ABI contracts, decoder, IR, SPIR-V, reference interpreter, GPU differential tests | T-701..T-734 | ABI v0 and v1 verified on GPU, `scale-shader` CLI done; ABI v2 (memory and resources, T-730..T-734) next |
+| M7 RDNA2 shader recompiler | ABI contracts, decoder, IR, SPIR-V, reference interpreter, GPU differential tests | T-701..T-734 | ABI v0 and v1 verified on GPU, `scale-shader` CLI done; ABI v2 contract frozen (T-730), decoder/IR/interpreter/GPU cases next (T-731..T-734) |
 | M8 Graphics integration | Translated shaders → pipeline creation, translation cache (decision 0005) | — | not started |
 | M9 Audio, input, local data | Interfaces demanded by verified tests | — | not started |
 | M10 Retail readiness gate | See AGENTS.md | — | not started |
@@ -22,8 +22,8 @@ deliverables, not a strict serial order. Tasks and owners are in
 
 ## Current tracks
 
-- **Shaders (Codex):** T-730 ABI v2 contract (memory and resources), then
-  decoder (T-731) and IR/SPIR-V (T-732). Claude: interpreter (T-733) and GPU
+- **Shaders (Codex):** ABI v2 decoder and test-case fields (T-731), then
+  IR/SPIR-V (T-732). Claude: interpreter (T-733) and GPU
   cases (T-734).
 - **CPU/runtime (Claude):** T-302 TLS directory, then the remaining M3
   features one at a time (import binding through adapters, CRT startup, DLL
