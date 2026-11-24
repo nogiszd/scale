@@ -54,3 +54,8 @@ scale_add_test(NAME unit_image_map
     SOURCES loader/image_map_test.cpp
     LIBS scale::loader
     LABELS quick)
+
+# --- gfx1030 decoder (T-701) ---------------------------------------------------
+if(SCALE_ENABLE_SHADER)
+    add_subdirectory(shader)
+endif()
