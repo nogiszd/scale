@@ -68,10 +68,12 @@ TEST(NativeExecutionRet42, WorkerReturns42AndMatchesReference) {
 }
 
 TEST(NativeExecutionReject, ImportsAreRejectedBeforeEntry) {
-    // test_exit.exe imports KERNEL32!ExitProcess: unsupported by the T-202 loader.
+    // test_exit.exe imports KERNEL32!ExitProcess, which no provider supplies (T-204).
     const ProcessResult r = run_in_worker(SCALE_TEST_EXE_EXIT);
     EXPECT_EQ(r.exit_code, 3u) << lines(r);
-    EXPECT_TRUE(has_line(r, "error stage=map component=loader code=unsupported_directory message=the import_table"))
+    // Windows exports are not permitted implicitly: KERNEL32 is unresolved.
+    EXPECT_TRUE(has_line(r, "event component=runtime stage=import_resolution code=unresolved_import severity=error "
+                            "fatal=1 a.module=KERNEL32.dll a.symbol=ExitProcess"))
         << lines(r);
     EXPECT_FALSE(has_line(r, "stage entry")) << lines(r);
 }
@@ -148,6 +150,43 @@ TEST(ExecutableRun, ReportJsonForPassAndBlocked) {
     ASSERT_TRUE(blocked.has_value());
     const std::string bjson = scale::diagnostics::to_json(blocked->report);
     EXPECT_NE(bjson.find("\"outcome\": \"BLOCKED\""), std::string::npos) << bjson;
-    EXPECT_NE(bjson.find("\"code\": \"unsupported_directory\""), std::string::npos) << bjson;
+    EXPECT_NE(bjson.find("\"code\": \"unresolved_import\""), std::string::npos) << bjson;
     EXPECT_NE(bjson.find("\"exit_code\": null"), std::string::npos) << bjson;
+}
+// ---- T-204: unresolved synthetic platform imports --------------------------------
+
+TEST(NativeExecutionImports, NativeReferenceLoadsTheDllAndReturns42) {
+    // The Windows loader resolves test_platform.dll from the executable's directory.
+    const ProcessResult native = supervise(path_of(SCALE_TEST_EXE_IMPORT_MISSING), {});
+    EXPECT_EQ(native.termination, Termination::exited);
+    EXPECT_EQ(native.exit_code, 42u);
+}
+
+TEST(NativeExecutionImports, ScaleBlocksBeforeMappingAndReportsEachImport) {
+    const ProcessResult worker = run_in_worker(SCALE_TEST_EXE_IMPORT_MISSING);
+    EXPECT_EQ(worker.exit_code, 3u) << lines(worker);
+    EXPECT_TRUE(has_line(worker, "stage inspected")) << lines(worker);
+    EXPECT_FALSE(has_line(worker, "stage mapped")) << lines(worker);
+    EXPECT_FALSE(has_line(worker, "stage entry")) << lines(worker);
+    EXPECT_TRUE(has_line(worker, "event component=runtime stage=import_resolution code=unresolved_import "
+                                 "severity=error fatal=1 a.module=test_platform.dll a.ordinal=2 "
+                                 "a.importing_module=test_import_missing.exe a.import_kind=by_ordinal"))
+        << lines(worker);
+    EXPECT_TRUE(has_line(worker, "event component=runtime stage=import_resolution code=unresolved_import "
+                                 "severity=error fatal=1 a.module=test_platform.dll a.symbol=TestAllocate "
+                                 "a.importing_module=test_import_missing.exe a.import_kind=by_name"))
+        << lines(worker);
+
+    RunOptions options;
+    options.worker = path_of(SCALE_WORKER_PATH);
+    options.executable = path_of(SCALE_TEST_EXE_IMPORT_MISSING);
+    options.subject_name = "test_import_missing.exe";
+    const auto run = run_executable(options);
+    ASSERT_TRUE(run.has_value());
+    EXPECT_EQ(run->report.outcome, scale::diagnostics::Outcome::blocked);
+    EXPECT_EQ(run->report.diagnostics.entries().size(), 2u);
+    const std::string json = scale::diagnostics::to_json(run->report);
+    EXPECT_NE(json.find("\"code\": \"unresolved_import\""), std::string::npos) << json;
+    EXPECT_NE(json.find("\"import_kind\": \"by_ordinal\""), std::string::npos) << json;
+    EXPECT_NE(json.find("\"importing_module\": \"test_import_missing.exe\""), std::string::npos) << json;
 }

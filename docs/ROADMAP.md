@@ -8,7 +8,7 @@ deliverables, not a strict serial order.
 |---|---|---|---|
 | M0 Foundation | CMake/presets, CLI skeleton, diagnostics contract, CTest | T-000 | done |
 | M1 PE inspector | Read-only bounded PE32+ AMD64 inspection, `scale inspect` | T-101..T-103 | done |
-| M2 Native execution slice | Worker, custom-entry test executable, relocated test executable, `scale run`, missing-import diagnostic | T-201..T-204 | ready (T-201) |
+| M2 Native execution slice | Worker, custom-entry test executable, relocated test executable, `scale run`, missing-import diagnostic | T-201..T-204 | done |
 | M3 Imports and Windows runtime fidelity | Imports/ordinals/forwarders, delay load, CRT startup, TLS, SEH/C++ EH, DLL init | — | not planned yet |
 | M4 Adapters and filesystem | Adapter registry, title root + data root, path translation | backlog | — |
 | M5 Integration and diagnostics | report.json completeness, synthetic test title | — | — |

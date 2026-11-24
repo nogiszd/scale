@@ -6,9 +6,9 @@
 |---|---|---|---|---|
 | `src/common` | `scale::common` | Windows SDK | Claude | present |
 | `src/diagnostics` | `scale::diagnostics` | common | Claude | present |
-| `src/loader` | `scale::loader` | common, diagnostics | Claude | planned |
-| `src/host` | `scale::host` | loader, runtime, diagnostics | Claude | planned |
-| `src/runtime` | `scale::runtime` | loader, filesystem, diagnostics | Claude | planned |
+| `src/loader` | `scale::loader` | common | Claude | present (inspector, image mapping) |
+| `src/host` | `scale::host` | loader, diagnostics | Claude | present (supervisor, run reports) |
+| `src/runtime` | `scale::runtime` | loader, diagnostics | Claude | present (import resolution policy) |
 | `src/filesystem` | `scale::filesystem` | common | unassigned | planned (M4) |
 | `src/shader` | `scale::shader_decode`, `scale::shader_ir`, `scale::shader_spirv` | common, diagnostics | Codex | planned, `SCALE_ENABLE_SHADER` |
 | `src/shader_ref` | `scale::shader_ref` | shader_decode (public header only), common | Claude | planned, `SCALE_ENABLE_SHADER` |

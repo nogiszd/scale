@@ -110,7 +110,7 @@ scale_add_test(NAME integration_native_execution
     LIBS scale::host scale::common
     LABELS integration
     TIMEOUT 60)
-add_dependencies(integration_native_execution scale_worker test_ret42 test_reloc test_crash test_hang
+add_dependencies(integration_native_execution test_import_missing test_platform scale_worker test_ret42 test_reloc test_crash test_hang
     test_exit test_lib)
 target_compile_definitions(integration_native_execution PRIVATE
     "SCALE_WORKER_PATH=\"$<TARGET_FILE:scale_worker>\""
@@ -118,6 +118,7 @@ target_compile_definitions(integration_native_execution PRIVATE
     "SCALE_TEST_EXE_RELOC=\"$<TARGET_FILE:test_reloc>\""
     "SCALE_TEST_EXE_CRASH=\"$<TARGET_FILE:test_crash>\""
     "SCALE_TEST_EXE_HANG=\"$<TARGET_FILE:test_hang>\""
+    "SCALE_TEST_EXE_IMPORT_MISSING=\"$<TARGET_FILE:test_import_missing>\""
     "SCALE_TEST_EXE_EXIT=\"$<TARGET_FILE:test_exit>\""
     "SCALE_TEST_EXE_LIB=\"$<TARGET_FILE:test_lib>\"")
 
@@ -133,7 +134,7 @@ scale_add_command_test(NAME cli_run_relocated
 scale_add_command_test(NAME cli_run_blocked_on_imports
     COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:test_exit>
     EXPECT_EXIT 1
-    EXPECT_OUTPUT "outcome: +BLOCKED\n.*\\[error, fatal\\] loader/map/unsupported_directory: the import_table directory"
+    EXPECT_OUTPUT "outcome: +BLOCKED\n.*\\[error, fatal\\] runtime/import_resolution/unresolved_import module=KERNEL32\\.dll symbol=ExitProcess importing_module=test_exit\\.exe import_kind=by_name"
     LABELS integration)
 scale_add_command_test(NAME cli_run_crash_fails
     COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:test_crash>
@@ -181,3 +182,9 @@ add_test(NAME cli_run_report_content
         -P "${PROJECT_SOURCE_DIR}/tests/support/expect_file.cmake")
 set_tests_properties(cli_run_report_content PROPERTIES
     LABELS integration FIXTURES_REQUIRED cli_run_report TIMEOUT 30)
+# --- Unresolved synthetic imports (T-204) ------------------------------------------
+scale_add_command_test(NAME cli_run_blocked_on_unresolved_imports
+    COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:test_import_missing>
+    EXPECT_EXIT 1
+    EXPECT_OUTPUT "stage: +inspected\noutcome: +BLOCKED\n.*runtime/import_resolution/unresolved_import module=test_platform\\.dll ordinal=2 importing_module=test_import_missing\\.exe import_kind=by_ordinal.*runtime/import_resolution/unresolved_import module=test_platform\\.dll symbol=TestAllocate importing_module=test_import_missing\\.exe import_kind=by_name"
+    LABELS integration)

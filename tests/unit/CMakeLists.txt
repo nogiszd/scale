@@ -9,7 +9,7 @@ scale_add_test(NAME unit_common
 
 scale_add_test(NAME unit_diagnostics
     SOURCES diagnostics/json_writer_test.cpp diagnostics/diagnostic_log_test.cpp
-            diagnostics/run_report_test.cpp
+            diagnostics/run_report_test.cpp diagnostics/event_line_test.cpp
     LIBS scale::diagnostics
     LABELS quick)
 
@@ -59,3 +59,9 @@ scale_add_test(NAME unit_image_map
 if(SCALE_ENABLE_SHADER)
     add_subdirectory(shader)
 endif()
+
+# --- Import resolution policy (T-204) ---------------------------------------------
+scale_add_test(NAME unit_runtime
+    SOURCES runtime/import_resolver_test.cpp
+    LIBS scale::runtime
+    LABELS quick)

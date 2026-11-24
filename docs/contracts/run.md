@@ -35,12 +35,16 @@ The worker writes newline-terminated lines to the report pipe (see
 ```text
 stage start
 stage inspected
+stage resolved imports=<n>          (only when the image has imports and all resolved)
 stage mapped base=0x<hex> size=0x<hex> delta=<signed> relocations=<n>
 stage entry
 stage returned value=<int>
 error stage=<read|inspect|map> component=<c> code=<code> message=<text>
 exception code=0x<8 hex> address=0x<16 hex>
+event component=<c> stage=<s> code=<k> severity=<...> fatal=<0|1> a.<key>=<v> ... message=<v>
 ```
+
+`event` lines use the percent-encoded format in `scale/diagnostics/event_line.h`. At most 64 `unresolved_import` events are sent, followed by one `unresolved_imports_omitted` event (attribute `count`) if there are more.
 
 Only this channel is trusted. Guest stdout and stderr are captured but never
 parsed.
@@ -55,6 +59,7 @@ parsed.
   `entry`, `inspected`.
 - `exit_code` is the returned value for `PASS`, otherwise `null`.
 - Diagnostic events (all fatal unless noted):
+  - worker `event` lines, in order (e.g. `runtime/import_resolution/unresolved_import` with `module`, `symbol` or `ordinal`, `importing_module`, `import_kind`). The first fatal event sets the outcome;
   - loader errors: `loader/<stage>/<code>`, with the worker's message;
   - `host/<final_stage>/unhandled_exception` with `exception_code`,
     `address`, and `rva` + `module` when the address lies inside the mapped

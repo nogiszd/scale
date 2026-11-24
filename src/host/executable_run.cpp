@@ -2,6 +2,7 @@
 
 #include "scale/common/sha256.h"
 #include "scale/common/text.h"
+#include "scale/diagnostics/event_line.h"
 #include "scale/loader/image_map.h"
 
 #include <windows.h>
@@ -43,7 +44,8 @@ std::optional<std::uint64_t> hex_value(std::string_view text) {
 
 bool is_blocking_code(std::string_view code) {
     return code.starts_with("unsupported_") || code == "relocation_required" ||
-           code == "writable_executable_section" || code == "entry_not_executable" || code == "unresolved_import";
+           code == "writable_executable_section" || code == "entry_not_executable" || code == "unresolved_import" ||
+           code == "unresolved_imports_omitted";
 }
 
 struct WorkerError {
@@ -91,9 +93,17 @@ diagnostics::RunReport make_run_report(const ProcessResult& process, diagnostics
     std::optional<std::uint64_t> base;
     std::optional<std::uint64_t> size;
     std::optional<WorkerError> worker_error;
+    std::vector<DiagnosticEvent> worker_events;  // structured `event` lines
     for (const std::string& line : process.report_lines) {
         const std::string_view l(line);
-        if (l.starts_with("stage ")) {
+        if (l.starts_with("event ")) {
+            if (auto event = diagnostics::parse_event_line(l)) {
+                worker_events.push_back(std::move(*event));
+            } else {
+                worker_events.push_back(DiagnosticEvent{"host", "worker", "malformed_report_line", Severity::warning,
+                                                        false, "a worker event line could not be parsed", {}});
+            }
+        } else if (l.starts_with("stage ")) {
             const auto name = l.substr(6, l.find(' ', 6) == std::string_view::npos ? std::string_view::npos
                                                                                    : l.find(' ', 6) - 6);
             report.final_stage = std::string(name);
@@ -104,6 +114,15 @@ diagnostics::RunReport make_run_report(const ProcessResult& process, diagnostics
         } else if (!worker_error) {
             worker_error = parse_error_line(l);
         }
+    }
+
+    // Events reported by the worker come first, in order; the first fatal one
+    // decides the outcome when nothing more specific (timeout, exception,
+    // loader error) happened.
+    const DiagnosticEvent* first_fatal = nullptr;
+    for (const DiagnosticEvent& e : worker_events) {
+        report.diagnostics.report(e);
+        if (e.fatal && first_fatal == nullptr) first_fatal = &e;
     }
 
     const auto value = returned_value(process);
@@ -128,6 +147,8 @@ diagnostics::RunReport make_run_report(const ProcessResult& process, diagnostics
         report.outcome = is_blocking_code(worker_error->code) ? Outcome::blocked : Outcome::failed;
         report.diagnostics.report(DiagnosticEvent{worker_error->component, worker_error->stage, worker_error->code,
                                                   Severity::error, true, worker_error->message, {}});
+    } else if (first_fatal != nullptr) {
+        report.outcome = is_blocking_code(first_fatal->code) ? Outcome::blocked : Outcome::failed;
     } else if (value) {
         report.outcome = Outcome::pass;
         report.exit_code = *value;

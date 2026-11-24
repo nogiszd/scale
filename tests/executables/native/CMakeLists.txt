@@ -8,3 +8,7 @@ scale_add_test_executable(test_ret42 EXE ENTRY test_entry SOURCES ret42.cpp)
 scale_add_test_executable(test_reloc EXE ENTRY test_entry SOURCES reloc.cpp)
 scale_add_test_executable(test_crash EXE ENTRY test_entry SOURCES crash.cpp)
 scale_add_test_executable(test_hang EXE ENTRY test_entry SOURCES hang.cpp)
+
+# T-204: synthetic platform DLL and an executable that imports from it.
+scale_add_test_executable(test_platform DLL ENTRY test_dll_entry SOURCES platform.cpp platform.def)
+scale_add_test_executable(test_import_missing EXE ENTRY test_entry SOURCES import_missing.cpp LIBS test_platform)

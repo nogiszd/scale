@@ -143,3 +143,45 @@ TEST(ExecutableReport, RunIdFormat) {
     EXPECT_TRUE(std::regex_match(make_run_id(), std::regex(R"(run-\d{8}T\d{6}Z-\d+-\d+)")));
     EXPECT_NE(make_run_id(), make_run_id());
 }
+
+// ---- T-204: structured events from the worker ------------------------------------
+
+TEST(ExecutableReport, UnresolvedImportEventsBlockTheRun) {
+    const ProcessResult p = worker(
+        {"stage start", "stage inspected",
+         "event component=runtime stage=import_resolution code=unresolved_import severity=error fatal=1 "
+         "a.module=test_platform.dll a.symbol=TestAllocate a.importing_module=game.exe a.import_kind=by_name "
+         "message=no%20provider",
+         "event component=runtime stage=import_resolution code=unresolved_import severity=error fatal=1 "
+         "a.module=test_platform.dll a.ordinal=2 a.importing_module=game.exe a.import_kind=by_ordinal "
+         "message=no%20provider"},
+        Termination::exited, 3);
+    const auto r = report(p);
+    EXPECT_EQ(r.outcome, Outcome::blocked);
+    EXPECT_EQ(r.final_stage, "inspected");
+    EXPECT_FALSE(r.exit_code.has_value());
+    ASSERT_EQ(r.diagnostics.entries().size(), 2u);
+    const auto& e = r.diagnostics.entries()[0].event;
+    EXPECT_EQ(e.code, "unresolved_import");
+    EXPECT_EQ(e.message, "no provider");
+    ASSERT_EQ(e.attributes.size(), 4u);
+    EXPECT_EQ(e.attributes[1].key, "symbol");
+    EXPECT_EQ(r.diagnostics.entries()[1].event.attributes[1].value, "2");
+}
+
+TEST(ExecutableReport, MalformedEventLineIsAWarningNotAResult) {
+    auto lines = kLoaded;
+    lines.push_back("event garbage");
+    lines.push_back("stage returned value=42");
+    const auto r = report(worker(lines));
+    EXPECT_EQ(r.outcome, Outcome::pass);
+    EXPECT_EQ(first(r).code, "malformed_report_line");
+    EXPECT_FALSE(first(r).fatal);
+}
+
+TEST(ExecutableReport, NonFatalEventsDoNotChangeOutcome) {
+    auto lines = kLoaded;
+    lines.push_back("event component=runtime stage=import_resolution code=note severity=info fatal=0 message=");
+    lines.push_back("stage returned value=42");
+    EXPECT_EQ(report(worker(lines)).outcome, Outcome::pass);
+}

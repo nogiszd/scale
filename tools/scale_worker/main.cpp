@@ -24,6 +24,8 @@
 #include "scale/common/text.h"
 #include "scale/loader/image_map.h"
 #include "scale/loader/pe_image.h"
+#include "scale/diagnostics/event_line.h"
+#include "scale/runtime/import_resolver.h"
 
 #include <windows.h>
 
@@ -38,6 +40,8 @@
 namespace {
 
 constexpr int kWorkerLoadFailed = 3;
+// Bounds the report channel (see scale/host/supervisor.h limits).
+constexpr std::size_t kMaxImportEvents = 64;
 HANDLE g_report = nullptr;
 
 void write_all(HANDLE h, const char* data, std::size_t size) {
@@ -197,6 +201,31 @@ int run_executable(const std::string& path_utf8) {
         return kWorkerLoadFailed;
     }
     report_line("stage inspected");
+
+    // Import resolution happens before anything is mapped: an image with an
+    // unresolved required import is never executed (AGENTS.md M3).
+    if (!image->imports.empty()) {
+        const std::string importing_module =
+            scale::to_utf8(std::filesystem::path(*wide).filename().wstring()).value_or("<image>");
+        const auto resolution = scale::runtime::resolve_imports(*image, importing_module);
+        if (!resolution.complete()) {
+            std::size_t sent = 0;
+            for (const auto& unresolved : resolution.unresolved) {
+                if (sent == kMaxImportEvents) break;
+                report_line(scale::diagnostics::to_event_line(scale::runtime::to_event(unresolved)));
+                ++sent;
+            }
+            if (resolution.unresolved.size() > sent) {
+                report_line(scale::diagnostics::to_event_line(scale::diagnostics::DiagnosticEvent{
+                    "runtime", "import_resolution", "unresolved_imports_omitted", scale::diagnostics::Severity::error,
+                    true, "further unresolved imports were not reported individually",
+                    {{"count", std::to_string(resolution.unresolved.size() - sent)}}}));
+            }
+            return kWorkerLoadFailed;
+        }
+        report_line(std::format("stage resolved imports={}", resolution.total));
+    }
+
     auto mapped = scale::loader::map_image(view, *image);
     if (!mapped) {
         report_error("map", mapped.error());

@@ -2,6 +2,39 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-204 Unresolved import diagnostics — M2 complete (Claude)
+
+- `scale::runtime::resolve_imports` (`src/runtime`) applies the resolver policy
+  in order: documented adapter → approved guest module → permitted Windows
+  export → unresolved. All three sources are empty in this slice, so every
+  import is unresolved. There is no search path and no stub. Each becomes a
+  fatal `runtime/import_resolution/unresolved_import` event with `module`,
+  `symbol` or `ordinal`, `importing_module` and `import_kind`.
+- The worker resolves imports after inspection and before mapping. If any are
+  unresolved it reports up to 64 events (then `unresolved_imports_omitted`)
+  and exits 3. Nothing is mapped and the entry is never reached. Events use
+  the new percent-encoded `event` line format
+  (`scale/diagnostics/event_line.h`). The host parses it into report.json,
+  and the first fatal event sets the outcome.
+- Test executables: `test_platform.dll` (synthetic platform API: TestAllocate
+  by name, TestFree @2 NONAME) and `test_import_missing.exe` (imports both,
+  returns 40 + 2).
+- Native reference: the Windows loader resolves `test_platform.dll` from the
+  executable's directory and returns 42. SCALE run: `BLOCKED` at stage
+  `inspected`, with two unresolved_import events (ordinal 2 and TestAllocate).
+  This is the intended difference: SCALE never uses a DLL search path.
+- Mutation check: a resolver that accepts every import fails 3 tests. The
+  loader still refuses the import table, so nothing executes even then.
+- Tests: `unit_diagnostics.EventLine/PercentCoding` (4), `unit_runtime` (2),
+  `unit_host.ExecutableReport` (+3), `integration_native_execution` (+2) and
+  the CLI test `cli_run_blocked_on_unresolved_imports`.
+- **M2 acceptance (AGENTS.md):** first native test executable with a native
+  reference (T-202), relocated data (T-203), worker capturing exit code,
+  output, timeout and exceptions (T-201/T-203), unsupported directories
+  rejected explicitly, and an unresolved synthetic import diagnostic (T-204).
+  Limitations: only the custom `int test_entry(void)` contract is supported.
+  CRT entry, imports with binding, TLS and exceptions are M3.
+
 ## 2026-11-24 — Terminology: "fixture" → "executable" (Claude)
 
 User-facing wording now follows the vocabulary of comparable projects (XCL:
