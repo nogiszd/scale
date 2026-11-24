@@ -24,15 +24,20 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-203 | `scale run`, relocated-data test executable, report.json | Claude | DONE | T-202 | M2 |
 | T-204 | Missing synthetic import diagnostic | Claude | DONE | T-203 | M2/M3 |
 | T-601 | Vulkan compute plumbing harness | Claude | READY | T-001 | M6 |
+| T-801 | Portability groundwork (decision 0004) | Claude | READY | T-000 | infra |
+| T-802 | Linux build/test environment and CI | unassigned | BLOCKED (no Linux environment) | T-801 | infra |
 | T-704 | Synthetic shader ABI v0 contract | Codex | DONE | T-000 | M7 |
 | T-701 | gfx1030 decoder (first subset) | Codex | DONE | T-001 | M7 |
 | T-702 | Shader IR v0 | Codex | DONE | T-701, T-704 | M7 |
 | T-703 | SPIR-V emitter + validation | Codex | DONE | T-702 | M7 |
+| T-705 | Shader test-case library (T-704 JSON) | Codex | READY | T-704 | M7 |
+| T-706 | `scale-shader` CLI (decode / compile / validate) | Codex | WAITING | T-705 | M7 |
+| T-707 | Shader ABI v1 contract: EXEC masks and control flow | Codex | READY | T-704 | M7 |
 | T-711 | RDNA2 reference interpreter | Claude | READY | T-701 (interface), T-704 | M7 |
 | T-720 | Differential runner: interpreter vs GPU | Claude | WAITING | T-601, T-703, T-711 | M7 |
 
 Unassigned backlog: title filesystem / path translation (M4), adapter
-registry (M4), shader CLI `scale-shader` (M7, Codex when T-703 lands).
+registry (M4).
 
 ## Interface freeze points
 
@@ -267,6 +272,62 @@ Direct SPIR-V binary emission for the T-702 IR under the T-704 ABI. Validate
 with `spirv-val`, which requires the Vulkan SDK. SKIPPED when absent.
 Validation is not correctness. GPU execution is T-720.
 
+## T-705 — Shader test-case library (Codex)
+
+**Paths owned:** `src/shader/` (test-case files), `tests/unit/shader/`.
+
+Library `scale::shader_testcase`: loads the T-704 JSON test-case format
+strictly. It rejects duplicate, missing or unknown fields, bad values,
+unsupported versions and out-of-contract dispatch, with named error codes
+(component `shader`, stage `testcase`). Output: a typed struct with code
+words, input words, expected words, output type and seed. Do not depend on
+`shader_ir`, `shader_spirv` or `shader_ref`. T-720 (Claude) and T-706 consume
+it. If you want a JSON library instead of a small strict parser, propose it
+in your HANDOFF first (AGENTS.md: pinned, justified dependency).
+**Acceptance:** the T-704 example loads; every rejection rule has a negative
+test. Freeze the public header first (interface freeze), as with `decode.h`.
+
+## T-706 — `scale-shader` CLI (Codex)
+
+**Paths owned:** `tools/scale_shader/`, its test block.
+
+A standalone tool, independent of the native execution host (AGENTS.md):
+`scale-shader decode <case.json|words>` prints the decoded instructions,
+`scale-shader compile <case.json> -o <out.spv>` runs decode → IR → SPIR-V,
+and `scale-shader validate <out.spv>` runs spirv-val if present (SKIPPED
+otherwise). Exit codes follow the `scale` CLI convention. **Acceptance:** CLI
+tests on the T-704 example and on malformed input.
+
+## T-707 — Shader ABI v1 contract: EXEC masks and control flow (Codex)
+
+**Paths owned:** `docs/contracts/shader_abi.md` (new v1 section).
+
+Contract first, no code. Extend the synthetic ABI to partial EXEC masks
+(`v_cmp_*` → VCC, `s_and_saveexec_b32`, `s_mov_b32 exec_lo`), scalar
+branches (`s_cbranch_scc0/1`, `s_cbranch_execz`, `s_branch`) and the matching
+test-case fields (e.g. initial EXEC or per-case dispatch options). Define
+inactive-lane store semantics and how SPIR-V represents divergence. Cite
+the RDNA2 ISA and LLVM. Mark every rule as a synthetic ABI decision.
+**Acceptance:** Claude reviews it, because T-711 must model the same
+semantics. Implementation tasks follow after the freeze.
+## T-801 — Portability groundwork (Claude)
+
+Decision 0004. Make `scale::common` portable: a platform-independent UTF-8 ↔
+UTF-16 implementation checked against the Win32 conversion and SHA-256
+checked against BCrypt and FIPS vectors, or an explicit `_win32.cpp` split
+behind the same headers. Add CMake platform gating per component instead of
+a root-level Windows-only error, a compiler-flag block for GCC/Clang, and a
+shared test helper for starting tools (replacing `_wpopen`/`_wspawn` in
+tests). Windows behavior and test results must not change. **Acceptance:**
+the Windows suites are unchanged, and portable components contain no OS
+headers (checked by a grep-based test).
+
+## T-802 — Linux build/test environment and CI (unassigned, BLOCKED)
+
+Needs a Linux machine or CI runner with Vulkan. Scope: configure presets for
+GCC/Clang plus Ninja, build the portable components, run their tests and
+the Vulkan GPU tests (SKIPPED without a device). This can't be marked done
+without real Linux runs.
 ## T-711 — RDNA2 reference interpreter (Claude)
 
 `src/shader_ref/`, `scale::shader_ref`. Directly interprets decoded

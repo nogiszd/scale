@@ -58,6 +58,8 @@ Nothing on this roadmap is implemented beyond what the status tables show. Broad
 | Desktop development with C++ workload       | C++ toolchain, bundled CMake and Ninja |
 | Git                                         | Version control                        |
 
+Windows 11 x64 is the first supported platform. Linux is planned: the Vulkan backend and the shader, diagnostics and PE inspection components are kept platform-independent ([decision 0004](docs/decisions/0004-platform-portability.md)). Linux builds are not supported or tested yet.
+
 Graphics and shader development additionally requires:
 
 - [LunarG Vulkan SDK](https://vulkan.lunarg.com/sdk/home#windows) — Vulkan headers, libraries and SPIR-V validation tools.
