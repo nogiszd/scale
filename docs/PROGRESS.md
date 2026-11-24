@@ -8,11 +8,33 @@ Only recorded, executed results, newest first. Each entry describes the state at
 |---|---|
 | M0 Foundation, M1 PE inspector, M2 native execution | complete |
 | M3 runtime fidelity | exception directory validated and registered; SEH dispatch verified natively and under SCALE (T-301). Next: TLS (T-302). |
-| M7 shaders | ABI v0 and ABI v1 (EXEC masks, scalar branches) verified on hardware: decoder, IR, SPIR-V, reference interpreter and GPU agree on 10 JSON test cases (T-701..T-712, T-720, T-721). `scale-shader` CLI done (T-706). Next: ABI v2 contract, memory and resources (T-730, Codex). |
+| M7 shaders | ABI v0 and ABI v1 (EXEC masks, scalar branches) verified on hardware: decoder, IR, SPIR-V, reference interpreter and GPU agree on 10 JSON test cases (T-701..T-712, T-720, T-721). `scale-shader` CLI done (T-706). ABI v2 contract (memory and resources) approved and frozen (T-730). Next: v2 decoder and test-case fields (T-731, Codex), then interpreter (T-733, Claude). |
 | M6 graphics | Vulkan compute harness with per-device fingerprints (T-601). Coverage: GPU class A2 only. |
 | Portability | groundwork done (T-801). Linux unverified (T-802 blocked). |
 
 Latest suite totals: `full`/`release-full` 189/189, `full-all`/`release-full-all` 334/334, `gpu` 14/14 (RX 9070 XT), no skips.
+
+## 2026-11-24 — T-730 merged: shader ABI v2 contract (Claude, review)
+
+- Reviewed and merged Codex's ABI v2 section of
+  `docs/contracts/shader_abi.md` (frozen at `05ba211`): three fixed
+  bindings (input, output, constants at `s[8:11]`, `s0`–`s11` reserved), MUBUF
+  with immediate and SGPR offsets and program-computed addresses,
+  `s_buffer_load_dword` with `s_waitcnt lgkmcnt(0)` and pending SGPRs, store
+  collision rejection, JSON field `constant_words`.
+- Out-of-range rule: only cases where AMD 70648 Table 35 (scalar addend
+  reduces the bound) and LLVM's raw buffer description (scalar addend
+  excluded) agree are accepted: in range when `byte_offset <= 124`, zero load
+  / dropped store when `vector_offset >= 128`; the straddling case is
+  rejected before dispatch.
+- Independent checks: the worked example re-assembled with llvm-mc 23.1.6
+  (all 11 words match the contract); llvm-objdump prints the zero-offset
+  scalar load as `null`, as the contract states; expected words recomputed by
+  hand (EXEC `0xd000000b`: words 1, 2, 4, 29, 31 = 7, 8, 0xa, 0x23, 4; lane 31
+  dropped; lane 29 rejected with EXEC `0xf000000b`).
+- Nit for T-731: the GFX1030 SMEM syntax reference links LLVM 18.1.6 docs
+  while the tools are pinned at 23.1.6.
+- `ctest --preset full-all` 334/334 (docs-only merge).
 
 ## 2026-11-24 — T-706 merged: `scale-shader` CLI (Claude, review)
 
