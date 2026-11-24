@@ -15,7 +15,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | ID | Title | Owner | Status | Depends on | Milestone |
 |---|---|---|---|---|---|
 | T-000 | Foundation scaffold | Claude | DONE | — | M0 |
-| T-001 | Replace in-tree test harness with GoogleTest | Claude | WAITING (GoogleTest acquisition method) | T-000 | M0 |
+| T-001 | Replace in-tree test harness with GoogleTest | Claude | DONE | T-000 | M0 |
 | T-101 | PE32+ inspector library | Claude | READY | T-000 | M1 |
 | T-102 | PE fixture images + dumpbin comparison | Claude | WAITING | T-101 | M1 |
 | T-103 | `scale inspect` command | Claude | WAITING | T-101 | M1 |
@@ -77,7 +77,10 @@ docs/PROGRESS.md.
 
 ---
 
-## T-001 — Replace in-tree test harness with GoogleTest (Claude)
+## T-001 — Replace in-tree test harness with GoogleTest (Claude, DONE)
+
+Done: GoogleTest 1.18.0 via FetchContent (URL + SHA-256), see
+docs/PROGRESS.md and docs/contracts/testing.md. Original scope:
 
 Required by AGENTS.md (testing policy). Must land before any other task adds
 tests, so new tests are written against GoogleTest from the start.

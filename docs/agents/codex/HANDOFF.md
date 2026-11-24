@@ -16,8 +16,8 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Constraints
 
-- Tests use GoogleTest (AGENTS.md). Add shader tests only after T-001 has
-  replaced the temporary in-tree harness.
+- Tests use GoogleTest 1.18.0 via `scale_add_test` (see
+  docs/contracts/testing.md). `GTEST_SKIP()` is reported as SKIPPED.
 - Do not depend on loader, host, runtime or graphics.
 - Do not put semantic lowering code anywhere `src/shader_ref` could use it.
 - LLVM 23.1.6 with AMDGPU is installed (`scripts/build-llvm-amdgpu.ps1`).

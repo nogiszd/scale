@@ -1,6 +1,6 @@
 #include "scale/diagnostics/json_writer.h"
 
-#include "scale_test.h"
+#include <gtest/gtest.h>
 
 #include <cstdint>
 #include <limits>
@@ -10,28 +10,28 @@
 using scale::diagnostics::json_quote;
 using scale::diagnostics::JsonWriter;
 
-SCALE_TEST(json_quote_escapes_specials) {
-    SCALE_CHECK_EQ(json_quote("a\"b\\c"), std::string(R"("a\"b\\c")"));
-    SCALE_CHECK_EQ(json_quote("\n\t\r\b\f"), std::string(R"("\n\t\r\b\f")"));
-    SCALE_CHECK_EQ(json_quote(std::string("\x01\x1f\x7f", 3)), std::string(R"("\u0001\u001f\u007f")"));
-    SCALE_CHECK_EQ(json_quote(std::string("nul\0x", 5)), std::string(R"("nul\u0000x")"));
+TEST(JsonQuote, EscapesSpecials) {
+    EXPECT_EQ(json_quote("a\"b\\c"), R"("a\"b\\c")");
+    EXPECT_EQ(json_quote("\n\t\r\b\f"), R"("\n\t\r\b\f")");
+    EXPECT_EQ(json_quote(std::string("\x01\x1f\x7f", 3)), R"("\u0001\u001f\u007f")");
+    EXPECT_EQ(json_quote(std::string("nul\0x", 5)), R"("nul\u0000x")");
 }
 
-SCALE_TEST(json_quote_preserves_valid_utf8) {
+TEST(JsonQuote, PreservesValidUtf8) {
     const std::string text = "\xC3\xA9\xE4\xB8\xAD\xF0\x9F\x98\x80";
-    SCALE_CHECK_EQ(json_quote(text), "\"" + text + "\"");
+    EXPECT_EQ(json_quote(text), "\"" + text + "\"");
 }
 
-SCALE_TEST(json_quote_replaces_invalid_utf8) {
+TEST(JsonQuote, ReplacesInvalidUtf8) {
     const std::string fffd = "\xEF\xBF\xBD";
-    SCALE_CHECK_EQ(json_quote("\xFF"), "\"" + fffd + "\"");
-    SCALE_CHECK_EQ(json_quote("\xC0\xAF"), "\"" + fffd + fffd + "\"");      // overlong
-    SCALE_CHECK_EQ(json_quote("\xED\xA0\x80"), "\"" + fffd + fffd + fffd + "\"");  // surrogate
-    SCALE_CHECK_EQ(json_quote("a\xE4\xB8"), "\"a" + fffd + fffd + "\"");    // truncated
-    SCALE_CHECK_EQ(json_quote("\xF4\x90\x80\x80"), "\"" + fffd + fffd + fffd + fffd + "\"");  // > U+10FFFF
+    EXPECT_EQ(json_quote("\xFF"), "\"" + fffd + "\"");
+    EXPECT_EQ(json_quote("\xC0\xAF"), "\"" + fffd + fffd + "\"");                    // overlong
+    EXPECT_EQ(json_quote("\xED\xA0\x80"), "\"" + fffd + fffd + fffd + "\"");         // surrogate
+    EXPECT_EQ(json_quote("a\xE4\xB8"), "\"a" + fffd + fffd + "\"");                  // truncated
+    EXPECT_EQ(json_quote("\xF4\x90\x80\x80"), "\"" + fffd + fffd + fffd + fffd + "\"");  // > U+10FFFF
 }
 
-SCALE_TEST(json_writer_nested_document) {
+TEST(JsonWriter, NestedDocument) {
     JsonWriter w;
     w.begin_object();
     w.field("name", "fixture");
@@ -64,43 +64,25 @@ SCALE_TEST(json_writer_nested_document) {
                                  "    []\n"
                                  "  ]\n"
                                  "}";
-    SCALE_CHECK(w.complete());
-    SCALE_CHECK_EQ(w.str(), expected);
+    EXPECT_TRUE(w.complete());
+    EXPECT_EQ(w.str(), expected);
 }
 
-SCALE_TEST(json_writer_rejects_misuse) {
-    {
-        JsonWriter w;
-        w.begin_object();
-        bool threw = false;
-        try {
-            w.value(1);  // value without key
-        } catch (const std::logic_error&) {
-            threw = true;
-        }
-        SCALE_CHECK(threw);
-    }
-    {
-        JsonWriter w;
-        w.begin_array();
-        SCALE_CHECK(!w.complete());
-        bool threw = false;
-        try {
-            (void)w.str();
-        } catch (const std::logic_error&) {
-            threw = true;
-        }
-        SCALE_CHECK(threw);
-    }
-    {
-        JsonWriter w;
-        w.value(1);
-        bool threw = false;
-        try {
-            w.value(2);  // second root
-        } catch (const std::logic_error&) {
-            threw = true;
-        }
-        SCALE_CHECK(threw);
-    }
+TEST(JsonWriter, RejectsValueWithoutKey) {
+    JsonWriter w;
+    w.begin_object();
+    EXPECT_THROW(w.value(1), std::logic_error);
+}
+
+TEST(JsonWriter, RejectsIncompleteDocument) {
+    JsonWriter w;
+    w.begin_array();
+    EXPECT_FALSE(w.complete());
+    EXPECT_THROW((void)w.str(), std::logic_error);
+}
+
+TEST(JsonWriter, RejectsSecondRoot) {
+    JsonWriter w;
+    w.value(1);
+    EXPECT_THROW(w.value(2), std::logic_error);
 }

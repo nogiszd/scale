@@ -1,7 +1,7 @@
 #include "scale/common/version.h"
 #include "scale/diagnostics/run_report.h"
 
-#include "scale_test.h"
+#include <gtest/gtest.h>
 
 #include <string>
 
@@ -10,7 +10,7 @@ using namespace scale::diagnostics;
 // Golden test for report schema_version 1 (docs/contracts/diagnostics.md).
 // Changing this output is a contract change: update the contract document and
 // bump kReportSchemaVersion for any removal, rename or type change.
-SCALE_TEST(run_report_schema_v1_golden) {
+TEST(RunReport, SchemaV1Golden) {
     RunReport r;
     r.run_id = "test-run-0001";
     r.command = "run";
@@ -67,13 +67,13 @@ SCALE_TEST(run_report_schema_v1_golden) {
                                  "    }\n"
                                  "  ]\n"
                                  "}\n";
-    SCALE_CHECK_EQ(to_json(r), expected);
+    EXPECT_EQ(to_json(r), expected);
 }
 
-SCALE_TEST(outcome_names_match_reporting_vocabulary) {
-    SCALE_CHECK_EQ(to_string(Outcome::pass), std::string_view("PASS"));
-    SCALE_CHECK_EQ(to_string(Outcome::failed), std::string_view("FAILED"));
-    SCALE_CHECK_EQ(to_string(Outcome::blocked), std::string_view("BLOCKED"));
-    SCALE_CHECK_EQ(to_string(Outcome::skipped), std::string_view("SKIPPED"));
-    SCALE_CHECK_EQ(to_string(Outcome::not_tested), std::string_view("NOT_TESTED"));
+TEST(RunReport, OutcomeNamesMatchReportingVocabulary) {
+    EXPECT_EQ(to_string(Outcome::pass), std::string_view("PASS"));
+    EXPECT_EQ(to_string(Outcome::failed), std::string_view("FAILED"));
+    EXPECT_EQ(to_string(Outcome::blocked), std::string_view("BLOCKED"));
+    EXPECT_EQ(to_string(Outcome::skipped), std::string_view("SKIPPED"));
+    EXPECT_EQ(to_string(Outcome::not_tested), std::string_view("NOT_TESTED"));
 }
