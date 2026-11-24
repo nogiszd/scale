@@ -24,11 +24,6 @@ scale_add_command_test(NAME cli_unknown_command_is_usage_error
     EXPECT_OUTPUT "unknown command 'frobnicate'"
     LABELS integration)
 
-scale_add_command_test(NAME cli_unimplemented_command_reports_task
-    COMMAND $<TARGET_FILE:scale> run missing.exe
-    EXPECT_EXIT 3
-    EXPECT_OUTPUT "command 'run' is not implemented yet \\(task T-203\\)"
-    LABELS integration)
 
 # --- PE fixtures vs dumpbin (T-102) --------------------------------------------
 get_filename_component(_scale_linker_dir "${CMAKE_LINKER}" DIRECTORY)
@@ -115,9 +110,74 @@ scale_add_test(NAME integration_native_fixture
     LIBS scale::host scale::common
     LABELS integration
     TIMEOUT 60)
-add_dependencies(integration_native_fixture scale_worker fixture_ret42 fixture_exit fixture_lib)
+add_dependencies(integration_native_fixture scale_worker fixture_ret42 fixture_reloc fixture_crash fixture_hang
+    fixture_exit fixture_lib)
 target_compile_definitions(integration_native_fixture PRIVATE
     "SCALE_WORKER_PATH=\"$<TARGET_FILE:scale_worker>\""
     "SCALE_FIXTURE_RET42=\"$<TARGET_FILE:fixture_ret42>\""
+    "SCALE_FIXTURE_RELOC=\"$<TARGET_FILE:fixture_reloc>\""
+    "SCALE_FIXTURE_CRASH=\"$<TARGET_FILE:fixture_crash>\""
+    "SCALE_FIXTURE_HANG=\"$<TARGET_FILE:fixture_hang>\""
     "SCALE_FIXTURE_EXIT=\"$<TARGET_FILE:fixture_exit>\""
     "SCALE_FIXTURE_LIB=\"$<TARGET_FILE:fixture_lib>\"")
+
+# --- scale run (T-203) ------------------------------------------------------------
+scale_add_command_test(NAME cli_run_pass
+    COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:fixture_ret42>
+    EXPECT_OUTPUT "sha256:   [0-9a-f]+\nstage:    returned\noutcome:  PASS\nreturned: 42\n.*no diagnostics"
+    LABELS integration)
+scale_add_command_test(NAME cli_run_relocated
+    COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:fixture_reloc>
+    EXPECT_OUTPUT "outcome:  PASS\nreturned: 42\n"
+    LABELS integration)
+scale_add_command_test(NAME cli_run_blocked_on_imports
+    COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:fixture_exit>
+    EXPECT_EXIT 1
+    EXPECT_OUTPUT "outcome:  BLOCKED\n.*\\[error, fatal\\] loader/map/unsupported_directory: the import_table directory"
+    LABELS integration)
+scale_add_command_test(NAME cli_run_crash_fails
+    COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:fixture_crash>
+    EXPECT_EXIT 1
+    EXPECT_OUTPUT "outcome:  FAILED\n.*host/entry/unhandled_exception exception_code=0xc0000005 address=0x[0-9a-f]+ rva=0x[0-9a-f]+"
+    LABELS integration)
+scale_add_command_test(NAME cli_run_timeout_fails
+    COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:fixture_hang> --timeout-ms 500
+    EXPECT_EXIT 1
+    EXPECT_OUTPUT "outcome:  FAILED\n.*host/worker/timeout timeout_ms=500 last_stage=entry"
+    LABELS integration)
+scale_add_command_test(NAME cli_run_malformed_fails
+    COMMAND $<TARGET_FILE:scale> run ${_scale_bad_pe}
+    EXPECT_EXIT 1
+    EXPECT_OUTPUT "outcome:  FAILED\n.*loader/inspect/truncated_dos_header"
+    LABELS integration)
+scale_add_command_test(NAME cli_run_rejects_guest_arguments
+    COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:fixture_ret42> -- extra
+    EXPECT_EXIT 2
+    EXPECT_OUTPUT "takes no arguments"
+    LABELS integration)
+scale_add_command_test(NAME cli_run_rejects_bad_timeout
+    COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:fixture_ret42> --timeout-ms 0
+    EXPECT_EXIT 2
+    EXPECT_OUTPUT "--timeout-ms must be an integer"
+    LABELS integration)
+scale_add_command_test(NAME cli_run_requires_fixture
+    COMMAND $<TARGET_FILE:scale> run
+    EXPECT_EXIT 2
+    EXPECT_OUTPUT "usage: scale run <trusted-fixture.exe>"
+    LABELS integration)
+
+# report.json written by the CLI, then checked by a dependent test.
+set(_scale_run_report "${CMAKE_CURRENT_BINARY_DIR}/reports/cli_run_report.json")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/reports")
+scale_add_command_test(NAME cli_run_writes_report
+    COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:fixture_reloc> --report ${_scale_run_report}
+    EXPECT_OUTPUT "report:   .*cli_run_report\\.json"
+    LABELS integration)
+set_tests_properties(cli_run_writes_report PROPERTIES FIXTURES_SETUP cli_run_report)
+add_test(NAME cli_run_report_content
+    COMMAND ${CMAKE_COMMAND}
+        "-DSCALE_FILE=${_scale_run_report}"
+        "-DSCALE_EXPECT_CONTENT=\"schema_version\": 1,\n  \"run_id\": \"run-[0-9]+T[0-9]+Z-[0-9]+-[0-9]+\",.*\"command\": \"run\",.*\"kind\": \"fixture\",.*\"sha256\": \"[0-9a-f]+\".*\"final_stage\": \"returned\",\n  \"outcome\": \"PASS\",\n  \"exit_code\": 42,\n  \"elapsed_ms\": [0-9]+,.*\"diagnostics\": \\[\\]"
+        -P "${PROJECT_SOURCE_DIR}/tests/support/expect_file.cmake")
+set_tests_properties(cli_run_report_content PROPERTIES
+    LABELS integration FIXTURES_REQUIRED cli_run_report TIMEOUT 30)

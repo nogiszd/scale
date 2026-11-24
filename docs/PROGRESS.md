@@ -2,6 +2,40 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-203 `scale run`, relocated data, report.json (Claude)
+
+- `scale run <fixture> [--report <path>] [--timeout-ms <n>]` (contract
+  `docs/contracts/run.md`) runs the fixture through `scale_worker`. The
+  outcome is PASS (entry returned), BLOCKED (unsupported loader feature) or
+  FAILED (malformed input, exception, timeout, unexpected exit). Guest
+  arguments are rejected. `--report` writes report.json v1 with the
+  subject's SHA-256 (BCrypt; `scale::sha256_hex`, verified against FIPS
+  vectors and `Get-FileHash`).
+- `scale::host::run_fixture` / `make_fixture_report`: worker report lines
+  become stages and diagnostic events. Exceptions inside the image get
+  `rva` and `module`. Worker error lines now carry
+  `stage=<read|inspect|map>`, and the mapped line carries `size`.
+- New fixtures: `fixture_reloc.exe` (two DIR64 pointers → 40 + 2),
+  `fixture_crash.exe` (null write) and `fixture_hang.exe` (spin). Globals
+  instead of stack locals keep crash/hang as leaf functions, without an
+  exception directory, which the loader still rejects.
+- Observed CLI results: ret42 and reloc → PASS, returned 42. crash →
+  FAILED, `host/entry/unhandled_exception exception_code=0xc0000005
+  rva=0x1007`. hang with `--timeout-ms 500` → FAILED after 507 ms.
+  `fixture_exit.exe` → BLOCKED, `loader/map/unsupported_directory`.
+- Native reference comparisons: reloc returns 42 both ways (worker: 2
+  relocations, non-zero delta). The crash is 0xC0000005 natively (exit code)
+  and in the worker (reported exception). The hang times out both ways.
+- Mutation check: with relocation disabled, `AppliesDir64Relocations`,
+  `RelocatedPointersMatchReference` and `cli_run_relocated` fail.
+  `fixture_reloc` crashes at RVA 0x1028. Restored afterwards.
+- Tests added: `unit_common.Sha256` (2), `unit_host.FixtureReport` (10),
+  `integration_native_fixture` (+4), and 11 CLI tests, including report.json
+  content checked by a dependent CTest fixture.
+- `ctest --preset full` and `release-full`: see the commit. Limitations: the
+  supervisor runs one fixture at a time, and stdout/stderr are captured but
+  not printed by `scale run`.
+
 ## 2026-11-24 — T-202 First native execution slice (Claude)
 
 - Decision 0002: custom mapping in the worker. The OS loader cannot meet

@@ -3,7 +3,7 @@
 # conflicts.
 
 scale_add_test(NAME unit_common
-    SOURCES common/checked_test.cpp common/byte_reader_test.cpp common/text_test.cpp
+    SOURCES common/checked_test.cpp common/byte_reader_test.cpp common/text_test.cpp common/sha256_test.cpp
     LIBS scale::common
     LABELS quick)
 
@@ -45,7 +45,7 @@ scale_add_command_test(NAME selftest_gtest_failure_fails_run
 
 # --- Host supervisor helpers (T-201) -------------------------------------------
 scale_add_test(NAME unit_host
-    SOURCES host/supervisor_unit_test.cpp
+    SOURCES host/supervisor_unit_test.cpp host/fixture_report_test.cpp
     LIBS scale::host
     LABELS quick)
 

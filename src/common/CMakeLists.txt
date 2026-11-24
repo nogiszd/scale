@@ -4,5 +4,7 @@ scale_add_library(common
     SOURCES
         error.cpp
         text.cpp
+        sha256.cpp
 )
 target_include_directories(scale_common PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/generated")
+target_link_libraries(scale_common PRIVATE bcrypt)

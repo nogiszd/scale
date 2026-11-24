@@ -1,6 +1,9 @@
 scale_add_library(host
     SOURCES
         supervisor.cpp
+        fixture_run.cpp
     DEPS
         scale::common
+        scale::diagnostics
+        scale::loader
 )
