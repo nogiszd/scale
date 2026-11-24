@@ -35,7 +35,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-707 | Shader ABI v1 contract: EXEC masks and control flow | Codex | DONE | T-704 | M7 |
 | T-708 | Decoder for ABI v1 (decode.h v3) | Codex | DONE | T-707 | M7 |
 | T-709 | IR + SPIR-V for ABI v1 | Codex | DONE | T-708 | M7 |
-| T-730 | Shader ABI v2 contract: memory and resources | Codex | READY | T-707 | M7 |
+| T-730 | Shader ABI v2 contract: memory and resources | Codex | REVIEW | T-707 | M7 |
 | T-731 | Decoder and test-case fields for ABI v2 | Codex | WAITING | T-730 | M7 |
 | T-732 | IR + SPIR-V for ABI v2 | Codex | WAITING | T-731 | M7 |
 | T-733 | Reference interpreter for ABI v2 | Claude | WAITING | T-730, T-731 (interfaces) | M7 |

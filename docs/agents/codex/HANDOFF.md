@@ -9,11 +9,10 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
    task registry on `integration`.
 2. Use the existing Codex worktree. Start each task branch from the current
    `integration` after the coordinator's review checkpoint.
-3. Build with `-DSCALE_ENABLE_SHADER=ON`, for example
-   `cmake --preset debug -DSCALE_ENABLE_SHADER=ON`. `src/shader/CMakeLists.txt`
-   is yours to create. The root already adds it when the option is ON.
-4. Freeze `decode.h` and the ABI contract early. Claude's interpreter (T-711)
-   consumes them.
+3. Run `. .\scripts\vsenv.ps1`. Use `debug-all` and `release-all` for
+   shader and graphics builds.
+4. Freeze shader interfaces on `integration` before dependent work.
+   The independent interpreter consumes the decoder interface and ABI.
 
 ## Constraints
 
@@ -33,10 +32,74 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-706 — REVIEW (standalone shader CLI)
+### T-730 — ABI v2 memory and resources
 
-Review branch `codex/T-706-shader-cli`, based on `integration` at
-`2c829c9`. The approved root hook builds `scale-shader` with
+Branch `codex/T-730-shader-abi-v2` starts from `integration` at `d207823`.
+The contract fixes two raw MUBUF descriptors and a separate read-only
+constant resource at set 0, binding 2. It allows computed vector addresses,
+aligned immediate offsets, and ordinary SGPR scalar offsets. It rejects
+boundary crossings caused solely by `soffset` because AMD 70648's mode 3
+description reduces the bound and LLVM's raw intrinsic descriptions exclude
+the scalar addend from bounds checks. The interpreter also rejects
+duplicate in-range output destinations before dispatch.
+[ABI v2 contract](../../contracts/shader_abi.md#abi-v2--memory-and-resources)
+
+The scalar load uses the immediate `s_buffer_load_dword` form with the
+opaque `s[8:11]` resource. `s_waitcnt lgkmcnt(0)` settles pending SGPRs
+independently of the VMEM wait. The strict JSON case format adds the
+required 32-dword `constant_words` array. The worked example covers
+an in-range load at byte 124, zero reads, a dropped write, sentinel
+preservation, and an ambiguous boundary-crossing rejection.
+
+```powershell
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=OFF -DSCALE_ENABLE_GRAPHICS=OFF
+cmake --build --preset debug
+ctest --preset full --output-on-failure
+cmake --preset release -DSCALE_ENABLE_SHADER=OFF -DSCALE_ENABLE_GRAPHICS=OFF
+cmake --build --preset release
+ctest --preset release-full --output-on-failure
+$gtestSource = (Resolve-Path out/build/debug/_deps/googletest-src).Path
+cmake --preset debug-all "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=$gtestSource"
+cmake --build --preset debug-all
+ctest --preset full-all --output-on-failure
+cmake --preset release-all "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=$gtestSource"
+cmake --build --preset release-all
+ctest --preset release-full-all --output-on-failure
+ctest --preset gpu -V
+llvm-mc --version
+llvm-objdump --version
+# memory.s is the worked example's assembly block.
+$reviewDir = 'out/abi-v2-review'
+llvm-mc -triple=amdgcn -mcpu=gfx1030 -mattr=+wavefrontsize32 -show-encoding "$reviewDir/memory.s"
+llvm-mc -triple=amdgcn -mcpu=gfx1030 -mattr=+wavefrontsize32 -filetype=obj -o "$reviewDir/memory.o" "$reviewDir/memory.s"
+llvm-objdump --disassemble --mcpu=gfx1030 --mattr=+wavefrontsize32 "$reviewDir/memory.o"
+python out/abi-v2-review/check-example.py
+git diff --cached --check
+```
+
+- `full` and `release-full` passed 189/189 each. `full-all` and
+  `release-full-all` passed 334/334 each. `gpu` passed 14/14 on the
+  AMD Radeon RX 9070 XT (Vulkan 1.4.359, AMD proprietary driver
+  26.10.1, raw `0x008001a0`). Zero skips across the five runs.
+  The all-component builds reused the extracted GoogleTest 1.18.0 source
+  after checking the cached archive against the CMake pin.
+- LLVM 23.1.6 assembled and disassembled all 11 documented dwords
+  identically. Additional assembly probes covered MUBUF `offset:4092`,
+  `v255` addressing and `s105` as `soffset`, the scalar 0/124-byte
+  endpoints, and the encodings for excluded scalar and combined wait
+  forms. The zero-byte scalar immediate disassembles as `null`.
+- The scratch Python check extracted the example, compared all 11
+  dwords with both tools, and checked all 32 hand-derived output words
+  and the lane 29 crossing. Logs and scratch files are under ignored
+  `out/abi-v2-review/`. The GPU results cover existing ABI v0 and v1
+  cases. ABI v2 GPU readback is T-734.
+
+## Completed
+
+### T-706 — Standalone shader CLI
+
+Merged into `integration` at `acc5731`. The approved root hook builds `scale-shader` with
 `-DSCALE_ENABLE_SHADER=ON`. `decode` prints dword offsets, raw words,
 operands and resolved branch targets from JSON cases or inline dwords.
 `compile` uses `lower_ir` for ABI v0 and `lower_ir_v1` with the case's
@@ -72,8 +135,6 @@ cmake --build out/build/t706-standalone --target scale-shader
   the two selected external validation tests reported Skipped.
 - The standalone build and inline decode passed with graphics and tests
   disabled. Linux execution remains unverified.
-
-## Completed
 
 ### T-709 — ABI v1 IR and SPIR-V
 
@@ -474,9 +535,10 @@ git diff --cached --check
 
 ## Next
 
-When next editing the shader ABI contract, update its instruction syntax
-citations to the pinned LLVM 23.x documentation.
+After coordinator approval of T-730, start T-731 with separate
+`decode.h` v4 and `test_case.h` v2 interface steps. T-732 follows T-731.
 
 ## Requests to coordinator
 
-- Review and merge T-706.
+- Review the T-730 synthetic bounds rules and resource layout before
+  dependent work starts.
