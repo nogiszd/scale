@@ -11,6 +11,7 @@
 #include <format>
 #include <fstream>
 #include <iomanip>
+#include <map>
 #include <span>
 #include <sstream>
 #include <string>
@@ -21,6 +22,7 @@
 namespace {
 
 using namespace scale::shader;
+using Labels = std::map<std::int64_t, std::string>;  // Dword offset to LLVM symbol.
 
 // Test program words from the T-704 ABI contract. LLVM independently assembles
 // and disassembles tests/shader/add_lane_to_input.s.
@@ -43,6 +45,8 @@ std::string operand_text(const Operand& operand) {
     switch (operand.kind) {
     case OperandKind::sgpr: return std::format("s{}", operand.value);
     case OperandKind::vgpr: return std::format("v{}", operand.value);
+    case OperandKind::vcc_lo: return "vcc_lo";
+    case OperandKind::exec_lo: return "exec_lo";
     case OperandKind::inline_constant: {
         if (operand.encoded < 240) {
             return std::to_string(std::bit_cast<std::int32_t>(operand.value));
@@ -80,9 +84,25 @@ std::string alu_text(const DecodedInstruction& instruction, std::string_view mne
     return text;
 }
 
-std::string instruction_text(const DecodedInstruction& instruction) {
+std::string compare_text(const DecodedInstruction& instruction, std::string_view mnemonic) {
+    EXPECT_EQ(instruction.encoding, Encoding::vopc);
+    const auto& operands = std::get<CompareOperands>(instruction.operands);
+    return std::format("{}_e32 vcc_lo, {}, {}", mnemonic,
+                       operand_text(operands.sources[0]), operand_text(operands.sources[1]));
+}
+
+std::string branch_text(const DecodedInstruction& instruction, std::string_view mnemonic, const Labels& labels) {
+    EXPECT_EQ(instruction.encoding, Encoding::sopp);
+    const auto& operands = std::get<BranchOperands>(instruction.operands);
+    const auto target = labels.find(operands.target_dword);
+    if (target == labels.end()) return std::format("{} <unknown target dword {}>", mnemonic, operands.target_dword);
+    return std::format("{} {}", mnemonic, target->second);
+}
+
+std::string instruction_text(const DecodedInstruction& instruction, const Labels& labels) {
     switch (instruction.opcode) {
     case Opcode::s_mov_b32: return alu_text(instruction, "s_mov_b32", Encoding::sop1);
+    case Opcode::s_and_saveexec_b32: return alu_text(instruction, "s_and_saveexec_b32", Encoding::sop1);
     case Opcode::s_add_u32: return alu_text(instruction, "s_add_u32", Encoding::sop2);
     case Opcode::s_movk_i32: return alu_text(instruction, "s_movk_i32", Encoding::sopk);
     case Opcode::v_mov_b32: return alu_text(instruction, "v_mov_b32", Encoding::vop1);
@@ -90,6 +110,12 @@ std::string instruction_text(const DecodedInstruction& instruction) {
     case Opcode::v_mul_f32: return alu_text(instruction, "v_mul_f32", Encoding::vop2);
     case Opcode::v_add_nc_u32: return alu_text(instruction, "v_add_nc_u32", Encoding::vop2);
     case Opcode::v_mul_lo_u32: return alu_text(instruction, "v_mul_lo_u32", Encoding::vop3);
+    case Opcode::v_cmp_eq_u32: return compare_text(instruction, "v_cmp_eq_u32");
+    case Opcode::v_cmp_lt_u32: return compare_text(instruction, "v_cmp_lt_u32");
+    case Opcode::s_branch: return branch_text(instruction, "s_branch", labels);
+    case Opcode::s_cbranch_scc0: return branch_text(instruction, "s_cbranch_scc0", labels);
+    case Opcode::s_cbranch_scc1: return branch_text(instruction, "s_cbranch_scc1", labels);
+    case Opcode::s_cbranch_execz: return branch_text(instruction, "s_cbranch_execz", labels);
     case Opcode::buffer_load_dword:
     case Opcode::buffer_store_dword: {
         const auto& buffer = std::get<BufferOperands>(instruction.operands);
@@ -144,9 +170,20 @@ void expect_disassembly(std::string_view test_program, std::size_t instruction_c
     const auto disassembly = output.str();
 
     std::istringstream listing(disassembly);
+    Labels labels;
     std::vector<ReferenceInstruction> reference;
     std::vector<std::uint32_t> words;
     for (std::string line; std::getline(listing, line);) {
+        // LLVM prints branch operands as symbols when the target has a label.
+        if (const auto label = line.find(" <"); label != std::string::npos && line.ends_with(">:")) {
+            std::istringstream address(line.substr(0, label));
+            std::uint64_t bytes{};
+            ASSERT_TRUE(static_cast<bool>(address >> std::hex >> bytes)) << line;
+            ASSERT_EQ(bytes % sizeof(std::uint32_t), 0u) << line;
+            labels.emplace(static_cast<std::int64_t>(bytes / sizeof(std::uint32_t)),
+                           line.substr(label + 2, line.size() - label - 4));
+            continue;
+        }
         const auto comment = line.find("//");
         if (comment == std::string::npos) continue;
         SCOPED_TRACE(line);
@@ -177,7 +214,7 @@ void expect_disassembly(std::string_view test_program, std::size_t instruction_c
         const auto& expected = reference[i];
         const auto& instruction = (*decoded)[i];
         SCOPED_TRACE(std::format("{} at 0x{:x}", test_program, expected.address));
-        EXPECT_EQ(without_whitespace(instruction_text(instruction)), expected.text);
+        EXPECT_EQ(without_whitespace(instruction_text(instruction, labels)), expected.text);
         EXPECT_EQ(instruction.dword_offset * sizeof(std::uint32_t), expected.address);
         ASSERT_EQ(instruction.word_count, expected.words.size());
         const auto decoded_words = std::span(instruction.raw_words).first(instruction.word_count);
@@ -191,6 +228,10 @@ TEST(ShaderLlvm, T704ExampleAgreesWithDisassembly) {
 
 TEST(ShaderLlvm, FullSubsetAgreesWithDisassembly) {
     expect_disassembly("decoder_subset", 33);
+}
+
+TEST(ShaderLlvm, AbiV1SubsetAgreesWithDisassembly) {
+    expect_disassembly("decoder_v1_subset", 28);
 }
 
 }  // namespace

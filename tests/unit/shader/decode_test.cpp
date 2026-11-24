@@ -59,6 +59,22 @@ void PrintTo(const AluVector& vector, std::ostream* output) {
 constexpr AluVector kAluVectors[]{
     {"Sop1MovLiteral", Encoding::sop1, Opcode::s_mov_b32, {0xbee903ff, 0x12345678}, 2,
      {sgpr(105), {literal(0x12345678)}, 1}},  // s_mov_b32 s105, 0x12345678
+    {"Sop1SaveExecSgpr", Encoding::sop1, Opcode::s_and_saveexec_b32, {0xbe893c08}, 1,
+     {sgpr(9), {sgpr(8)}, 1}},
+    {"Sop1SaveExecVccLo", Encoding::sop1, Opcode::s_and_saveexec_b32, {0xbee93c6a}, 1,
+     {sgpr(105), {Operand{OperandKind::vcc_lo, 106, 106}}, 1}},
+    {"Sop1SaveExecInline", Encoding::sop1, Opcode::s_and_saveexec_b32, {0xbe893cc1}, 1,
+     {sgpr(9), {inline_constant(193, 0xffffffff)}, 1}},
+    {"Sop1SaveExecLiteral", Encoding::sop1, Opcode::s_and_saveexec_b32, {0xbe893cff, 0x12345678}, 2,
+     {sgpr(9), {literal(0x12345678)}, 1}},
+    {"Sop1RestoreExecSgpr", Encoding::sop1, Opcode::s_mov_b32, {0xbefe0369}, 1,
+     {Operand{OperandKind::exec_lo, 126, 126}, {sgpr(105)}, 1}},
+    {"Sop1RestoreExecVccLo", Encoding::sop1, Opcode::s_mov_b32, {0xbefe036a}, 1,
+     {Operand{OperandKind::exec_lo, 126, 126}, {Operand{OperandKind::vcc_lo, 106, 106}}, 1}},
+    {"Sop1RestoreExecInline", Encoding::sop1, Opcode::s_mov_b32, {0xbefe03c1}, 1,
+     {Operand{OperandKind::exec_lo, 126, 126}, {inline_constant(193, 0xffffffff)}, 1}},
+    {"Sop1RestoreExecLiteral", Encoding::sop1, Opcode::s_mov_b32, {0xbefe03ff, 0x87654321}, 2,
+     {Operand{OperandKind::exec_lo, 126, 126}, {literal(0x87654321)}, 1}},
     {"Sop2AddInline", Encoding::sop2, Opcode::s_add_u32, {0x8013d069}, 1,
      {sgpr(19), {sgpr(105), inline_constant(208, 0xfffffff0)}, 2}},  // s_add_u32 s19, s105, -16
     {"SopkSignedImmediate", Encoding::sopk, Opcode::s_movk_i32, {0xb0118000}, 1,
@@ -109,6 +125,82 @@ TEST_P(AluDecode, DecodesHandEncodedOperands) {
 
 INSTANTIATE_TEST_SUITE_P(Gfx1030, AluDecode, testing::ValuesIn(kAluVectors),
                         [](const testing::TestParamInfo<AluVector>& info) { return info.param.name; });
+
+TEST(Decoder, DecodesVopcSourceFields) {
+    // RDNA 2 ISA reference section 12.9. VSRC1 = 255 is v255.
+    constexpr std::uint32_t words[]{0x7d85fe69, 0x7d83ff00, 0x7d8404c0, 0x7d83feff, 0xfedcba98, 0xbf810000};
+    constexpr std::array cases{
+        CompareOperands{{sgpr(105), vgpr(255, 255)}},
+        CompareOperands{{vgpr(256, 0), vgpr(255, 255)}},
+        CompareOperands{{inline_constant(192, 64), vgpr(2, 2)}},
+        CompareOperands{{literal(0xfedcba98), vgpr(255, 255)}},
+    };
+    constexpr std::array opcodes{Opcode::v_cmp_eq_u32, Opcode::v_cmp_lt_u32,
+                                 Opcode::v_cmp_eq_u32, Opcode::v_cmp_lt_u32};
+    const auto result = decode(code_bytes(words));
+    ASSERT_TRUE(result.has_value()) << result.error().to_string();
+    ASSERT_EQ(result->size(), cases.size() + 1);
+    for (std::size_t i = 0; i < cases.size(); ++i) {
+        SCOPED_TRACE(i);
+        const auto& instruction = (*result)[i];
+        EXPECT_EQ(instruction.encoding, Encoding::vopc);
+        EXPECT_EQ(instruction.opcode, opcodes[i]);
+        EXPECT_EQ(instruction.dword_offset, i);
+        const auto* operands = std::get_if<CompareOperands>(&instruction.operands);
+        ASSERT_NE(operands, nullptr);
+        expect_operand(operands->sources[0], cases[i].sources[0]);
+        expect_operand(operands->sources[1], cases[i].sources[1]);
+        EXPECT_EQ(instruction.raw_words[0], words[i]);
+    }
+    EXPECT_EQ((*result)[0].word_count, 1);
+    EXPECT_EQ((*result)[1].word_count, 1);
+    EXPECT_EQ((*result)[2].word_count, 1);
+    EXPECT_EQ((*result)[3].word_count, 2);
+    EXPECT_EQ((*result)[3].raw_words[1], 0xfedcba98);
+    EXPECT_EQ(result->back().opcode, Opcode::s_endpgm);
+    EXPECT_EQ(result->back().dword_offset, 5u);
+}
+
+TEST(Decoder, DecodesSignedSoppDisplacements) {
+    // RDNA 2 ISA reference sections 12.5 and 13.1.5.
+    constexpr std::uint32_t words[]{
+        0xbf840003, 0xbf850000, 0xbf880001, 0xbf82fffd, 0xbf828000, 0xbf827fff,
+    };
+    constexpr std::array opcodes{Opcode::s_cbranch_scc0, Opcode::s_cbranch_scc1, Opcode::s_cbranch_execz,
+                                 Opcode::s_branch, Opcode::s_branch, Opcode::s_branch};
+    constexpr std::array expected{
+        BranchOperands{3, 4}, BranchOperands{0, 2}, BranchOperands{1, 4},
+        BranchOperands{0xfffd, 1}, BranchOperands{0x8000, -32763}, BranchOperands{0x7fff, 32773},
+    };
+    const auto result = decode(code_bytes(words));
+    ASSERT_TRUE(result.has_value()) << result.error().to_string();
+    ASSERT_EQ(result->size(), expected.size());
+    for (std::size_t i = 0; i < expected.size(); ++i) {
+        SCOPED_TRACE(i);
+        const auto& instruction = (*result)[i];
+        EXPECT_EQ(instruction.encoding, Encoding::sopp);
+        EXPECT_EQ(instruction.opcode, opcodes[i]);
+        EXPECT_EQ(instruction.dword_offset, i);
+        EXPECT_EQ(instruction.raw_words[0], words[i]);
+        EXPECT_EQ(instruction.word_count, 1);
+        const auto* operands = std::get_if<BranchOperands>(&instruction.operands);
+        ASSERT_NE(operands, nullptr);
+        EXPECT_EQ(operands->simm16, expected[i].simm16);
+        EXPECT_EQ(operands->target_dword, expected[i].target_dword);
+    }
+}
+
+TEST(Decoder, PreservesBranchTargetInLiteralDword) {
+    constexpr std::uint32_t words[]{0xbf820001, 0xbe8803ff, 0x12345678, 0xbf810000};
+    const auto result = decode(code_bytes(words));
+    ASSERT_TRUE(result.has_value()) << result.error().to_string();
+    ASSERT_EQ(result->size(), 3u);
+    const auto* branch = std::get_if<BranchOperands>(&result->front().operands);
+    ASSERT_NE(branch, nullptr);
+    EXPECT_EQ(branch->target_dword, 2);
+    EXPECT_EQ((*result)[1].dword_offset, 1u);
+    EXPECT_EQ((*result)[2].dword_offset, 3u);
+}
 
 TEST(Decoder, ReadsOneLiteralForBothSourcesAndContinuesPastEndpgm) {
     constexpr std::uint32_t words[]{
@@ -229,8 +321,35 @@ TEST(DecoderReject, TruncatedEncoding) {
 
 TEST(DecoderReject, UnsupportedEncoding) {
     expect_error({0xbf810000, 0xffffffff}, "unsupported_encoding");  // Failure after endpgm.
-    expect_error({0xbf820000}, "unsupported_encoding");  // s_branch
+    expect_error({0xbf890000}, "unsupported_encoding");  // s_cbranch_execnz
     expect_error({0xe0341000, 0x80000201}, "unsupported_encoding");  // buffer_load_dwordx2
+}
+
+TEST(DecoderReject, TruncatedV1Extensions) {
+    expect_error({0x7d8406ff}, "truncated_encoding");  // VOPC literal.
+    expect_error({0x7d8402f9}, "truncated_encoding");  // VOPC SDWA word.
+    expect_error({0xbe893cff}, "truncated_encoding");  // Save mask literal.
+    expect_error({0xbefe03ff}, "truncated_encoding");  // Restore mask literal.
+}
+
+TEST(DecoderReject, UnsupportedCompareEncodings) {
+    expect_error({0x7d8a0300}, "unsupported_encoding");  // v_cmp_ne_u32_e32
+    expect_error({0xd4c2006a, 0x02020300}, "unsupported_encoding");  // v_cmp_eq_u32_e64
+}
+
+TEST(DecoderReject, UnsupportedMaskRegisterOperands) {
+    expect_error({0xbe883c7e}, "unsupported_operand");  // Save mask takes vcc_lo or an ordinary source.
+    expect_error({0xbefe3c08}, "unsupported_operand");  // Save destination must be an SGPR.
+    expect_error({0xbefe036b}, "unsupported_operand");  // vcc_hi source.
+    expect_error({0xbeff036a}, "unsupported_operand");  // exec_hi destination.
+    expect_error({0xbefe037e}, "unsupported_operand");  // exec_lo as source.
+    expect_error({0xbe88036a}, "unsupported_operand");  // vcc_lo into an ordinary move destination.
+    expect_error({0x7d84026a}, "unsupported_operand");  // vcc_lo cannot source VOPC.
+    expect_error({0xe0301000, 0x6a000201}, "unsupported_operand");  // vcc_lo cannot source MUBUF.
+}
+
+TEST(DecoderReject, UnsupportedCompareModifier) {
+    expect_error({0x7d8402f9, 0x06060000}, "unsupported_modifier");  // v_cmp_eq_u32_sdwa
 }
 
 TEST(DecoderReject, UnsupportedOperand) {
