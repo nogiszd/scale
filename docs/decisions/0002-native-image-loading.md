@@ -12,8 +12,8 @@ Options considered:
 
 1. **OS loader** (`CreateProcess` on the image, or `LoadLibraryExW`). The OS
    resolves every import itself, through the standard DLL search order, before
-   any Scale code can intervene.
-2. **Custom mapping** in the worker. Scale copies headers and sections into
+   any SCALE code can intervene.
+2. **Custom mapping** in the worker. SCALE copies headers and sections into
    private memory, applies base relocations, sets page protections and
    resolves imports itself.
 

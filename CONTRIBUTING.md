@@ -1,6 +1,6 @@
-# Contributing to Scale
+# Contributing to SCALE
 
-Scale is developed through a small, repeatable pipeline: a shared task
+SCALE is developed through a small, repeatable pipeline: a shared task
 registry, one branch per task, explicit ownership of files, test gates, and a
 single integrator who merges. The same pipeline works for people and for
 coding agents (Claude Code, Codex, or your own), and for any mix of them.
@@ -149,7 +149,7 @@ The coordinator does the following for every task:
 Any coding agent can take part. Give it repository access through its own
 worktree and a first prompt like this:
 
-> You are the `<name>` agent for Scale. Read AGENTS.md, CONTRIBUTING.md,
+> You are the `<name>` agent for SCALE. Read AGENTS.md, CONTRIBUTING.md,
 > docs/MULTI_AGENT.md, docs/TASKS.md, docs/architecture.md, the relevant
 > docs/contracts/ files and docs/agents/<name>/HANDOFF.md. You work in your
 > own worktree on branch `<name>/<task-id>-<slug>`. Do only the tasks assigned

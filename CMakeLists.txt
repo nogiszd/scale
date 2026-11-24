@@ -6,10 +6,10 @@ project(scale
     LANGUAGES CXX)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-    message(FATAL_ERROR "Scale targets Windows x64 only (system: ${CMAKE_SYSTEM_NAME}, pointer size: ${CMAKE_SIZEOF_VOID_P}).")
+    message(FATAL_ERROR "SCALE targets Windows x64 only (system: ${CMAKE_SYSTEM_NAME}, pointer size: ${CMAKE_SIZEOF_VOID_P}).")
 endif()
 if(NOT MSVC)
-    message(FATAL_ERROR "Scale requires the MSVC toolchain. Configure from a Developer PowerShell or run scripts/vsenv.ps1 first.")
+    message(FATAL_ERROR "SCALE requires the MSVC toolchain. Configure from a Developer PowerShell or run scripts/vsenv.ps1 first.")
 endif()
 
 set(CMAKE_CXX_STANDARD 23)

@@ -178,7 +178,7 @@ void report_error(std::string_view stage, const scale::Error& e) {
     report_line("error stage=" + std::string(stage) + " component=" + e.component + " code=" + e.code + " message=" + e.message);
 }
 
-// Maps a trusted test executable with the Scale loader and calls its entry
+// Maps a trusted test executable with the SCALE loader and calls its entry
 // (contract: int test_entry(void)). Reports each stage; the process exit
 // code is the entry's return value. Loader failures exit with
 // kWorkerLoadFailed and an `error` report line; the entry is never reached.

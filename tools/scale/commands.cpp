@@ -39,14 +39,14 @@ int cmd_help(Args args);
 // file) and clear the task id. Keep entries sorted as listed in README.md.
 constexpr std::array kCommands = {
     Command{"help", "help", "Show available commands", "", &cmd_help},
-    Command{"version", "version", "Print the Scale version", "", &cmd_version},
+    Command{"version", "version", "Print the SCALE version", "", &cmd_version},
     Command{"inspect", "inspect <file> [--json]", "Inspect a PE32+ image (read-only)", "", &cmd_inspect},
     Command{"run", "run <executable> [--report <path>]", "Execute a trusted test executable in a worker process",
             "", &cmd_run},
 };
 
 int cmd_help(Args) {
-    std::string text = std::format("scale {} - Scarlett Compatibility and Layered Execution\n\n"
+    std::string text = std::format("SCALE {} - Scarlett Compatibility and Layered Execution\n\n"
                                    "usage: scale <command> [arguments]\n\ncommands:\n",
                                    kVersionString);
     for (const Command& c : kCommands) {

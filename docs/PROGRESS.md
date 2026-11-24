@@ -2,6 +2,14 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — Project name written as SCALE (Claude)
+
+The project name is now written **SCALE** in prose, documentation, comments
+and user-visible messages (`SCALE component: …`, `scale help` header).
+Identifiers stay lowercase: the `scale` command and `scale version` output,
+`tool.name = "scale"` in reports, the `scale::` namespace, `scale_*` targets
+and file names. Codex-owned shader documents will follow in Codex's branch.
+
 ## 2026-11-24 — T-204 Unresolved import diagnostics — M2 complete (Claude)
 
 - `scale::runtime::resolve_imports` (`src/runtime`) applies the resolver policy
