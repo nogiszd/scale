@@ -21,8 +21,8 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-103 | `scale inspect` command | Claude | DONE | T-101 | M1 |
 | T-201 | Worker process supervisor | Claude | DONE | T-000 | M2 |
 | T-202 | First native fixture, reference run, loader decision | Claude | DONE | T-101, T-201 | M2 |
-| T-203 | `scale run`, relocated-data fixture, report.json | Claude | READY | T-202 | M2 |
-| T-204 | Missing synthetic import diagnostic | Claude | WAITING | T-203 | M2/M3 |
+| T-203 | `scale run`, relocated-data fixture, report.json | Claude | DONE | T-202 | M2 |
+| T-204 | Missing synthetic import diagnostic | Claude | READY | T-203 | M2/M3 |
 | T-601 | Vulkan compute plumbing harness | Claude | READY | T-001 | M6 |
 | T-704 | Synthetic shader ABI v0 contract | Codex | DONE | T-000 | M7 |
 | T-701 | gfx1030 decoder (first subset) | Codex | IN_PROGRESS (interface frozen at c4ce6f3) | T-001 | M7 |

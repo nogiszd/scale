@@ -170,8 +170,8 @@ int self_test(const std::vector<std::string>& a) {
     return usage();
 }
 
-void report_error(const scale::Error& e) {
-    report_line("error component=" + e.component + " code=" + e.code + " message=" + e.message);
+void report_error(std::string_view stage, const scale::Error& e) {
+    report_line("error stage=" + std::string(stage) + " component=" + e.component + " code=" + e.code + " message=" + e.message);
 }
 
 // Maps a trusted fixture with the fixture loader and calls its entry
@@ -182,27 +182,27 @@ int run_fixture(const std::string& path_utf8) {
     report_line("stage start");
     const auto wide = scale::to_wide(path_utf8);
     if (!wide) {
-        report_error(wide.error());
+        report_error("read", wide.error());
         return kWorkerLoadFailed;
     }
     const auto bytes = scale::loader::read_file(std::filesystem::path(*wide));
     if (!bytes) {
-        report_error(bytes.error());
+        report_error("read", bytes.error());
         return kWorkerLoadFailed;
     }
     const scale::ByteView view(*bytes);
     const auto image = scale::loader::inspect_pe(view);
     if (!image) {
-        report_error(image.error());
+        report_error("inspect", image.error());
         return kWorkerLoadFailed;
     }
     report_line("stage inspected");
     auto mapped = scale::loader::map_image(view, *image);
     if (!mapped) {
-        report_error(mapped.error());
+        report_error("map", mapped.error());
         return kWorkerLoadFailed;
     }
-    report_line(std::format("stage mapped base=0x{:x} delta={} relocations={}", mapped->base(),
+    report_line(std::format("stage mapped base=0x{:x} size=0x{:x} delta={} relocations={}", mapped->base(), mapped->size(),
                             mapped->relocation_delta(), mapped->relocations_applied()));
 
     using Entry = int (*)();
