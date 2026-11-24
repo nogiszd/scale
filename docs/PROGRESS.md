@@ -2,6 +2,30 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-102 PE fixtures and dumpbin comparison (Claude)
+
+- `tests/fixtures/pe`: three no-CRT fixtures with an explicit `/ENTRY`,
+  `/DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT`, `/GS` kept and `/RTC1` removed:
+  `fixture_exit.exe` (KERNEL32!ExitProcess by name, plus a DIR64 relocation
+  from an absolute data pointer), `fixture_lib.dll` (exports FixtureAdd
+  @7 NONAME and FixtureMul by name), and `fixture_ordinal.exe` (imports
+  fixture_lib by ordinal 7 and by name).
+- `integration_pe_dumpbin` (6 cases, label integration): it parses
+  `dumpbin /headers /imports /relocations` (MSVC 14.52.37025 dumpbin) on its
+  own and compares machine, characteristics, entry point, image base,
+  alignments, image/header sizes, subsystem, DLL characteristics, all 16
+  directories, every section field, imports (module, IAT VA, names with
+  hints, ordinals) and relocation block/type counts with the inspector. It
+  also checks each fixture's documented contract. If dumpbin is missing, the
+  comparison is SKIPPED.
+- Observed: when a `.def` export has an explicit ordinal and no NONAME, the
+  import library makes importers bind by ordinal. `FixtureMul` therefore has
+  no ordinal in the `.def`.
+- Observed: dumpbin lists a module's ordinal imports in a different order
+  than the import table, so entries are compared as sorted sets.
+- `ctest --preset full` and `release-full`: 89/89 passed, zero warnings.
+- The fixtures are inspected only. Running them is T-202.
+
 ## 2026-11-24 — T-101 PE32+ inspector library (Claude)
 
 - `scale::loader` (`src/loader`): `inspect_pe(ByteView)` and
