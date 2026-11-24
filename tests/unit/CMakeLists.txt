@@ -42,3 +42,9 @@ scale_add_command_test(NAME selftest_gtest_failure_fails_run
     EXPECT_EXIT 1
     EXPECT_OUTPUT "\\[  FAILED  \\] Probe\\.Failing"
     LABELS quick)
+
+# --- Host supervisor helpers (T-201) -------------------------------------------
+scale_add_test(NAME unit_host
+    SOURCES host/supervisor_unit_test.cpp
+    LIBS scale::host
+    LABELS quick)

@@ -2,6 +2,38 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-201 Worker process supervisor (Claude)
+
+- `scale::host::run_supervised` (`src/host`) creates the worker directly in a
+  job object (`PROC_THREAD_ATTRIBUTE_JOB_LIST`) with kill-on-close, a
+  committed-memory limit and `DIE_ON_UNHANDLED_EXCEPTION` (no WER UI). It
+  inherits only an explicit handle list (`PROC_THREAD_ATTRIBUTE_HANDLE_LIST`):
+  stdin = NUL, stdout/stderr pipes and a report pipe. stdout/stderr are
+  captured up to a limit (the rest is drained and discarded). A wall-clock
+  timeout kills the job. The job is also terminated after the worker exits,
+  which kills any descendants.
+- Report channel: the worker gets `--scale-report-handle=<hex>`. Its
+  top-level exception filter writes `exception code=0x... address=0x...` to
+  that pipe and terminates with the exception code. Guest stdout/stderr
+  cannot fake a crash report.
+- `tools/scale_worker`: self-test modes (exit, access-violation, hang, flood,
+  echo-args, read-stdin, alloc, report, spawn-orphan). Guest execution is
+  refused with "not implemented yet (task T-202)".
+- Tests: `unit_host` (4, quick): command-line quoting round-trips through
+  `CommandLineToArgvW` (spaces, quotes, trailing backslashes, empty, UNC,
+  non-ASCII) and report-line parsing. `integration_host_supervisor` (13):
+  exit code; access violation reported as 0xC0000005 with an address (20 ms,
+  no dialog); a 500 ms timeout (0.51 s observed); 4 MiB per stream truncated
+  to 64 KiB without blocking; exact arguments; empty stdin; a 64 MiB job
+  limit rejecting a 256 MiB commit; report lines; a fake crash line on
+  stdout ignored; descendant killed; relative and missing executables rejected.
+- `ctest --preset full` and `release-full`: 115/115 passed, zero warnings.
+  `scale_worker.exe` has Dynamic base, NX, CFG and CET.
+- Limitations: the worker uses the caller's unelevated token (no restricted
+  token or AppContainer). It is not a security boundary. Crashes that bypass
+  the filter (fail-fast, stack overflow) appear only as
+  `abnormal_exit_status`.
+
 ## 2026-11-24 — T-103 `scale inspect` — M1 complete (Claude)
 
 - `scale inspect <file> [--json]` (`tools/scale/inspect_command.cpp`) prints a

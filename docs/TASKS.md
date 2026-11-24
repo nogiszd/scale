@@ -19,8 +19,8 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-101 | PE32+ inspector library | Claude | DONE | T-000 | M1 |
 | T-102 | PE fixture images + dumpbin comparison | Claude | DONE | T-101 | M1 |
 | T-103 | `scale inspect` command | Claude | DONE | T-101 | M1 |
-| T-201 | Worker process supervisor | Claude | READY | T-000 | M2 |
-| T-202 | First native fixture, reference run, loader decision | Claude | WAITING | T-101, T-201 | M2 |
+| T-201 | Worker process supervisor | Claude | DONE | T-000 | M2 |
+| T-202 | First native fixture, reference run, loader decision | Claude | READY | T-101, T-201 | M2 |
 | T-203 | `scale run`, relocated-data fixture, report.json | Claude | WAITING | T-202 | M2 |
 | T-204 | Missing synthetic import diagnostic | Claude | WAITING | T-203 | M2/M3 |
 | T-601 | Vulkan compute plumbing harness | Claude | READY | T-001 | M6 |

@@ -98,3 +98,13 @@ scale_add_command_test(NAME cli_inspect_rejects_unknown_option
     EXPECT_EXIT 2
     EXPECT_OUTPUT "unknown option '--verbose'"
     LABELS integration)
+
+# --- Worker supervision (T-201) -------------------------------------------------
+scale_add_test(NAME integration_host_supervisor
+    SOURCES host_supervisor_test.cpp
+    LIBS scale::host scale::common
+    LABELS integration
+    TIMEOUT 60)
+add_dependencies(integration_host_supervisor scale_worker)
+target_compile_definitions(integration_host_supervisor PRIVATE
+    "SCALE_WORKER_PATH=\"$<TARGET_FILE:scale_worker>\"")
