@@ -11,7 +11,7 @@
 | `src/runtime` | `scale::runtime` | loader, diagnostics | Claude | present (import resolution policy) |
 | `src/filesystem` | `scale::filesystem` | common | unassigned | planned (M4) |
 | `src/shader` | `scale::shader_decode`, `scale::shader_ir`, `scale::shader_spirv` | common, diagnostics | Codex | planned, `SCALE_ENABLE_SHADER` |
-| `src/shader_ref` | `scale::shader_ref` | shader_decode (public header only), common | Claude | planned, `SCALE_ENABLE_SHADER` |
+| `src/shader_ref` | `scale::shader_ref` | shader_decode (public header only), common | Claude | present (reference interpreter), `SCALE_ENABLE_SHADER` |
 | `src/graphics` | `scale::graphics` | common, diagnostics, Vulkan | Claude | planned, `SCALE_ENABLE_GRAPHICS` |
 | `tools/scale` | `scale` (exe) | everything above, host | Claude (registry); command owners own their file | present |
 | `tests/support` | `expect_command.cmake` (CLI checks); GoogleTest 1.18.0 via FetchContent | — | Claude | present |
