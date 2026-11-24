@@ -4,11 +4,10 @@
 
 #include <gtest/gtest.h>
 
-#include <windows.h>
-
 #include <atomic>
 #include <filesystem>
 #include <fstream>
+#include <random>
 #include <string>
 
 using namespace scale::loader;
@@ -209,29 +208,19 @@ TEST(PeInspect, ExceptionAndDelayImportDirectories) {
     EXPECT_EQ(directory_name(DirectoryIndex::delay_import_descriptor), "delay_import_descriptor");
 }
 
-TEST(PeInspect, RealSystemDll) {
-    // Read-only inspection of an MSVC-built system image; it is never loaded.
-    wchar_t dir[MAX_PATH];
-    const UINT len = ::GetSystemDirectoryW(dir, MAX_PATH);
-    ASSERT_GT(len, 0u);
-    ASSERT_LT(len, static_cast<UINT>(MAX_PATH));
-    const auto r = inspect_pe_file(std::filesystem::path(dir) / L"kernel32.dll");
-    ASSERT_TRUE(r.has_value()) << r.error().to_string();
-    EXPECT_EQ(r->machine, kMachineAmd64);
-    EXPECT_TRUE(r->is_dll());
-    EXPECT_TRUE(r->directory(DirectoryIndex::export_table).present());
-    EXPECT_FALSE(r->imports.empty());
-    EXPECT_TRUE(r->exceptions.has_value());
-    EXPECT_TRUE(r->relocations.has_value());
-}
-
 // ---- File access ------------------------------------------------------------------
 
 namespace {
+// Distinguishes concurrent test processes without OS calls.
+std::uint64_t unique_run_tag() {
+    static const std::uint64_t tag = std::random_device{}();
+    return tag;
+}
+
 std::filesystem::path temp_file(std::string_view tag) {
     static std::atomic<int> counter{0};
     return std::filesystem::temp_directory_path() /
-           std::format("scale_unit_loader_{}_{}_{}.bin", ::GetCurrentProcessId(), tag, counter++);
+           std::format("scale_unit_loader_{}_{}_{}.bin", unique_run_tag(), tag, counter++);
 }
 }  // namespace
 

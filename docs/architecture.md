@@ -4,7 +4,7 @@
 
 | Directory | CMake target | Depends on | Owner (current) | State |
 |---|---|---|---|---|
-| `src/common` | `scale::common` | Windows SDK | Claude | present |
+| `src/common` | `scale::common` | std only (portable) | Claude | present |
 | `src/diagnostics` | `scale::diagnostics` | common | Claude | present |
 | `src/loader` | `scale::loader` | common | Claude | present (inspector, image mapping) |
 | `src/host` | `scale::host` | loader, diagnostics | Claude | present (supervisor, run reports) |

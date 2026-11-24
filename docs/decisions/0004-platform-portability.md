@@ -19,9 +19,9 @@ Linux implementation can be added beside the Windows one later.
 | Component | Portability class | Notes |
 |---|---|---|
 | `scale::diagnostics` | portable | std only |
-| `scale::common` | portable API | `text.cpp` (UTF-16 conversion) and `sha256.cpp` (BCrypt) are Windows implementations to be split or replaced (T-801) |
+| `scale::common` | portable | strict UTF-8/wide conversion and FIPS 180-4 SHA-256 in standard C++ (T-801) |
 | `scale::loader` inspection (`pe_image`) | portable | parses bytes only |
-| `scale::loader` mapping (`image_map`) | OS-specific | `VirtualAlloc`/`VirtualProtect` → `mmap`/`mprotect` on Linux |
+| `scale::loader` mapping (`image_map_win32.cpp`) | OS-specific, built on Windows only | `VirtualAlloc`/`VirtualProtect` → `mmap`/`mprotect` on Linux |
 | `scale::runtime` resolver policy | portable logic | adapters may be OS-specific |
 | `scale::host`, `scale_worker` | OS-specific | job object, `CreateProcessW` and handle lists → process groups, rlimits, pidfd/pipes on Linux |
 | `scale::shader_*`, `scale::shader_ref`, `scale-shader` | portable | must never include OS headers |
@@ -58,3 +58,18 @@ Linux implementation can be added beside the Windows one later.
 - Follow-up tasks: T-801 (portable `common`, CMake platform gating, shared
   process helper for tests) and T-802 (Linux build/test environment and CI).
   T-802 can't be marked done without real Linux runs.
+
+## Status after T-801 (2026-11-24)
+
+- `common` is portable: no Win32 or BCrypt.
+- The root CMake gates on platform. Non-Windows 64-bit builds with GCC/Clang
+  configure only the portable components (common, diagnostics, loader
+  inspection, runtime policy, shader, shader_ref, graphics, unit tests) and
+  print an UNVERIFIED warning. The host, worker, `scale` CLI, image mapping,
+  test executables and integration tests are Windows-only.
+- `cmake/ScaleOptions.cmake` has a GCC/Clang hardening block (PIE, RELRO,
+  noexecstack, stack protector, FORTIFY_SOURCE, CET). It is unverified.
+- Tests start tools through `tests/support/run_tool.h` (Win32 and POSIX
+  implementations).
+- The CTest check `portable_components_have_no_os_headers` enforces rule 1.
+- Still open: Linux presets and real Linux runs (T-802).

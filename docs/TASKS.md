@@ -24,7 +24,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-203 | `scale run`, relocated-data test executable, report.json | Claude | DONE | T-202 | M2 |
 | T-204 | Missing synthetic import diagnostic | Claude | DONE | T-203 | M2/M3 |
 | T-601 | Vulkan compute plumbing harness | Claude | DONE | T-001 | M6 |
-| T-801 | Portability groundwork (decision 0004) | Claude | READY | T-000 | infra |
+| T-801 | Portability groundwork (decision 0004) | Claude | DONE | T-000 | infra |
 | T-802 | Linux build/test environment and CI | unassigned | BLOCKED (no Linux environment) | T-801 | infra |
 | T-704 | Synthetic shader ABI v0 contract | Codex | DONE | T-000 | M7 |
 | T-701 | gfx1030 decoder (first subset) | Codex | DONE | T-001 | M7 |
