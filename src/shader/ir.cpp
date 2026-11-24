@@ -1,5 +1,7 @@
 #include "scale/shader/ir.h"
 
+#include "ir_abi.h"
+
 #include <bitset>
 #include <format>
 #include <string_view>
@@ -8,29 +10,7 @@
 namespace scale::shader {
 namespace {
 
-constexpr std::uint8_t kWordBytes = 4;
-constexpr std::uint8_t kAddressVgpr = 1;
-constexpr std::uint8_t kInputSgprBase = 0;
-constexpr std::uint8_t kOutputSgprBase = 4;
-constexpr std::uint8_t kResourceSgprCount = 4;
-
-std::string_view opcode_name(Opcode opcode) {
-    switch (opcode) {
-    case Opcode::s_mov_b32: return "s_mov_b32";
-    case Opcode::s_add_u32: return "s_add_u32";
-    case Opcode::s_movk_i32: return "s_movk_i32";
-    case Opcode::s_endpgm: return "s_endpgm";
-    case Opcode::s_waitcnt: return "s_waitcnt";
-    case Opcode::v_mov_b32: return "v_mov_b32";
-    case Opcode::v_add_nc_u32: return "v_add_nc_u32";
-    case Opcode::v_mul_lo_u32: return "v_mul_lo_u32";
-    case Opcode::v_add_f32: return "v_add_f32";
-    case Opcode::v_mul_f32: return "v_mul_f32";
-    case Opcode::buffer_load_dword: return "buffer_load_dword";
-    case Opcode::buffer_store_dword: return "buffer_store_dword";
-    default: return "unknown opcode";
-    }
-}
+using namespace detail;
 
 class Lowerer {
 public:
@@ -187,10 +167,7 @@ private:
     Result<void> buffer(bool load) {
         const auto* operands = std::get_if<BufferOperands>(&current_->operands);
         if (!operands) return error("invalid_decoded_instruction", "expected MUBUF operands");
-        const auto required_resource = load ? kInputSgprBase : kOutputSgprBase;
-        if (operands->resource_sgpr_base != required_resource || operands->address_vgpr != kAddressVgpr ||
-                operands->immediate_offset_bytes != 0 || operands->scalar_offset_bytes.value != 0 ||
-                operands->scalar_offset_bytes.kind != OperandKind::inline_constant) {
+        if (!matches_buffer_abi(*operands, load)) {
             return error("unsupported_abi", "MUBUF must use the ABI resource tuple, v1 and zero offsets");
         }
         const auto byte_offset = *vgprs_[kAddressVgpr];
@@ -219,7 +196,7 @@ private:
     Result<void> wait() {
         const auto* counters = std::get_if<WaitCounters>(&current_->operands);
         if (!counters) return error("invalid_decoded_instruction", "expected wait counters");
-        if (counters->vmcnt != 0 || counters->expcnt != 7 || counters->lgkmcnt != 63) {
+        if (!matches_wait_abi(*counters)) {
             return error("unsupported_abi", "ABI v0 requires s_waitcnt vmcnt(0) with the other counters at their maximums");
         }
         pending_loads_.reset();

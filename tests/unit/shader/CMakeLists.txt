@@ -3,10 +3,10 @@ scale_add_test(NAME unit_shader_decode
     LIBS scale::shader_decode
     LABELS quick)
 
-# --- Shader IR v0 (T-702) ---------------------------------------------------
+# --- Shader IR (T-702, T-709) ------------------------------------------------
 scale_add_test(NAME unit_shader_ir
     SOURCES ir_test.cpp
-    LIBS scale::shader_ir
+    LIBS scale::shader_ir scale::shader_testcase
     LABELS quick)
 
 scale_add_test(NAME integration_shader_llvm
@@ -63,12 +63,12 @@ target_compile_definitions(integration_shader_llvm PRIVATE
 # --- Direct SPIR-V emission and validation (T-703) ----------------------------
 scale_add_test(NAME unit_shader_spirv
     SOURCES spirv_test.cpp
-    LIBS scale::shader_spirv
+    LIBS scale::shader_spirv scale::shader_testcase
     LABELS quick)
 
 scale_add_test(NAME integration_shader_spirv_val
     SOURCES spirv_val_test.cpp
-    LIBS scale::shader_spirv scale::test_tools
+    LIBS scale::shader_spirv scale::shader_testcase scale::test_tools
     LABELS integration)
 
 find_program(SCALE_SHADER_SPIRV_VAL spirv-val HINTS "$ENV{VULKAN_SDK}/Bin" NO_CACHE)
@@ -81,6 +81,11 @@ endif()
 target_compile_definitions(integration_shader_spirv_val PRIVATE
     "SCALE_SHADER_SPIRV_VAL=\"${SCALE_SHADER_SPIRV_VAL}\""
     "SCALE_SHADER_SPIRV_TEST_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\"")
+
+foreach(shader_test IN ITEMS unit_shader_ir unit_shader_spirv integration_shader_spirv_val)
+    target_compile_definitions(${shader_test} PRIVATE
+        "SCALE_SHADER_CASE_DIR=\"${PROJECT_SOURCE_DIR}/tests/shader/cases\"")
+endforeach()
 
 # --- Shader JSON test cases (T-705) -------------------------------------------
 scale_add_test(NAME unit_shader_testcase

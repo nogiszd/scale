@@ -3,7 +3,7 @@ scale_add_library(shader_decode
     DEPS scale::common)
 
 scale_add_library(shader_ir
-    SOURCES ir.cpp
+    SOURCES ir.cpp ir_v1.cpp
     DEPS scale::shader_decode)
 
 scale_add_library(shader_spirv

@@ -1,3 +1,4 @@
+#include "case_program.h"
 #include "scale/shader/ir.h"
 
 #include <gtest/gtest.h>
@@ -267,6 +268,87 @@ TEST(ShaderIrReject, ReportsMalformedDecodedOperands) {
     const auto bad_variant = lower_ir(*decoded);
     ASSERT_FALSE(bad_variant.has_value());
     EXPECT_EQ(bad_variant.error().code, "invalid_decoded_instruction");
+}
+
+TEST(ShaderIrV1, LowersT707ToGuardedOperationsAndUniformJumps) {
+    const auto shader_case = test::read_shader_case("t707_exec_ff_lanes_4_to_7");
+    ASSERT_TRUE(shader_case.has_value()) << shader_case.error().to_string();
+    ASSERT_TRUE(shader_case->v1);
+    const auto decoded = decode(scale::ByteView(std::as_bytes(std::span(shader_case->code_words))));
+    ASSERT_TRUE(decoded.has_value()) << decoded.error().to_string();
+    const auto ir = lower_ir_v1(*decoded, shader_case->v1->initial_exec);
+    ASSERT_TRUE(ir.has_value()) << ir.error().to_string();
+    EXPECT_EQ(ir->initial_exec(), 0xffu);
+    const auto blocks = ir->blocks();
+    ASSERT_EQ(blocks.size(), 3u);
+    EXPECT_EQ(blocks[0].dword_offset, 0u);
+    ASSERT_EQ(blocks[0].operations.size(), 2u);
+    const auto& compare = blocks[0].operations[0];
+    EXPECT_EQ(compare.opcode, IrV1Opcode::compare_lt);
+    EXPECT_EQ(compare.lanes, IrLanes::per_lane);
+    ASSERT_TRUE(compare.destination);
+    EXPECT_EQ(compare.destination->kind, IrV1RegisterKind::vcc);
+    const auto& save = blocks[0].operations[1];
+    EXPECT_EQ(save.opcode, IrV1Opcode::save_exec);
+    EXPECT_EQ(save.lanes, IrLanes::uniform);
+    ASSERT_TRUE(blocks[0].jump);
+    EXPECT_EQ(blocks[0].jump->condition, IrV1Condition::exec_zero);
+    EXPECT_EQ(blocks[0].jump->taken, 2u);
+    EXPECT_EQ(blocks[0].jump->fallthrough, 1u);
+    EXPECT_EQ(blocks[1].dword_offset, 3u);
+    ASSERT_TRUE(blocks[1].jump);
+    EXPECT_EQ(blocks[1].jump->condition, IrV1Condition::always);
+    EXPECT_EQ(blocks[1].jump->taken, 2u);
+    EXPECT_EQ(blocks[2].dword_offset, 7u);
+    ASSERT_EQ(blocks[2].operations.size(), 1u);
+    EXPECT_EQ(blocks[2].operations[0].opcode, IrV1Opcode::store_output);
+    EXPECT_EQ(blocks[2].operations[0].lanes, IrLanes::per_lane);
+    EXPECT_FALSE(blocks[2].jump);
+}
+
+void expect_v1_error(std::initializer_list<std::uint32_t> words, std::string_view code) {
+    const auto bytes = std::as_bytes(std::span(words.begin(), words.size()));
+    const auto decoded = decode(scale::ByteView(bytes));
+    ASSERT_TRUE(decoded.has_value()) << decoded.error().to_string();
+    const auto ir = lower_ir_v1(*decoded, 0);
+    ASSERT_FALSE(ir.has_value());
+    EXPECT_EQ(ir.error().component, "shader");
+    EXPECT_EQ(ir.error().code, code);
+}
+
+TEST(ShaderIrV1Reject, RejectsInvalidBranchTargets) {
+    for (const auto branch : {0xbf82ffffu, 0xbf82fffeu, 0xbf820001u, 0xbf820002u, 0xbf820010u}) {
+        // Respectively self, negative, second word of store, end, and beyond the stream.
+        SCOPED_TRACE(branch);
+        expect_v1_error({branch, kStore, kStoreV0Operands, kEnd}, "invalid_program");
+    }
+}
+
+TEST(ShaderIrV1Reject, RequiresOneStoreAndOneTerminalEnd) {
+    expect_v1_error({kEnd}, "invalid_program");
+    expect_v1_error({kStore, kStoreV0Operands}, "invalid_program");
+    expect_v1_error({kStore, kStoreV0Operands, kStore, kStoreV0Operands, kEnd}, "invalid_program");
+    expect_v1_error({kEnd, kStore, kStoreV0Operands, kEnd}, "invalid_program");
+}
+
+TEST(ShaderIrV1Reject, ChecksOperandsInUnreachableBlocks) {
+    constexpr std::uint32_t jump_over_one = 0xbf820001;
+    expect_v1_error({jump_over_one, 0xbf8c3f71, kStore, kStoreV0Operands, kEnd}, "unsupported_abi");
+    expect_v1_error({jump_over_one, 0x7e020280, kStore, kStoreV0Operands, kEnd}, "reserved_register");
+    expect_v1_error({jump_over_one, 0xbe800380, kStore, kStoreV0Operands, kEnd}, "reserved_register");
+    constexpr std::uint32_t jump_over_two = 0xbf820002;
+    expect_v1_error({jump_over_two, 0xe0301001, 0x80000201, kStore, kStoreV0Operands, kEnd}, "unsupported_abi");
+}
+
+TEST(ShaderIrV1Reject, RejectsInconsistentDecodedBranch) {
+    constexpr std::uint32_t words[]{0xbf820000, kStore, kStoreV0Operands, kEnd};
+    auto decoded = decode(scale::ByteView(std::as_bytes(std::span(words))));
+    ASSERT_TRUE(decoded.has_value()) << decoded.error().to_string();
+    std::get<BranchOperands>(decoded->front().operands).simm16 = 1;
+    const auto ir = lower_ir_v1(*decoded, 0);
+    ASSERT_FALSE(ir.has_value());
+    EXPECT_EQ(ir.error().code, "invalid_decoded_instruction");
+    EXPECT_NE(ir.error().message.find("s_branch"), std::string::npos);
 }
 
 }  // namespace
