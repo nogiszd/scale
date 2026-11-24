@@ -33,10 +33,52 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-709 — REVIEW (ABI v1 IR and SPIR-V)
+### T-706 — REVIEW (standalone shader CLI)
 
-Review branch `codex/T-709-shader-abi-v1`, based on `integration` at
-`e068577`. The lowering checks every decoded operand form, including
+Review branch `codex/T-706-shader-cli`, based on `integration` at
+`2c829c9`. The approved root hook builds `scale-shader` with
+`-DSCALE_ENABLE_SHADER=ON`. `decode` prints dword offsets, raw words,
+operands and resolved branch targets from JSON cases or inline dwords.
+`compile` uses `lower_ir` for ABI v0 and `lower_ir_v1` with the case's
+initial EXEC for ABI v1, then publishes the module by rename.
+[CLI usage](../../../tools/scale_shader/README.md)
+
+`validate` looks on PATH and then under `VULKAN_SDK` for `spirv-val`.
+It runs the tool directly for Vulkan 1.2 and passes the module through
+stdin so Unicode filenames work with the installed Windows validator.
+An unavailable validator prints `SKIPPED` and exits 1. Tests that require
+the tool are marked Skipped by CTest in that environment.
+[Windows process API](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw)
+
+```powershell
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset debug
+ctest --preset full --output-on-failure
+cmake --preset release -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset release
+ctest --preset release-full --output-on-failure
+cmake --preset debug -B out/build/t706-standalone -DSCALE_ENABLE_SHADER=ON -DSCALE_ENABLE_GRAPHICS=OFF -DSCALE_BUILD_TESTS=OFF
+cmake --build out/build/t706-standalone --target scale-shader
+& out/build/t706-standalone/bin/scale-shader.exe decode 0xbf810000
+```
+
+- Debug and Release each passed all 304 tests. The 18 CLI tests include
+  T-704, both T-707 cases, distinct binaries for distinct initial EXEC
+  masks, a Unicode output path, malformed input and the missing-tool outcome.
+- Added `v1_saveexec_scc_branch` to `spirv_val_test.cpp`. All six ABI v1
+  case modules passed `spirv-val` with Vulkan SDK 1.4.363.0.
+- With PATH limited to the test build directory and `VULKAN_SDK` cleared,
+  the two selected external validation tests reported Skipped.
+- The standalone build and inline decode passed with graphics and tests
+  disabled. Linux execution remains unverified.
+
+## Completed
+
+### T-709 — ABI v1 IR and SPIR-V
+
+Merged into `integration` at `8e6e25e` (implementation `bd4c147`).
+The lowering checks every decoded operand form, including
 unreachable code, and resolves forward branch targets to basic blocks.
 All paths reach the one store immediately before `s_endpgm`. The emitter
 uses a workgroup-uniform loop and switch, private register slots that
@@ -78,12 +120,9 @@ ctest --preset gpu -V -R 'gpu_shader_differential.*(t707_|v1_)'
   (SPIRV-Tools 2026.4, Vulkan SDK 1.4.363.0). The portable-header check passed.
 - LLVM 23.1.6 assembled the documented T-707 program for gfx1030 wave32.
   Its disassembly dwords matched both existing T-707 JSON files.
-- The T-721 interpreter matched all five ABI v1 golden outputs. CTest
-  reported those differential cases as SKIPPED because the runner still
-  calls the ABI v0 entry point. ABI v1 hardware execution awaits the T-721
-  API wiring.
-
-## Completed
+- At review, the interpreter matched all five ABI v1 golden outputs.
+  T-721 subsequently wired ABI v1 GPU execution and recorded 10/10 matches
+  on the RX 9070 XT across both ABI versions. [Verification record](../../PROGRESS.md)
 
 ### T-708 — Decoder implementation
 
@@ -435,11 +474,9 @@ git diff --cached --check
 
 ## Next
 
-Start T-706 from current `integration` after the T-709 merge. Use
-`scale::shader_testcase` and select the lowering API by the case ABI version.
 When next editing the shader ABI contract, update its instruction syntax
 citations to the pinned LLVM 23.x documentation.
 
 ## Requests to coordinator
 
-- Review T-709 and wire the ABI v1 lowering call into the T-721 runner.
+- Review and merge T-706.

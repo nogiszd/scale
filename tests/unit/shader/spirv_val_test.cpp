@@ -72,7 +72,7 @@ TEST_P(ShaderSpirvV1Validation, ValidatesAbiV1TestCase) {
 INSTANTIATE_TEST_SUITE_P(AbiV1, ShaderSpirvV1Validation,
     testing::Values(std::string_view{"t707_exec_ff_lanes_4_to_7"}, std::string_view{"t707_exec_0f_branch_taken"},
                     std::string_view{"v1_scc_and_unconditional_branches"}, std::string_view{"v1_exec_restore_compare"},
-                    std::string_view{"v1_zero_exec_f32"}),
+                    std::string_view{"v1_zero_exec_f32"}, std::string_view{"v1_saveexec_scc_branch"}),
     [](const auto& info) { return std::string(info.param); });
 
 }  // namespace

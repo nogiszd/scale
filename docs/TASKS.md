@@ -31,7 +31,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-703 | SPIR-V emitter + validation | Codex | DONE | T-702 | M7 |
 | T-704 | Synthetic shader ABI v0 contract | Codex | DONE | T-000 | M7 |
 | T-705 | Shader test-case library (JSON) | Codex | DONE | T-704 | M7 |
-| T-706 | `scale-shader` CLI (decode / compile / validate) | Codex | READY | T-705 | M7 |
+| T-706 | `scale-shader` CLI (decode / compile / validate) | Codex | DONE | T-705 | M7 |
 | T-707 | Shader ABI v1 contract: EXEC masks and control flow | Codex | DONE | T-704 | M7 |
 | T-708 | Decoder for ABI v1 (decode.h v3) | Codex | DONE | T-707 | M7 |
 | T-709 | IR + SPIR-V for ABI v1 | Codex | DONE | T-708 | M7 |
