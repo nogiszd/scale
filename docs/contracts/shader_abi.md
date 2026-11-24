@@ -336,6 +336,258 @@ buffer_store_dword v2, v1, s[4:7], 0 offen
 s_endpgm
 ```
 
+## ABI v2 — Memory and resources
+
+**Synthetic ABI decision.** ABI v2 inherits ABI v1 except where this
+section extends it. Keep the single logical wave32, the entry values of
+`v0` and immutable `v1`, the EXEC rules, and the forward-only scalar
+control flow through one terminal store followed by `s_endpgm`.
+
+### Fixed resources
+
+**Synthetic ABI decision.** Use three distinct, non-aliasing 128-byte
+buffers, each containing 32 little-endian dwords. An instruction names
+its resource by its opaque, four-SGPR-aligned tuple. `s0` through `s11`
+are reserved exclusively for those resource operands. Ordinary scalar
+values use `s12` through `s105`. Guest instructions cannot read or modify
+descriptor fields as scalar data.
+
+| Tuple | Resource | Permitted access | Vulkan set and binding |
+|---|---|---|---|
+| `s[0:3]` | Input | `buffer_load_dword` | Set 0, binding 0 |
+| `s[4:7]` | Output | `buffer_store_dword` | Set 0, binding 1 |
+| `s[8:11]` | Constants | `s_buffer_load_dword` | Set 0, binding 2 |
+
+**Synthetic ABI decision.** The input and output model linear raw V#
+descriptors with dword-aligned bases, stride 0, `NUM_RECORDS = 128`
+bytes, and `OOB_SELECT = 3`. Use the 32-bit unsigned format
+(`BUF_FMT_32_UINT`), channel selections R, G, B, A in order, resource
+level 1 and buffer type 0. Cache swizzle, address swizzle and
+`ADD_TID_ENABLE` are clear. Swizzle-only fields and reserved bits are
+zero. The scalar descriptor uses a dword-aligned base, stride 4 and
+`NUM_RECORDS = 32` records. Only those three fields participate in
+the scalar load. Each base denotes the start of its own backing buffer.
+The tuple selects a binding in SCALE. Its numeric base is never supplied
+by a test case or exposed as a device address.
+
+AMD document 70648 §8.1.8, Table 37 defines V# and the units of
+`NUM_RECORDS`. §§7.1–7.2 describe the fields used by scalar buffer
+reads. LLVM AMDGPUUsage describes V# as a 128-bit buffer descriptor.
+[AMD RDNA 2 ISA reference](https://docs.amd.com/v/u/en-US/rdna2-shader-instruction-set-architecture)
+[LLVM AMDGPUUsage, Buffer Resource](https://llvm.org/docs/AMDGPUUsage.html#buffer-resource)
+[LLVM 23.1.6 GFX10 format names](https://github.com/llvm/llvm-project/blob/llvmorg-23.1.6/llvm/lib/Target/AMDGPU/Utils/AMDGPUAsmUtils.cpp)
+
+### Vector memory
+
+**Synthetic ABI decision.** Use only the untyped dword MUBUF load and
+store. Require `offen = 1`, `idxen = 0`, and clear optional cache,
+fault, LDS and reserved bits. The address is any single VGPR, which
+the program may compute separately in each lane. The 12-bit immediate
+is an unsigned, dword-aligned byte offset. `soffset` is the inline zero
+selector or an ordinary SGPR holding an unsigned byte offset. For each
+active lane, read its address VGPR and the scalar offset. A store also
+reads its data VGPR. All these sources must be defined and ready even
+when the resulting access is out of range. A load reads its sources
+before marking its destination pending. A load destination must be a
+writable VGPR. Inactive lanes read no operands and leave values,
+definedness and pending state unchanged.
+
+**Synthetic ABI decision.** Let `V` be the unsigned VGPR value, `I`
+the immediate and `S` the unsigned scalar offset. Compute
+`vector_offset = V + I` and `byte_offset = S + vector_offset` with
+checked arithmetic before classifying the access. Require `V` and
+`S` to be dword-aligned, `S <= 124`, and the sums through
+`byte_offset + 4` to fit in unsigned 32 bits. Use these rules for the
+memory calculation independently of the wrapping ALU rules that
+produced its operands. Misalignment, an offset outside this domain,
+or overflow is an error.
+
+| Condition after those checks | Load | Store |
+|---|---|---|
+| `byte_offset <= 124` | Read input word `byte_offset / 4` | Write output word `byte_offset / 4` |
+| `vector_offset >= 128` | Produce raw `0x00000000` | Drop the write |
+| `vector_offset <= 124` and `byte_offset >= 128` | Reject before dispatch | Reject before dispatch |
+
+AMD document 70648 §8.1, Figure 8 and Tables 32–35 separate the
+scalar addend from the vector-plus-immediate offset. Table 35
+describes mode 3 as reducing the byte bound by the scalar addend and
+specifies zero reads and dropped writes for out-of-range accesses with
+the selected channels. LLVM's raw buffer intrinsic descriptions
+exclude the scalar addend from bounds checks. The synthetic rules
+above accept aligned dwords where both descriptions agree on the
+outcome. Other descriptor modes and access widths are outside this
+contract. [AMD RDNA 2 ISA reference](https://docs.amd.com/v/u/en-US/rdna2-shader-instruction-set-architecture)
+[LLVM AMDGPUUsage, Buffer Fat Pointer out of bounds handling](https://llvm.org/docs/AMDGPUUsage.html#buffer-fat-pointer-out-of-bounds-oob-handling)
+[LLVM 23.1.6 AMDGPU intrinsic definitions](https://github.com/llvm/llvm-project/blob/llvmorg-23.1.6/llvm/include/llvm/IR/IntrinsicsAMDGPU.td)
+
+**Synthetic ABI decision.** An active out-of-range load also creates a
+pending VGPR value. The ABI v1 per-lane rules apply until
+`s_waitcnt vmcnt(0)` completes it. The single final store may address
+different words than the corresponding lane indices. The interpreter
+must reject duplicate in-range destinations among active lanes of
+that store, even when the lanes would write identical data. Dropped
+stores and inactive lanes do not enter the collision check. Any
+output word that receives no in-range store keeps its initial dword.
+
+### Scalar memory and waits
+
+**Synthetic ABI decision.** Use the immediate form of
+`s_buffer_load_dword sdst, s[8:11], imm`. The descriptor form identifies
+the constant resource by its tuple. An `s_load_dword` would require a
+scalar address pair, which this ABI does not expose. The destination
+must be an ordinary writable SGPR. Require `GLC = DLC = 0`, clear
+reserved bits, and encode `SOFFSET` as `null` (selector 125). The
+unsigned immediate is a byte offset in `0, 4, ..., 124`. LLVM
+disassembles the zero-offset form as `s_buffer_load_dword sdst,
+s[8:11], null`. Offsets outside the interval, scalar-register offsets
+and other SMEM instructions are errors. With no scalar out-of-range
+result defined by this ABI, an invalid immediate is rejected even on
+an untaken path.
+
+AMD document 70648 §§7.1–7.2, 7.5 and 12.6 distinguish the two
+base operands, describe scalar buffer offsets and specify the dword
+load. LLVM 23.1.6 assembles both opcodes for `gfx1030`; the buffer
+form uses the unsigned `offset20u` immediate syntax.
+[AMD RDNA 2 ISA reference](https://docs.amd.com/v/u/en-US/rdna2-shader-instruction-set-architecture)
+[LLVM GFX1030 SMEM syntax](https://releases.llvm.org/18.1.6/docs/AMDGPU/AMDGPUAsmGFX1030.html#smem)
+
+**Synthetic ABI decision.** The scalar load reads `constant_words[imm / 4]`
+once logically per wave, even with an empty EXEC mask. It preserves
+EXEC, VCC and SCC and marks the destination pending. A pending SGPR
+cannot be read or overwritten by an executing instruction, including
+as a vector source or MUBUF `soffset`. The wait publishes the loaded
+dword and makes the destination defined. Pending state survives
+branches and EXEC changes. Distinct destinations may be pending at
+the same time. A wait with nothing pending in its domain is valid.
+
+**Synthetic ABI decision.** Accept exactly these `s_waitcnt` forms.
+The counters for the other domains are encoded at their maximums.
+Both waits execute even when EXEC is empty. Reject combined and
+partial-count waits.
+
+| Instruction | VM | EXP | LGKM | Effect |
+|---|---:|---:|---:|---|
+| `s_waitcnt vmcnt(0)` | 0 | 7 | 63 | Completes all earlier vector loads, including lanes currently inactive |
+| `s_waitcnt lgkmcnt(0)` | 63 | 7 | 0 | Completes all earlier scalar loads |
+
+**Synthetic ABI decision.** Every load issued on the executed path
+must be covered by its corresponding wait before the final store,
+even if the store mask is empty. AMD document 70648 §§7.3–7.4 and
+12.5 describe the SMEM completion counter and the wait encoding.
+[AMD RDNA 2 ISA reference](https://docs.amd.com/v/u/en-US/rdna2-shader-instruction-set-architecture)
+
+### Vulkan and SPIR-V
+
+**Synthetic ABI decision.** Emit SPIR-V 1.5 for Vulkan 1.2 using the
+ABI v1 `GLCompute` entry point `main`, local size and workgroup-uniform
+control flow. All three bindings are `VK_DESCRIPTOR_TYPE_STORAGE_BUFFER`
+with 128-byte descriptor ranges. Each `StorageBuffer` `Block` contains
+an array of 32 unsigned 32-bit integers at member `Offset 0` with
+`ArrayStride 4`. Use `NonWritable` on both read-only members and
+`NonReadable` on the output member. The harness uploads input and
+constants and initializes output before dispatch. After completion,
+it synchronizes shader writes for host readback and compares the
+whole output buffer.
+
+**Synthetic ABI decision.** Within the EXEC guard, use structured
+control flow to create a buffer element pointer and access it only
+on the in-range arm, at index `byte_offset / 4`. The out-of-range
+load arm yields a literal dword zero. The out-of-range store arm
+performs no write. These guards implement the accepted outcomes
+without depending on Vulkan robustness features. The in-range
+predicate can use checked unsigned 32-bit additions or equivalent
+bounded comparisons. The scalar read uses the fixed constant word
+index in uniform control flow outside the EXEC guard. Each physical
+invocation may load the same immutable word into its uniform
+scalar state. Validated guest waits may lower to synchronous
+SPIR-V loads and normal value dependencies. Workgroup barriers
+used by the ABI v1 VCC exchange keep their own synchronization.
+[Khronos SPIR-V specification](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html)
+[Vulkan shader interfaces and buffer layout](https://docs.vulkan.org/spec/latest/chapters/interfaces.html)
+
+**Synthetic ABI decision.** Validate instruction boundaries, layout
+and allowed operand forms throughout the stream. Before GPU
+dispatch, run the independent interpreter with the same initial
+mask and buffer contents used by Vulkan. Pre-check every executed
+read and write for definedness, pending state, alignment, supported
+bounds behavior and store collisions, and apply the inherited
+float-domain rule. Report failures with the case name and the
+offending instruction offset and opcode when available. Include
+the logical lane and byte offsets for lane-specific address
+errors. Dispatch requires a successful pre-check for those inputs.
+
+### ABI v2 test cases
+
+**Synthetic ABI decision.** Use the ABI v1 UTF-8 JSON format with the
+required changes below. The inherited fields and their validation,
+including rejection of unknown, missing and duplicate keys, still
+apply. ABI v0 and v1 retain their existing field sets.
+
+| Field | Value for an ABI v2 case |
+|---|---|
+| `schema_version`, `abi_version` | Integers `1` and `2` respectively |
+| `constant_words` | Exactly 32 required dword strings, in increasing byte-offset order, including for programs that issue no scalar loads |
+| `input_words`, `initial_output_words`, `expected_output_words` | Exactly 32 dwords each, in increasing byte-offset order. Expected output includes every preserved word. |
+
+**Synthetic ABI decision.** Keep the bit-exact comparison, including
+sentinel words in unwritten slots. The `f32` finite-normal rule covers
+executed floating arithmetic and written float results. Constants
+are raw dwords subject to the inherited arithmetic rules when used.
+
+### Worked example
+
+**Synthetic ABI decision.** This manual `u32` case uses `seed: null`,
+`initial_exec: "0xd000000b"`, and `input_words[i] = i`. Constant word
+1 is `0x00000004` and all other constant words are zero. Every initial
+output word is `0xdeadbeef`.
+
+```asm
+s_buffer_load_dword s12, s[8:11], 0x4
+s_waitcnt lgkmcnt(0)
+v_add_nc_u32_e32 v2, 4, v1
+buffer_load_dword v3, v2, s[0:3], s12 offen offset:4
+s_waitcnt vmcnt(0)
+v_add_nc_u32_e32 v3, s12, v3
+buffer_store_dword v3, v2, s[4:7], 0 offen
+s_endpgm
+```
+
+LLVM 23.1.6 assembled and disassembled these `gfx1030` wave32 dwords
+in stream order.
+
+```json
+[
+  "0xf4200304", "0xfa000004", "0xbf8cc07f", "0x4a040284",
+  "0xe0301004", "0x0c000302", "0xbf8c3f70", "0x4a06060c",
+  "0xe0701000", "0x80010302", "0xbf810000"
+]
+```
+
+The scalar wait makes `s12 = 4` available. In active lane `i`,
+`v2 = 4*i + 4`, so the input uses `vector_offset = 4*i + 8` and
+`byte_offset = 4*i + 12`. The store uses `v2` alone and targets
+output word `i + 1`. Add 4 to the loaded value after the vector wait.
+
+| Active lane | Input byte offset | Loaded value | Output word index | Expected dword |
+|---:|---:|---:|---:|---|
+| 0 | 12 | 3 | 1 | `0x00000007` |
+| 1 | 16 | 4 | 2 | `0x00000008` |
+| 3 | 24 | 6 | 4 | `0x0000000a` |
+| 28 | 124 | 31 | 29 | `0x00000023` |
+| 30 | 132 | 0 | 31 | `0x00000004` |
+| 31 | 136 | 0 | 32 (dropped) | — |
+
+All other in-range words remain `0xdeadbeef`. Enabling lane 29
+with `initial_exec: "0xf000000b"` must instead fail pre-check at the
+load. That lane has `vector_offset = 124` and `byte_offset = 128`.
+Removing the scalar wait must also fail pre-check at the first use
+of `s12` as the load's scalar offset.
+
+With `initial_exec: "0x00000000"` the scalar load and both waits
+still execute and all 32 output words stay `0xdeadbeef`. Removing the
+scalar wait in this variant fails at the final store because `s12`
+is still pending.
+
 ## References
 
 - AMD RDNA 2 ISA reference, document 70648. See §8.1 for MUBUF resource
