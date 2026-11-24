@@ -3,6 +3,7 @@ scale_add_library(diagnostics
         json_writer.cpp
         diagnostic_log.cpp
         run_report.cpp
+        event_line.cpp
     DEPS
         scale::common
 )

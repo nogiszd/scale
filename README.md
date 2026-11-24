@@ -29,7 +29,7 @@ The project is developed incrementally, with an emphasis on correctness, reprodu
 | :-------- | :---------------- | :----------- | :--------------------------------------------------------------------------------------- |
 | M0        | Foundation        | **Complete** | Build system, CLI skeleton, diagnostics contract and CTest infrastructure.               |
 | M1        | PE inspector      | **Complete** | `scale::loader`, read-only PE32+ inspection and test executables compared against `dumpbin`.     |
-| M2        | Native execution  | In progress  | Supervised worker, Scale loader and `scale run`; missing-import diagnostic next (T-204). |
+| M2        | Native execution  | **Complete** | Supervised worker, image loader, `scale run` with `report.json`, unresolved-import diagnostics. |
 | M6        | Graphics          | Planned      | Vulkan graphics harness; requires Vulkan SDK (T-601).                                    |
 | M7        | Shader recompiler | Planned      | RDNA2 decoding, IR and SPIR-V output; requires LLVM AMDGPU and Vulkan SDK (T-701–T-705). |
 

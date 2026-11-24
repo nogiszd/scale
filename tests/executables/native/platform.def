@@ -1,0 +1,4 @@
+LIBRARY test_platform
+EXPORTS
+    TestAllocate
+    TestFree @2 NONAME
