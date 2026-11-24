@@ -15,6 +15,14 @@
       "toolset": { "value": "host=x64", "strategy": "external" }
     },
     {
+      "name": "all-components",
+      "hidden": true,
+      "cacheVariables": {
+        "SCALE_ENABLE_SHADER": "ON",
+        "SCALE_ENABLE_GRAPHICS": "ON"
+      }
+    },
+    {
       "name": "debug",
       "displayName": "Debug (MSVC x64, Ninja)",
       "inherits": "base",
@@ -25,11 +33,23 @@
       "displayName": "Release (MSVC x64, Ninja)",
       "inherits": "base",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
+    },
+    {
+      "name": "debug-all",
+      "displayName": "Debug, all components (shader + graphics; needs LLVM AMDGPU and Vulkan SDK)",
+      "inherits": ["debug", "all-components"]
+    },
+    {
+      "name": "release-all",
+      "displayName": "Release, all components (shader + graphics; needs LLVM AMDGPU and Vulkan SDK)",
+      "inherits": ["release", "all-components"]
     }
   ],
   "buildPresets": [
     { "name": "debug", "configurePreset": "debug" },
-    { "name": "release", "configurePreset": "release" }
+    { "name": "release", "configurePreset": "release" },
+    { "name": "debug-all", "configurePreset": "debug-all" },
+    { "name": "release-all", "configurePreset": "release-all" }
   ],
   "testPresets": [
     {
@@ -53,7 +73,7 @@
     {
       "name": "gpu",
       "inherits": "test-base",
-      "configurePreset": "debug",
+      "configurePreset": "debug-all",
       "filter": { "include": { "label": "^gpu$" } }
     },
     {
@@ -65,6 +85,16 @@
       "name": "release-full",
       "inherits": "test-base",
       "configurePreset": "release"
+    },
+    {
+      "name": "full-all",
+      "inherits": "test-base",
+      "configurePreset": "debug-all"
+    },
+    {
+      "name": "release-full-all",
+      "inherits": "test-base",
+      "configurePreset": "release-all"
     }
   ]
 }

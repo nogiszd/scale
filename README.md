@@ -125,10 +125,11 @@ For Release tests, build the Release preset first, then run `ctest --preset rele
 | `integration`  | CLI, worker and test executable tests |
 | `full`         | Full Debug suite              |
 | `release-full` | Full Release suite            |
-| `gpu`          | Hardware GPU tests            |
+| `gpu`          | GPU tests on every Vulkan device (uses `debug-all`) |
+| `full-all`     | Full Debug suite with shader and graphics (`debug-all`) |
 
 > [!NOTE]
-> `ctest --preset gpu` intentionally fails with `No tests were found` while no GPU tests exist. An empty GPU test run is never considered a pass.
+> GPU tests need the `debug-all` preset (`cmake --preset debug-all`, which enables the shader and graphics components and needs the Vulkan SDK and LLVM AMDGPU tools). Every GPU test runs on every Vulkan device present and prints its capability fingerprint. Without a usable device it is SKIPPED, never PASS. See [docs/contracts/gpu_targets.md](docs/contracts/gpu_targets.md).
 
 ## Command-line interface
 

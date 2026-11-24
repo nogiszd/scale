@@ -31,7 +31,7 @@ Test totals (unchanged since the T-703 merge, `da29a41`): `ctest --preset full` 
    instruction, plus inactive-lane and overflow tests. It must check inline
    constants on its own, using `Operand::encoded`, not only the decoder's
    `value`.
-2. **T-601 — Vulkan compute harness** (`src/graphics`,
+2. ~~**T-601 — Vulkan compute harness**~~ DONE (`scale::graphics`, `gpu_vulkan_compute` PASS on RX 9070 XT; GPU target matrix in docs/contracts/gpu_targets.md; presets `debug-all`, `gpu`, `full-all`). Former plan: (`src/graphics`,
    `SCALE_ENABLE_GRAPHICS`). Instance, device and queue, two storage buffers,
    dispatch `(1,1,1)`, readback. Verify first with a known GLSL→SPIR-V
    compute shader (glslangValidator). Label `gpu`. If no device is present,

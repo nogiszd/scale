@@ -61,7 +61,7 @@ TEST(VulkanCompute, Readback) {
 - Missing hardware or tools means SKIPPED. Milestone acceptance that needs
   them stays incomplete until they actually run.
 - Tests write only under their build directory or a dedicated temp root.
-- Preset runs: `quick`, `integration`, `gpu`, `full`, `release-full`.
+- Preset runs: `quick`, `integration`, `full`, `release-full` (default components), and `gpu`, `full-all`, `release-full-all` (`debug-all`/`release-all`: shader + graphics). GPU tests follow docs/contracts/gpu_targets.md and run on every device present.
   Run `full` before moving a task to REVIEW.
 - Offline builds: configure with
   `-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=<extracted googletest-1.18.0>`.
