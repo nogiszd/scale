@@ -42,3 +42,8 @@ scale_add_command_test(NAME selftest_gtest_failure_fails_run
     EXPECT_EXIT 1
     EXPECT_OUTPUT "\\[  FAILED  \\] Probe\\.Failing"
     LABELS quick)
+
+# --- gfx1030 decoder (T-701) ---------------------------------------------------
+if(SCALE_ENABLE_SHADER)
+    add_subdirectory(shader)
+endif()

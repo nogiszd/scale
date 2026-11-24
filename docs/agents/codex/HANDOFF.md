@@ -27,21 +27,18 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-701 — interface freeze v2 ready
+### T-701 — REVIEW
 
-Review branch `codex/T-701-decoder`, based on `integration` at `016d6fd`.
-The public [decoder interface](../../../src/shader/include/scale/shader/decode.h)
-declares `decode(ByteView)` and the owned instruction representation. It
-preserves encoding, raw dwords and stream offsets, with typed payloads for
-ALU operands, wait counters and MUBUF operands. `AluOperands` has room for
-three sources and retains `source_count`. `Operand::encoded` preserves the
-raw field alongside the resolved value so the interpreter can independently
-verify inline constants. The interpreter and compiler can consume the same
-decoded stream and validate the synthetic ABI themselves.
-With `SCALE_ENABLE_SHADER=ON`, `scale::shader_decode` is a CMake interface
-target that exports the header and `scale::common`. The implementation will
-turn it into a static library with the same target name. `decode()` is a
-declaration at this checkpoint.
+Review branch `codex/T-701-decoder-impl`, based on `integration` at `b1fb7a7`.
+`scale::shader_decode` is a static library enabled by `SCALE_ENABLE_SHADER=ON`.
+It decodes all 12 opcodes in the frozen `decode.h` interface, including e32
+and e64 ALU forms, inline and literal constants, wait counters and the OFFEN
+MUBUF dword forms. Decoder errors carry the dword offset and raw words read
+for the instruction. The caller validates the T-704 ABI, including fixed
+registers and termination. DPP, SDWA, special-register operands, VOP3
+modifiers and other MUBUF address modes are outside this subset. Encoding
+reference is AMD document 70648, sections 5.2, 6.2, 12.5, 12.7.1, 12.8.1 and
+chapter 13. [AMD RDNA 2 ISA reference](https://docs.amd.com/v/u/en-US/rdna2-shader-instruction-set-architecture)
 
 Verification on Windows x64, MSVC 19.52.37029, Windows SDK 10.0.26100.0.
 
@@ -53,21 +50,34 @@ ctest --preset full
 cmake --preset release -DSCALE_ENABLE_SHADER=ON
 cmake --build --preset release
 ctest --preset release-full
-cmake --build out/interface-freeze/build --target shader_decode_interface_check
+ctest --preset full -R '^integration_shader_llvm[.]' -V
+cmake --preset debug -B out/build/shader-no-llvm -DSCALE_ENABLE_SHADER=ON `
+    -DSCALE_SHADER_LLVM_MC=missing-llvm-mc `
+    -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=out/build/debug/_deps/googletest-src
+cmake --build out/build/shader-no-llvm --target integration_shader_llvm
+ctest --test-dir out/build/shader-no-llvm -R '^integration_shader_llvm[.]' --output-on-failure
+git diff --exit-code c4ce6f3 -- src/shader/include/scale/shader/decode.h
 git diff --cached --check
 ```
 
-- Debug and Release each passed all 83 existing CTest cases with zero skips.
-- The scratch CMake consumer under ignored `out/interface-freeze/` compiled
-  with `scale::shader_decode`. It checked the `decode()` signature, the
-  three-source array and count, and the raw field's type and ability to
-  retain 9-bit and 16-bit values alongside resolved values.
-- `llvm-mc -triple=amdgcn -mcpu=gfx1030 -show-encoding` accepted the proposed
-  opcode forms, including e32/e64 moves and adds, `v_mul_lo_u32`, and both
-  T-704 MUBUF instructions. Decoder behavior and the LLVM disassembly
-  comparison belong to the implementation increment.
+- Debug and Release each passed 120/120 CTest cases with zero skips.
+  There are 21 decoder unit cases, with hand-encoded positive coverage for
+  every opcode and negative coverage for all four error codes.
+- LLVM 23.1.6 `llvm-mc -triple=amdgcn -mcpu=gfx1030 -filetype=obj` assembled
+  the T-704 fixture at configure time. `llvm-objdump --disassemble --mcpu=gfx1030`
+  produced the reference listing. GoogleTest matched all five instruction
+  texts, five offsets and seven dwords in both configurations.
+- An isolated configure with a missing `llvm-mc` path reported the LLVM
+  case as SKIPPED in CTest. The frozen header is byte-identical to `c4ce6f3`.
 
 ## Completed
+
+### T-701 — decoder interface freeze v2
+
+Commits `56e60a6` and `c2a0ce1` merged and frozen at `c4ce6f3`. The header
+preserves both the raw operand field and its resolved value, with room for
+three ALU sources. A scratch CMake consumer checked the interface and Debug
+and Release each passed 83/83 baseline cases on the freeze branch.
 
 ### T-704 — Synthetic shader ABI v0
 
@@ -103,12 +113,10 @@ git diff --cached --check
 
 ## Next
 
-After the coordinator merges the v2 interface, start the implementation on
-a new branch from `integration`. Implement the first subset and GoogleTest
-cases, including hand-encoded vectors and a cross-check of the T-704 example
-using both `llvm-mc` and `llvm-objdump`. T-711 can start from the frozen
-header and the merged ABI contract.
+After the T-701 implementation is merged and T-702 is ready on `integration`,
+start the shader IR on its own branch. T-711 consumes the frozen decoder
+interface and T-704 contract independently of the IR.
 
 ## Requests to coordinator
 
-- Review and freeze `decode.h` on `integration` for T-711.
+- Review the T-701 implementation branch for integration.
