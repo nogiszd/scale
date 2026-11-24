@@ -33,10 +33,49 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-705 — REVIEW (loader implementation)
+### T-708 — REVIEW (decoder interface v3)
 
-Review branch `codex/T-705-testcase-impl`, based on `integration` at
-`78c2ee9`. `scale::shader_testcase` implements the frozen v0/v1 API using
+Review branch `codex/T-708-decoder-v3`, rebased on `integration` at
+`0dbd2c5`. [decode.h](../../../src/shader/include/scale/shader/decode.h)
+adds the ABI v1 opcodes, `Encoding::vopc`, and special register kinds for
+`vcc_lo` (106) and `exec_lo` (126). `CompareOperands` carries both
+encoded source fields. The VOPC opcode implies the `vcc_lo` destination.
+`BranchOperands` carries the raw `SIMM16` bits and the signed target
+dword computed from the next instruction. The signed type lets IR and
+T-712 diagnose a target before the start of the stream. Target structure
+is checked by the consumers under the synthetic ABI.
+
+The compiler and LLVM comparison test route the new enum values through
+their existing error paths until ABI v1 support lands. Commit `956d32c`
+switches the `spirv-val` tests to `scale::test_tools`, checks the exit
+code and reports combined tool output on a validation failure.
+
+```powershell
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset debug
+ctest --preset full --output-on-failure
+cmake --preset release -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset release
+ctest --preset release-full --output-on-failure
+```
+
+- Debug and Release each passed all 243 tests with zero skips after the
+  rebase. This includes both LLVM 23.1.6 comparisons, all three
+  validation tests with Vulkan SDK 1.4.363.0, and the portable-header check.
+- An earlier parallel Debug and Release run hit two native execution failures.
+  Both cases passed on serial reruns before and after the rebase.
+- Windows GCC 13.2 syntax checks passed for the compiler and LLVM test
+  with `-Wswitch -Werror=switch`. The same check identified unhandled
+  enum values in `check_source()` and `Interpreter::step()` in the
+  reference interpreter. Linux builds are unverified.
+
+## Completed
+
+### T-705 — Loader implementation
+
+Approved and merged into `integration` at `0dbd2c5` (implementation
+`83e403d`). `scale::shader_testcase` implements the frozen v0/v1 API using
 a schema-specific parser with no JSON dependency. It validates UTF-8,
 decodes string escapes before matching keys, and accepts fields in any
 order. The file loader checks the caller's byte cap as it reads. The
@@ -63,8 +102,6 @@ git diff --cached --check
 - The directory-path test accepts an open or read error because the point
   of failure depends on the host's stream implementation. The missing
   file and size-limit tests assert their exact error codes.
-
-## Completed
 
 ### T-705 — Test-case interface freeze
 
@@ -311,11 +348,13 @@ git diff --cached --check
 
 ## Next
 
-Start the T-708 `decode.h` v3 proposal from current `integration` and stop
-for its independent freeze. T-706 follows the T-708 review checkpoint.
+Implement T-708 from current `integration` after the decoder interface
+freeze. Then start T-706 using `scale::shader_testcase`.
 When next editing the shader ABI contract, update its instruction syntax
 citations to the pinned LLVM 23.x documentation.
 
 ## Requests to coordinator
 
-- Review and merge the T-705 loader for T-720 and T-706.
+- Review the T-708 decoder interface v3 for the compiler and T-712.
+- Cover the new enum values in T-712 or route them through the existing
+  reference interpreter error paths for warning-as-error builds.

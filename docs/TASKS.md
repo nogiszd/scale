@@ -33,7 +33,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-705 | Shader test-case library (T-704 JSON) | Codex | DONE | T-704 | M7 |
 | T-706 | `scale-shader` CLI (decode / compile / validate) | Codex | READY | T-705 | M7 |
 | T-707 | Shader ABI v1 contract: EXEC masks and control flow | Codex | DONE | T-704 | M7 |
-| T-708 | Decoder for ABI v1 (decode.h v3: vcc_lo/exec_lo, VOPC, branches) | Codex | READY | T-707 | M7 |
+| T-708 | Decoder for ABI v1 (decode.h v3: vcc_lo/exec_lo, VOPC, branches) | Codex | REVIEW | T-707 | M7 |
 | T-709 | IR + SPIR-V for ABI v1 (EXEC masks, structured branches, VCC exchange) | Codex | WAITING | T-708 | M7 |
 | T-711 | RDNA2 reference interpreter | Claude | DONE | T-701 (interface), T-704 | M7 |
 | T-712 | Reference interpreter for ABI v1 | Claude | WAITING | T-708 (interface) | M7 |
