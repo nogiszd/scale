@@ -76,7 +76,7 @@ scale_add_test(NAME unit_runtime
 # --- Reference interpreter (T-711) ------------------------------------------------
 if(SCALE_ENABLE_SHADER)
     scale_add_test(NAME unit_shader_ref
-        SOURCES shader_ref/interpreter_test.cpp
+        SOURCES shader_ref/interpreter_test.cpp shader_ref/interpreter_v1_test.cpp
         LIBS scale::shader_ref
         LABELS quick)
 endif()

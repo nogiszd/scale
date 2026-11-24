@@ -7,11 +7,46 @@ Only recorded, executed results, newest first. Each entry describes the state at
 | Track | State |
 |---|---|
 | M0 Foundation, M1 PE inspector, M2 native execution | complete |
-| M7 shaders | first compute slice verified on hardware (ABI v0). ABI v1 contract merged (T-707). Test-case library merged (T-705). `decode.h` v3 frozen (T-708 interface), decoder implementation in progress (Codex). |
+| M7 shaders | first compute slice verified on hardware (ABI v0). ABI v1: contract (T-707) and reference interpreter (T-712) done. Test-case library merged (T-705). `decode.h` v3 frozen; v3 decoder implementation in progress (Codex, T-708), then IR + SPIR-V for v1 (T-709). |
 | M6 graphics | Vulkan compute harness with per-device fingerprints (T-601). Coverage: GPU class A2 only. |
 | Portability | groundwork done (T-801). Linux unverified (T-802 blocked). |
 
-Latest suite totals: `full`/`release-full` 173/173, `full-all`/`release-full-all` 247/247, `gpu` 4/4 (RX 9070 XT).
+Latest suite totals: `full`/`release-full` 173/173, `full-all`/`release-full-all` 259/259, `gpu` 4/4 (RX 9070 XT).
+
+## 2026-11-24 — T-712 Reference interpreter for shader ABI v1 (Claude)
+
+- `scale::shader_ref` implements ABI v1 against the frozen `decode.h` v3:
+  `run_abi_v1(program, input, {initial_exec, initial_output})`, VOPC
+  `v_cmp_eq/lt_u32` (replaces all of VCC, inactive bits clear),
+  `s_and_saveexec_b32` (dst = old EXEC, EXEC &= src, SCC = new EXEC != 0),
+  `s_mov_b32 exec_lo`, and `s_cbranch_scc0/scc1/execz` plus `s_branch` with a
+  wave-uniform PC. Scalar instructions run even with EXEC == 0. A vector
+  instruction with an empty mask reads no sources. Loads are pending per lane
+  and survive mask changes, and `s_waitcnt vmcnt(0)` clears all of them. The
+  masked store writes only active lanes over `initial_output`.
+- `check_program` (static, applied to every instruction including untaken
+  paths): contiguous dword offsets, the only `s_endpgm` last, the only store
+  directly before it, operand forms checked against raw encodings
+  (`vcc_lo`=106, `exec_lo`=126, VOPC fields), and branch targets recomputed
+  from the raw SIMM16 (`decoder_disagreement` on mismatch). Targets must be
+  forward only and land on an instruction start at or before the store. ABI
+  v0 rejects every v1 instruction (`unsupported_abi`). Pending loads moved
+  from a bitset to per-lane masks.
+- `interpreter_v1_test` (12 cases): both T-707 worked examples (EXEC
+  0xff → lanes 4–7 = 5..8; EXEC 0x0f → branch taken, all 0xdeadbeef,
+  5 instructions executed), SCC and unconditional branches, EXEC
+  save/restore with reactivated lanes keeping earlier values (and undefined
+  state), empty-mask no-read, compare inactive bits, per-lane pending,
+  wait-while-inactive, the static branch-target rules (self, backward,
+  bypassing the store, into a literal, outside the stream, untaken),
+  decoder disagreements and ABI rules. Words come from llvm-mc/llvm-objdump
+  23.1.6. v1 instructions are built as decoded structs because the v3
+  decoder implementation isn't merged yet.
+- Mutation checks: the empty-mask rule, per-lane pending and saveexec SCC are
+  each caught. The "never bypass the store" rule was **not** caught at first,
+  because the run then failed dynamically ("no store executed"). The structure
+  tests now call `check_program` directly and catch it.
+- `ctest`: full/release-full 173/173, full-all/release-full-all 259/259, gpu 4/4.
 
 ## 2026-11-24 — T-801 Portability groundwork (Claude)
 

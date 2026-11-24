@@ -4,7 +4,7 @@ Role: architect and integration coordinator (sole merger to `integration`
 and `main`), CPU/runtime, reference interpreter, Vulkan backend,
 differential GPU verification.
 
-Last updated: 2026-11-24, after merging the T-708 interface freeze (`decode.h` v3). Pushes need the maintainer's approval. **Next for me: T-712** (interpreter for ABI v1; `decode.h` v3 is frozen). Then convert the T-720 cases to T-705 JSON files, then M3 (exception directory / `RtlAddFunctionTable`).
+Last updated: 2026-11-24, after merging the T-708 interface freeze (`decode.h` v3). Pushes need the maintainer's approval. T-712 DONE. **Next for me:** convert the T-720 cases to T-705 JSON files (and add v1 cases once T-708/T-709 land, running `run_abi_v1` against the GPU), then M3 (exception directory / `RtlAddFunctionTable`).
 `origin` is at `e912520`, and the maintainer authorizes each push.
 
 ## State of the project
