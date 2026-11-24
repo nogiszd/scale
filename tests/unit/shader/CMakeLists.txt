@@ -3,6 +3,12 @@ scale_add_test(NAME unit_shader_decode
     LIBS scale::shader_decode
     LABELS quick)
 
+# --- Shader IR v0 (T-702) ---------------------------------------------------
+scale_add_test(NAME unit_shader_ir
+    SOURCES ir_test.cpp
+    LIBS scale::shader_ir
+    LABELS quick)
+
 scale_add_test(NAME integration_shader_llvm
     SOURCES decode_llvm_test.cpp
     LIBS scale::shader_decode
@@ -23,10 +29,10 @@ if(EXISTS "${SCALE_SHADER_LLVM_MC}" AND EXISTS "${SCALE_SHADER_LLVM_OBJDUMP}")
     if(llvm_mc_status STREQUAL "0" AND llvm_objdump_status STREQUAL "0" AND
             llvm_mc_version MATCHES "${amdgpu_target}" AND llvm_objdump_version MATCHES "${amdgpu_target}")
         set(llvm_reference_dir "${CMAKE_CURRENT_BINARY_DIR}")
-        foreach(fixture IN ITEMS add_lane_to_input decoder_subset)
-            set(assembly "${PROJECT_SOURCE_DIR}/tests/shader/${fixture}.s")
+        foreach(test_program IN ITEMS add_lane_to_input decoder_subset)
+            set(assembly "${PROJECT_SOURCE_DIR}/tests/shader/${test_program}.s")
             set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${assembly}")
-            set(object "${llvm_reference_dir}/${fixture}.o")
+            set(object "${llvm_reference_dir}/${test_program}.o")
             execute_process(COMMAND "${SCALE_SHADER_LLVM_MC}" -triple=amdgcn -mcpu=gfx1030
                 -filetype=obj -o "${object}" "${assembly}"
                 RESULT_VARIABLE assemble_status ERROR_VARIABLE assemble_error TIMEOUT 10)
@@ -40,7 +46,7 @@ if(EXISTS "${SCALE_SHADER_LLVM_MC}" AND EXISTS "${SCALE_SHADER_LLVM_OBJDUMP}")
             else()
                 set(disassembly "llvm-mc failed (${assemble_status}): ${assemble_error}")
             endif()
-            file(WRITE "${llvm_reference_dir}/${fixture}.disasm" "${disassembly}")
+            file(WRITE "${llvm_reference_dir}/${test_program}.disasm" "${disassembly}")
         endforeach()
         string(REGEX MATCH "LLVM version [^\r\n]+" mc_version_line "${llvm_mc_version}")
         string(REGEX MATCH "LLVM version [^\r\n]+" objdump_version_line "${llvm_objdump_version}")

@@ -27,9 +27,48 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-701 — REVIEW (full LLVM coverage)
+### T-702 — REVIEW
 
-Review branch `codex/T-701-decoder-impl`, based on `integration` at `b1fb7a7`.
+Review branch `codex/T-702-shader-ir`, based on `integration` at `3f642f0`.
+`scale::shader_ir` lowers the frozen decoder output to a typed, straight-line
+IR under T-704 ABI v0. Each value is named by its defining instruction index.
+The entry defines the all-active EXEC mask, zero VCC and clear SCC, plus lane
+index and byte-offset values. Guest vector operations refer to EXEC and
+broadcast uniform operands when needed. A scalar unsigned add defines the
+next SCC as the wrapping sum's unsigned carry. Float operations use binary32
+values and explicit bitcasts at raw-word boundaries. The independent
+reference interpreter continues consuming the decoder. [AMD RDNA 2 ISA reference](https://docs.amd.com/v/u/en-US/rdna2-shader-instruction-set-architecture)
+
+The proposed public freeze for T-703 is [ir.h](../../../src/shader/include/scale/shader/ir.h).
+The ordered IR retains input loads, waits, the final output store and the
+terminator. Lowering validates descriptor use, address operands, register
+definition, pending loads and stream termination. Failures use documented
+error codes with the instruction dword offset where available. The caller
+checks test case metadata and the data-dependent float domain.
+
+```powershell
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset debug
+ctest --preset full
+cmake --preset release -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset release
+ctest --preset release-full
+git diff --exit-code 3f642f0 -- src/shader/include/scale/shader/decode.h src/shader_ref
+git diff --cached --check
+```
+
+- Debug and Release each passed 190/190 CTest cases with zero skips on
+  Windows x64, MSVC 19.52.37029 and Windows SDK 10.0.26100.0.
+- The 10 new IR cases use decoded programs, including the exact T-704
+  example. They check the IR graph, scalar carry, vector broadcast, float
+  bitcasts, the VMEM wait, and all six lowering error codes.
+
+## Completed
+
+### T-701 — gfx1030 decoder
+
+Approved and merged into `integration` at `3f642f0`.
 `scale::shader_decode` is a static library enabled by `SCALE_ENABLE_SHADER=ON`.
 It decodes all 12 opcodes in the frozen `decode.h` interface, including e32
 and e64 ALU forms, inline and literal constants, wait counters and the OFFEN
@@ -70,15 +109,13 @@ git diff --cached --check
   `llvm-objdump --disassemble --mcpu=gfx1030` produced both listings. In both
   configurations GoogleTest matched text, offsets and raw words for all 33
   subset instructions (55 dwords) and all five T-704 instructions (seven
-  dwords). The T-704 words also match the ABI contract. The subset fixture
+  dwords). The T-704 words also match the ABI contract. The subset test program
   exercises all 12 opcodes, the e32/e64 forms, register and constant sources,
   signed immediates, wait counters and MUBUF load/store addressing fields.
 - Changing `0.5` to `0.75` in the generated LLVM listing failed the subset
   comparison. Restoring the listing returned both comparisons to PASS.
 - An isolated configure with a missing `llvm-mc` path reported both LLVM
   cases as SKIPPED in CTest. The frozen header is byte-identical to `c4ce6f3`.
-
-## Completed
 
 ### T-701 — decoder interface freeze v2
 
@@ -121,10 +158,10 @@ git diff --cached --check
 
 ## Next
 
-After the T-701 implementation is merged and T-702 is ready on `integration`,
-start the shader IR on its own branch. T-711 consumes the frozen decoder
-interface and T-704 contract independently of the IR.
+After T-702 is merged and T-703 is ready, start the direct SPIR-V emitter on
+its own branch using the approved IR. T-711 consumes the frozen decoder
+interface and T-704 contract independently of the compiler.
 
 ## Requests to coordinator
 
-- Review the T-701 implementation branch for integration.
+- Review the T-702 branch and freeze `ir.h` for T-703 on `integration`.
