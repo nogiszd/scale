@@ -8,6 +8,8 @@
 #include "scale/common/text.h"
 #include "scale/loader/pe_image.h"
 
+#include "run_tool.h"
+
 #include <gtest/gtest.h>
 
 #include <cstdio>
@@ -32,25 +34,12 @@ std::filesystem::path utf8_path(const char* utf8) {
 // ---- dumpbin runner --------------------------------------------------------------
 
 std::optional<std::string> run_dumpbin(const std::string& option, const std::filesystem::path& file) {
-    const std::filesystem::path dumpbin = utf8_path(SCALE_DUMPBIN_PATH);
-    // cmd.exe strips the outer quotes of the whole command line.
-    const std::wstring command = L"\"\"" + dumpbin.wstring() + L"\" /nologo " +
-                                 *scale::to_wide(option) + L" \"" + file.wstring() + L"\"\"";
-    FILE* pipe = ::_wpopen(command.c_str(), L"rt");
-    if (pipe == nullptr) {
-        return std::nullopt;
-    }
-    std::string output;
-    char buffer[4096];
-    while (std::fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-        output += buffer;
-    }
-    if (::_pclose(pipe) != 0) {
-        return std::nullopt;
-    }
-    return output;
+    const auto path = scale::to_utf8(file.wstring());
+    if (!path) return std::nullopt;
+    const auto r = scale::test::run_tool(utf8_path(SCALE_DUMPBIN_PATH), {"/nologo", option, *path});
+    if (!r || r->exit_code != 0) return std::nullopt;
+    return r->output;
 }
-
 std::vector<std::string> lines_of(const std::string& text) {
     std::vector<std::string> lines;
     std::istringstream in(text);

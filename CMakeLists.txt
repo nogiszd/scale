@@ -5,11 +5,23 @@ project(scale
     DESCRIPTION "Scarlett Compatibility and Layered Execution"
     LANGUAGES CXX)
 
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-    message(FATAL_ERROR "SCALE targets Windows x64 only (system: ${CMAKE_SYSTEM_NAME}, pointer size: ${CMAKE_SIZEOF_VOID_P}).")
+# Platforms (decision 0004): Windows x64 with MSVC is the supported platform.
+# Other 64-bit platforms build only the portable components and are
+# UNVERIFIED until T-802 runs them.
+if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(FATAL_ERROR "SCALE requires a 64-bit target (pointer size: ${CMAKE_SIZEOF_VOID_P}).")
 endif()
-if(NOT MSVC)
-    message(FATAL_ERROR "SCALE requires the MSVC toolchain. Configure from a Developer PowerShell or run scripts/vsenv.ps1 first.")
+if(WIN32)
+    set(SCALE_PLATFORM_WINDOWS ON)
+    if(NOT MSVC)
+        message(FATAL_ERROR "On Windows SCALE requires the MSVC toolchain. Configure from a Developer PowerShell or run scripts/vsenv.ps1 first.")
+    endif()
+else()
+    set(SCALE_PLATFORM_WINDOWS OFF)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(FATAL_ERROR "On ${CMAKE_SYSTEM_NAME} SCALE requires GCC or Clang (got ${CMAKE_CXX_COMPILER_ID}).")
+    endif()
+    message(WARNING "SCALE on ${CMAKE_SYSTEM_NAME} is UNVERIFIED (decision 0004, T-802): only portable components are built.")
 endif()
 
 set(CMAKE_CXX_STANDARD 23)
@@ -48,7 +60,10 @@ scale_add_component(src/diagnostics)
 scale_add_component(src/loader)
 scale_add_component(src/filesystem)
 scale_add_component(src/runtime)
-scale_add_component(src/host)
+if(SCALE_PLATFORM_WINDOWS)
+    # Process supervision and native execution use the Windows API.
+    scale_add_component(src/host)
+endif()
 if(SCALE_ENABLE_SHADER)
     # Compiler (decoder, IR, SPIR-V) and the independent reference interpreter
     # are separate components with separate owners; see docs/TASKS.md.
@@ -58,8 +73,10 @@ endif()
 if(SCALE_ENABLE_GRAPHICS)
     scale_add_component(src/graphics REQUIRED)
 endif()
-scale_add_component(tools/scale_worker)
-scale_add_component(tools/scale REQUIRED)
+if(SCALE_PLATFORM_WINDOWS)
+    scale_add_component(tools/scale_worker)
+    scale_add_component(tools/scale REQUIRED)
+endif()
 
 if(SCALE_BUILD_TESTS)
     add_subdirectory(tests)

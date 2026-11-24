@@ -37,7 +37,7 @@ endif()
 
 scale_add_test(NAME integration_pe_dumpbin
     SOURCES pe_dumpbin_test.cpp
-    LIBS scale::loader scale::common
+    LIBS scale::loader scale::common scale::test_tools
     LABELS integration)
 add_dependencies(integration_pe_dumpbin test_exit test_lib test_ordinal)
 target_compile_definitions(integration_pe_dumpbin PRIVATE

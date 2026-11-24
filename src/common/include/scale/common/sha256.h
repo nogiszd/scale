@@ -1,6 +1,6 @@
 #pragma once
 
-// SHA-256 via Windows CNG (BCrypt). Used for report subject identity.
+// Portable SHA-256 (FIPS 180-4). Used for report subject identity.
 
 #include "scale/common/byte_reader.h"
 #include "scale/common/error.h"
@@ -9,7 +9,7 @@
 
 namespace scale {
 
-// Lowercase hex digest (64 characters). Error code: common/hash_failed.
+// Lowercase hex digest (64 characters). Never fails today; Result is kept for API stability.
 [[nodiscard]] Result<std::string> sha256_hex(ByteView data);
 
 }  // namespace scale

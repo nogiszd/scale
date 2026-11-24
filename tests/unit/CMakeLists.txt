@@ -14,8 +14,12 @@ scale_add_test(NAME unit_diagnostics
     LABELS quick)
 
 # --- PE inspector (T-101) -----------------------------------------------------
+set(_scale_unit_loader_sources loader/pe_image_test.cpp)
+if(SCALE_PLATFORM_WINDOWS)
+    list(APPEND _scale_unit_loader_sources loader/pe_image_win32_test.cpp)
+endif()
 scale_add_test(NAME unit_loader
-    SOURCES loader/pe_image_test.cpp
+    SOURCES ${_scale_unit_loader_sources}
     LIBS scale::loader
     LABELS quick)
 
@@ -44,16 +48,20 @@ scale_add_command_test(NAME selftest_gtest_failure_fails_run
     LABELS quick)
 
 # --- Host supervisor helpers (T-201) -------------------------------------------
-scale_add_test(NAME unit_host
-    SOURCES host/supervisor_unit_test.cpp host/executable_report_test.cpp
-    LIBS scale::host
-    LABELS quick)
+if(SCALE_PLATFORM_WINDOWS)
+    scale_add_test(NAME unit_host
+        SOURCES host/supervisor_unit_test.cpp host/executable_report_test.cpp
+        LIBS scale::host
+        LABELS quick)
+endif()
 
 # --- Image mapping (T-202) -------------------------------------------------------
-scale_add_test(NAME unit_image_map
-    SOURCES loader/image_map_test.cpp
-    LIBS scale::loader
-    LABELS quick)
+if(SCALE_PLATFORM_WINDOWS)
+    scale_add_test(NAME unit_image_map
+        SOURCES loader/image_map_test.cpp
+        LIBS scale::loader
+        LABELS quick)
+endif()
 
 # --- gfx1030 decoder (T-701) ---------------------------------------------------
 if(SCALE_ENABLE_SHADER)

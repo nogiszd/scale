@@ -1,7 +1,8 @@
 #pragma once
 
-// UTF-8 <-> UTF-16 conversion for the Win32 boundary. Internally SCALE uses
-// UTF-8 std::string; wide strings appear only when calling Win32 APIs.
+// Strict UTF-8 <-> wide string conversion, portable (decision 0004). Internally
+// SCALE uses UTF-8 std::string. std::wstring is UTF-16 where wchar_t is 16 bits
+// (Windows) and UTF-32 otherwise; wide strings appear only at OS APIs.
 
 #include "scale/common/error.h"
 

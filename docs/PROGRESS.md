@@ -2,6 +2,32 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-801 Portability groundwork (Claude)
+
+- `scale::common` is now portable. Strict UTF-8 ↔ wide conversion (UTF-16 for
+  16-bit `wchar_t`, UTF-32 otherwise) rejects overlong forms, encoded
+  surrogates, values above U+10FFFF, truncation and lone UTF-16 surrogates.
+  SHA-256 is a FIPS 180-4 implementation. Win32 and BCrypt are gone from
+  `common`. Verification: FIPS vectors including 10^6 'a', plus a match with
+  `Get-FileHash` on `test_reloc.exe`
+  (`50c3a76b…decae7`).
+- Platform gating: the root CMake accepts non-Windows 64-bit GCC/Clang builds
+  (portable components only, UNVERIFIED warning). Host, worker, CLI, image
+  mapping (renamed `image_map_win32.cpp`), test executables and integration
+  tests are Windows-only. A GCC/Clang hardening flag block was added
+  (unverified).
+- Tests: the Windows-only kernel32 inspection case moved to
+  `pe_image_win32_test.cpp`. Temp names no longer use `GetCurrentProcessId`.
+  A shared tool runner (`tests/support/run_tool.h`, Win32 and POSIX)
+  replaces `_wpopen` in the dumpbin test. Codex's `spirv_val_test` will
+  migrate. The new CTest `portable_components_have_no_os_headers` checks 32
+  files, and inserting `<windows.h>` into `run_report.cpp` makes it fail as
+  intended.
+- `ctest` after a clean rebuild: full/release-full 173/173 (169 + 4 new),
+  full-all/release-full-all 236/236, gpu 4/4.
+- Not verified: any non-Windows build (T-802 is blocked without a Linux
+  environment).
+
 ## 2026-11-24 — T-720 Differential runner: first M7 slice verified on hardware (Claude)
 
 - `gpu_shader_differential` (label gpu): for each ABI v0 case, it decodes,
