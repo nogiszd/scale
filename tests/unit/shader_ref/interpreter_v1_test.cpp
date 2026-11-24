@@ -398,3 +398,60 @@ TEST(ShaderRefV1Structure, AbiRules) {
         EXPECT_EQ(run_error(p), "invalid_program");
     }
 }
+
+// ---- Real v3 decoder output through the independent interpreter (after T-708) ----
+// The interpreter re-derives vcc_lo/exec_lo selectors, VOPC fields and branch
+// targets from the raw words. Any decoder disagreement fails these cases.
+
+namespace {
+std::vector<DecodedInstruction> decode_stream(std::initializer_list<std::uint32_t> words) {
+    const std::vector<std::uint32_t> w(words);
+    auto r = scale::shader::decode(scale::ByteView(std::as_bytes(std::span(w))));
+    EXPECT_TRUE(r.has_value()) << (r ? "" : r.error().to_string());
+    return r ? *r : std::vector<DecodedInstruction>{};
+}
+}  // namespace
+
+TEST(ShaderRefV1Decoded, ContractExampleFromRealDecoder) {
+    const auto program = decode_stream({0x7D820083, 0xBE883C6A, 0xBF880004, 0xE0301000, 0x80000201, 0xBF8C3F70,
+                                        0x4A040481, 0xE0701000, 0x80010201, 0xBF810000});
+    ASSERT_EQ(program.size(), 8u);
+    ASSERT_TRUE(check_program(program, AbiVersion::v1).has_value());
+    // The decoded structs match the hand-built ones the other tests use.
+    const Program hand = t707_example();
+    for (std::size_t i = 0; i < program.size(); ++i) {
+        EXPECT_EQ(program[i].opcode, hand.insts[i].opcode) << i;
+        EXPECT_EQ(program[i].dword_offset, hand.insts[i].dword_offset) << i;
+    }
+    EXPECT_EQ(std::get<BranchOperands>(program[2].operands).target_dword, 7);
+
+    auto r = run_abi_v1(program, identity_input(), {0x000000FFu, sentinel_output()});
+    ASSERT_TRUE(r.has_value()) << r.error().to_string();
+    BufferWords expected = sentinel_output();
+    for (std::uint32_t lane = 4; lane <= 7; ++lane) expected[lane] = lane + 1;
+    EXPECT_EQ(r->output, expected);
+
+    r = run_abi_v1(program, identity_input(), {0x0000000Fu, sentinel_output()});
+    ASSERT_TRUE(r.has_value()) << r.error().to_string();
+    EXPECT_EQ(r->output, sentinel_output());
+}
+
+TEST(ShaderRefV1Decoded, BranchesAndExecRestoreFromRealDecoder) {
+    // scc program: every lane stores 11.
+    const auto scc = decode_stream({0x80098281, 0xBF850001, 0x7E04028B, 0xBF840001, 0x7E040296, 0xBF820001,
+                                    0x7E0402A1, 0xE0701000, 0x80010201, 0xBF810000});
+    const auto r = run_abi_v1(scc, identity_input(), {0xFFFFFFFFu, sentinel_output()});
+    ASSERT_TRUE(r.has_value()) << r.error().to_string();
+    BufferWords eleven{};
+    eleven.fill(11);
+    EXPECT_EQ(r->output, eleven);
+
+    // restore program: reactivated lanes never wrote v2 -> undefined_register.
+    const auto restore = decode_stream({0x7D840085, 0xBE883C6A, 0x7E0402FF, 0x00001234, 0xBEFE0308, 0xE0701000,
+                                        0x80010201, 0xBF810000});
+    ASSERT_EQ(restore.size(), 6u);
+    EXPECT_EQ(std::get<AluOperands>(restore[3].operands).destination.kind, OperandKind::exec_lo);
+    const auto e = run_abi_v1(restore, identity_input(), {0xFFFFFFFFu, sentinel_output()});
+    ASSERT_FALSE(e.has_value());
+    EXPECT_EQ(e.error().code, "undefined_register");
+}
