@@ -110,7 +110,7 @@ scale_add_test(NAME integration_native_execution
     LIBS scale::host scale::common
     LABELS integration
     TIMEOUT 60)
-add_dependencies(integration_native_execution test_import_missing test_platform scale_worker test_ret42 test_reloc test_crash test_hang
+add_dependencies(integration_native_execution test_import_missing test_platform scale_worker test_ret42 test_reloc test_crash test_hang test_seh
     test_exit test_lib)
 target_compile_definitions(integration_native_execution PRIVATE
     "SCALE_WORKER_PATH=\"$<TARGET_FILE:scale_worker>\""
@@ -118,6 +118,7 @@ target_compile_definitions(integration_native_execution PRIVATE
     "SCALE_TEST_EXE_RELOC=\"$<TARGET_FILE:test_reloc>\""
     "SCALE_TEST_EXE_CRASH=\"$<TARGET_FILE:test_crash>\""
     "SCALE_TEST_EXE_HANG=\"$<TARGET_FILE:test_hang>\""
+    "SCALE_TEST_EXE_SEH=\"$<TARGET_FILE:test_seh>\""
     "SCALE_TEST_EXE_IMPORT_MISSING=\"$<TARGET_FILE:test_import_missing>\""
     "SCALE_TEST_EXE_EXIT=\"$<TARGET_FILE:test_exit>\""
     "SCALE_TEST_EXE_LIB=\"$<TARGET_FILE:test_lib>\"")
@@ -130,6 +131,10 @@ scale_add_command_test(NAME cli_run_pass
 scale_add_command_test(NAME cli_run_relocated
     COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:test_reloc>
     EXPECT_OUTPUT "outcome: +PASS\nreturned: +42\n"
+    LABELS integration)
+scale_add_command_test(NAME cli_run_handled_exception
+    COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:test_seh>
+    EXPECT_OUTPUT "outcome: +PASS\nreturned: +101\n"
     LABELS integration)
 scale_add_command_test(NAME cli_run_blocked_on_imports
     COMMAND $<TARGET_FILE:scale> run $<TARGET_FILE:test_exit>

@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -252,4 +253,44 @@ inline ImportSection build_import_section(std::uint32_t rva, const std::vector<I
     return out;
 }
 
+// ---- Exception directory helper (T-301) ----------------------------------------------
+
+struct RuntimeFunctionSpec {
+    std::uint32_t begin = 0;
+    std::uint32_t end = 0;
+    std::uint32_t unwind = 0;
+};
+
+// Image with .text at 0x1000 (0x30 bytes: mov eax, 42 ; ret, then int3 padding)
+// and .rdata at 0x2000 (0x200 bytes of file data, `rdata_virtual` bytes of
+// virtual size if larger). Each blob is placed at its .rdata offset; the
+// RUNTIME_FUNCTION array goes at .rdata offset `pdata_offset` and the
+// exception directory names it.
+inline PeBuilder exception_image(const std::vector<std::pair<std::uint32_t, Bytes>>& blobs,
+                                 const std::vector<RuntimeFunctionSpec>& functions,
+                                 std::uint32_t pdata_offset = 0x100, std::uint32_t rdata_virtual = 0) {
+    PeBuilder pe;
+    Bytes text(0x30, std::byte{0xCC});
+    const Bytes code{std::byte{0xB8}, std::byte{0x2A}, std::byte{0}, std::byte{0}, std::byte{0}, std::byte{0xC3}};
+    std::copy(code.begin(), code.end(), text.begin());
+    pe.entry_rva = pe.add_section(".text", text, PeBuilder::kText);
+    Bytes rdata(0x200, std::byte{0});
+    for (const auto& [offset, blob] : blobs) std::copy(blob.begin(), blob.end(), rdata.begin() + offset);
+    for (std::size_t i = 0; i < functions.size(); ++i) {
+        put_u32(rdata, pdata_offset + i * 12 + 0, functions[i].begin);
+        put_u32(rdata, pdata_offset + i * 12 + 4, functions[i].end);
+        put_u32(rdata, pdata_offset + i * 12 + 8, functions[i].unwind);
+    }
+    rdata.resize(0x200, std::byte{0});
+    const std::uint32_t rva = pe.add_section(".rdata", rdata, PeBuilder::kRdata, rdata_virtual);
+    pe.set_directory(loader::DirectoryIndex::exception_table, rva + pdata_offset,
+                     static_cast<std::uint32_t>(functions.size() * 12));
+    return pe;
+}
+
+// UNWIND_INFO header: version, flags, prolog size, code count (frame register 0).
+inline Bytes unwind_header(std::uint8_t version, std::uint8_t flags, std::uint8_t prolog = 0, std::uint8_t codes = 0) {
+    return Bytes{std::byte{static_cast<std::uint8_t>(version | (flags << 3))}, std::byte{prolog}, std::byte{codes},
+                 std::byte{0}};
+}
 }  // namespace scale::test

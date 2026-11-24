@@ -44,12 +44,13 @@ it also runs natively, and the observable results must match.
 
 Supported: EXE images with SectionAlignment ≥ 4 KiB, DIR64 base
 relocations (relocatable images are always moved to an OS-chosen address),
-the debug directory (ignored), and an entry inside an executable section,
-called directly as `int test_entry(void)`.
+the debug directory (ignored), the exception directory (validated and
+registered with `RtlAddFunctionTable`, T-301), and an entry inside an
+executable section, called directly as `int test_entry(void)`.
 
 Rejected with named errors before any memory is made executable: DLLs, every
-other present directory (imports, TLS, exceptions, load config, delay
-imports, exports, CLR, …), other relocation types, W+X sections, and fixed
+other present directory (imports, TLS, load config, delay imports, exports,
+CLR, …), other relocation types, W+X sections, and fixed
 images whose preferred base is taken.
 
 ## Consequences
@@ -57,8 +58,9 @@ images whose preferred base is taken.
 - Each new loader feature (imports, TLS, SEH/unwind registration, DLL init)
   is a separate, tested addition to `map_image`'s allowlist (M3).
 - Mapped images live in private memory. Debuggers and
-  `GetModuleHandle` do not see them as modules. Unwinding through guest code
-  needs `RtlAddFunctionTable` once the exception directory is supported.
+  `GetModuleHandle` do not see them as modules. Exception dispatch and
+  unwinding find guest functions through the table registered with
+  `RtlAddFunctionTable` (T-301), deregistered before the memory is freed.
 - Success with `test_entry` says nothing about CRT entry points
   (`mainCRTStartup`). These are separate M3 features.
 - Executable pages come from `VirtualProtect(PAGE_EXECUTE_READ)` on private

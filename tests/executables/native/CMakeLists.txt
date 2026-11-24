@@ -9,6 +9,10 @@ scale_add_test_executable(test_reloc EXE ENTRY test_entry SOURCES reloc.cpp)
 scale_add_test_executable(test_crash EXE ENTRY test_entry SOURCES crash.cpp)
 scale_add_test_executable(test_hang EXE ENTRY test_entry SOURCES hang.cpp)
 
+# T-301: exception dispatch through the registered exception directory.
+enable_language(ASM_MASM)
+scale_add_test_executable(test_seh EXE ENTRY test_entry SOURCES seh_entry.asm seh.cpp)
+
 # T-204: synthetic platform DLL and an executable that imports from it.
 scale_add_test_executable(test_platform DLL ENTRY test_dll_entry SOURCES platform.cpp platform.def)
 scale_add_test_executable(test_import_missing EXE ENTRY test_entry SOURCES import_missing.cpp LIBS test_platform)

@@ -1,5 +1,7 @@
 #include "scale/loader/image_map.h"
 
+#include "scale/loader/exception_table.h"
+
 #include <windows.h>
 
 #include <cstring>
@@ -46,7 +48,7 @@ Result<void> check_supported(const PeImage& image) {
     for (std::size_t i = 0; i < kDirectoryCount; ++i) {
         const auto index = static_cast<DirectoryIndex>(i);
         if (!image.directories[i].present() || index == DirectoryIndex::base_relocation_table ||
-            index == DirectoryIndex::debug) {
+            index == DirectoryIndex::debug || index == DirectoryIndex::exception_table) {
             continue;
         }
         return map_error("unsupported_directory",
@@ -89,7 +91,9 @@ MappedImage::MappedImage(MappedImage&& other) noexcept
       size_(std::exchange(other.size_, 0)),
       entry_(std::exchange(other.entry_, 0)),
       delta_(std::exchange(other.delta_, 0)),
-      relocations_applied_(std::exchange(other.relocations_applied_, 0)) {}
+      relocations_applied_(std::exchange(other.relocations_applied_, 0)),
+      function_table_(std::exchange(other.function_table_, 0)),
+      functions_registered_(std::exchange(other.functions_registered_, 0)) {}
 
 MappedImage& MappedImage::operator=(MappedImage&& other) noexcept {
     if (this != &other) {
@@ -99,6 +103,8 @@ MappedImage& MappedImage::operator=(MappedImage&& other) noexcept {
         entry_ = std::exchange(other.entry_, 0);
         delta_ = std::exchange(other.delta_, 0);
         relocations_applied_ = std::exchange(other.relocations_applied_, 0);
+        function_table_ = std::exchange(other.function_table_, 0);
+        functions_registered_ = std::exchange(other.functions_registered_, 0);
     }
     return *this;
 }
@@ -108,6 +114,12 @@ MappedImage::~MappedImage() {
 }
 
 void MappedImage::release() noexcept {
+    // The dispatcher must stop using the table before its memory goes away.
+    if (function_table_ != 0) {
+        ::RtlDeleteFunctionTable(reinterpret_cast<PRUNTIME_FUNCTION>(function_table_));
+        function_table_ = 0;
+        functions_registered_ = 0;
+    }
     if (base_ != 0) {
         ::VirtualFree(reinterpret_cast<void*>(base_), 0, MEM_RELEASE);
         base_ = 0;
@@ -117,6 +129,10 @@ void MappedImage::release() noexcept {
 Result<MappedImage> map_image(ByteView file, const PeImage& image) {
     if (auto r = check_supported(image); !r) {
         return std::unexpected(r.error());
+    }
+    const auto exceptions = validate_exception_table(file, image);
+    if (!exceptions) {
+        return std::unexpected(exceptions.error());
     }
     const bool relocatable = image.relocations.has_value() && (image.characteristics & kRelocsStripped) == 0;
 
@@ -190,6 +206,18 @@ Result<MappedImage> map_image(ByteView file, const PeImage& image) {
         }
     }
     ::FlushInstructionCache(::GetCurrentProcess(), base, image.size_of_image);
+
+    // ---- Exception directory (T-301) -------------------------------------------------------
+    // RtlAddFunctionTable takes RVAs relative to the actual base; .pdata
+    // RVAs are base-independent, so relocation does not change the table.
+    if (*exceptions) {
+        auto* table = reinterpret_cast<PRUNTIME_FUNCTION>(base + (*exceptions)->rva);
+        if (!::RtlAddFunctionTable(table, (*exceptions)->function_count, reinterpret_cast<DWORD64>(base))) {
+            return map_error("map_failed", "RtlAddFunctionTable rejected the validated exception directory");
+        }
+        mapped.function_table_ = reinterpret_cast<std::uintptr_t>(table);
+        mapped.functions_registered_ = (*exceptions)->function_count;
+    }
 
     mapped.entry_ = mapped.base_ + image.address_of_entry_point;
     return mapped;

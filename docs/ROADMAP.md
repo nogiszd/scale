@@ -10,7 +10,7 @@ deliverables, not a strict serial order. Tasks and owners are in
 | M0 Foundation | CMake/presets, CLI, diagnostics contract, GoogleTest + CTest | T-000, T-001 | done |
 | M1 PE inspector | Read-only bounded PE32+ AMD64 inspection, dumpbin comparison, `scale inspect` | T-101..T-103 | done |
 | M2 Native execution slice | Supervised worker, image mapping, `scale run` + report.json, unresolved-import diagnostics | T-201..T-204 | done |
-| M3 Imports and Windows runtime fidelity | Exception tables / unwind, TLS, import binding through adapters, delay load, CRT startup, DLL init | T-301 | next (T-301: exception directory) |
+| M3 Imports and Windows runtime fidelity | Exception tables / unwind, TLS, import binding through adapters, delay load, CRT startup, DLL init | T-301, T-302 | in progress: exception directory done (T-301), TLS next (T-302) |
 | M4 Adapters and filesystem | Adapter registry, title root + writable data root, path translation | — | backlog |
 | M5 Integration and diagnostics | report.json completeness, synthetic test title | — | not started |
 | M6 Graphics slice | Vulkan compute harness (done), then a verified triangle through a synthetic adapter | T-601 | compute done, triangle not started |
@@ -24,7 +24,7 @@ deliverables, not a strict serial order. Tasks and owners are in
 
 - **Shaders (Codex):** T-706 `scale-shader` CLI. The next ABI extension
   (wave operations or memory/resources) needs a contract task first.
-- **CPU/runtime (Claude):** T-301 exception directory (`RtlAddFunctionTable`)
-  with a test executable that throws and catches, then the remaining M3
-  features one at a time.
+- **CPU/runtime (Claude):** T-302 TLS directory, then the remaining M3
+  features one at a time (import binding through adapters, CRT startup, DLL
+  init, C++ exceptions).
 - **Graphics (Claude):** the triangle slice after T-721.

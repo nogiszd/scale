@@ -105,6 +105,20 @@ TEST(NativeExecutionReloc, RelocatedPointersMatchReference) {
     EXPECT_EQ(lines(worker).find(" delta=0 "), std::string::npos) << lines(worker);
 }
 
+// ---- T-301: exception dispatch through the registered exception directory -----------
+
+TEST(NativeExecutionSeh, HandledExceptionMatchesReference) {
+    // Natively Windows registers .pdata; the handler resumes and the entry
+    // returns 100 + 1 handled exception.
+    const ProcessResult native = supervise(path_of(SCALE_TEST_EXE_SEH), {});
+    const ProcessResult worker = run_in_worker(SCALE_TEST_EXE_SEH);
+    EXPECT_EQ(native.exit_code, 101u);
+    EXPECT_EQ(worker.termination, Termination::exited) << lines(worker);
+    EXPECT_EQ(worker.exit_code, 101u) << lines(worker);
+    EXPECT_TRUE(has_line(worker, "stage returned value=101")) << lines(worker);
+    EXPECT_NE(lines(worker).find(" unwind_functions=1"), std::string::npos) << lines(worker);
+}
+
 TEST(NativeExecutionCrash, ExceptionMatchesReference) {
     const ProcessResult native = supervise(path_of(SCALE_TEST_EXE_CRASH), {});
     const ProcessResult worker = run_in_worker(SCALE_TEST_EXE_CRASH);
