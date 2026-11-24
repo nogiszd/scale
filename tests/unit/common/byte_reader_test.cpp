@@ -1,6 +1,6 @@
 #include "scale/common/byte_reader.h"
 
-#include "scale_test.h"
+#include <gtest/gtest.h>
 
 #include <array>
 #include <cstddef>
@@ -13,35 +13,35 @@ constexpr std::array<std::byte, 8> kBytes = {std::byte{0x4D}, std::byte{0x5A}, s
 
 }  // namespace
 
-SCALE_TEST(byte_view_reads_little_endian) {
+TEST(ByteView, ReadsLittleEndian) {
     const scale::ByteView view(kBytes);
-    SCALE_CHECK_EQ(view.u16(0).value(), 0x5A4Du);
-    SCALE_CHECK_EQ(view.u32(4).value(), 0x12345678u);
-    SCALE_CHECK_EQ(view.u64(0).value(), 0x1234567800905A4Dull);
+    EXPECT_EQ(view.u16(0), std::uint16_t{0x5A4D});
+    EXPECT_EQ(view.u32(4), std::uint32_t{0x12345678});
+    EXPECT_EQ(view.u64(0), std::uint64_t{0x1234567800905A4D});
 }
 
-SCALE_TEST(byte_view_rejects_out_of_bounds_reads) {
+TEST(ByteView, RejectsOutOfBoundsReads) {
     const scale::ByteView view(kBytes);
-    SCALE_CHECK(!view.u32(5).has_value());
-    SCALE_CHECK(!view.u64(1).has_value());
-    SCALE_CHECK(!view.u8(8).has_value());
-    SCALE_CHECK(!view.u8(std::numeric_limits<std::size_t>::max()).has_value());
+    EXPECT_FALSE(view.u32(5).has_value());
+    EXPECT_FALSE(view.u64(1).has_value());
+    EXPECT_FALSE(view.u8(8).has_value());
+    EXPECT_FALSE(view.u8(std::numeric_limits<std::size_t>::max()).has_value());
 }
 
-SCALE_TEST(byte_view_subview_bounds) {
+TEST(ByteView, SubviewBounds) {
     const scale::ByteView view(kBytes);
     const auto sub = view.subview(4, 4);
-    SCALE_REQUIRE(sub.has_value());
-    SCALE_CHECK_EQ(sub->size(), 4u);
-    SCALE_CHECK_EQ(sub->u32(0).value(), 0x12345678u);
-    SCALE_CHECK(!sub->u8(4).has_value());
-    SCALE_CHECK(view.subview(8, 0).has_value());
-    SCALE_CHECK(!view.subview(4, 5).has_value());
-    SCALE_CHECK(!view.subview(1, std::numeric_limits<std::size_t>::max()).has_value());
+    ASSERT_TRUE(sub.has_value());
+    EXPECT_EQ(sub->size(), 4u);
+    EXPECT_EQ(sub->u32(0), std::uint32_t{0x12345678});
+    EXPECT_FALSE(sub->u8(4).has_value());
+    EXPECT_TRUE(view.subview(8, 0).has_value());
+    EXPECT_FALSE(view.subview(4, 5).has_value());
+    EXPECT_FALSE(view.subview(1, std::numeric_limits<std::size_t>::max()).has_value());
 }
 
-SCALE_TEST(byte_view_empty) {
+TEST(ByteView, Empty) {
     const scale::ByteView view;
-    SCALE_CHECK(view.empty());
-    SCALE_CHECK(!view.u8(0).has_value());
+    EXPECT_TRUE(view.empty());
+    EXPECT_FALSE(view.u8(0).has_value());
 }

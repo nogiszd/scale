@@ -16,7 +16,8 @@ Status: accepted (2026-11-24, T-000)
 - The reference interpreter lives in `src/shader_ref`, separate from the
   compiler in `src/shader`, and may depend only on the decoder.
 - ~~A minimal in-tree test harness; no GoogleTest.~~ Superseded 2026-11-24:
-  AGENTS.md requires GoogleTest (pinned) via CTest. Migration is T-001.
+  AGENTS.md requires GoogleTest (pinned) via CTest. Done in T-001
+  (GoogleTest 1.18.0).
 
 ## Rationale
 

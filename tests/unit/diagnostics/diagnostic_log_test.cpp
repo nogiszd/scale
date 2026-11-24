@@ -1,6 +1,6 @@
 #include "scale/diagnostics/diagnostic_log.h"
 
-#include "scale_test.h"
+#include <gtest/gtest.h>
 
 #include <string>
 
@@ -24,36 +24,36 @@ DiagnosticEvent unresolved(std::string symbol) {
 
 }  // namespace
 
-SCALE_TEST(log_deduplicates_identical_events) {
+TEST(DiagnosticLog, DeduplicatesIdenticalEvents) {
     DiagnosticLog log;
     log.report(unresolved("FixtureAllocate"));
     log.report(unresolved("FixtureFree"));
     log.report(unresolved("FixtureAllocate"));
 
-    SCALE_REQUIRE(log.entries().size() == 2);
-    SCALE_CHECK_EQ(log.total_reported(), 3u);
+    ASSERT_EQ(log.entries().size(), 2u);
+    EXPECT_EQ(log.total_reported(), 3u);
     const auto& first = log.entries()[0];
-    SCALE_CHECK_EQ(first.count, 2u);
-    SCALE_CHECK_EQ(first.first_sequence, 1u);
-    SCALE_CHECK_EQ(first.last_sequence, 3u);
-    SCALE_CHECK_EQ(log.entries()[1].count, 1u);
-    SCALE_CHECK(log.has_fatal());
-    SCALE_CHECK(log.has_errors());
+    EXPECT_EQ(first.count, 2u);
+    EXPECT_EQ(first.first_sequence, 1u);
+    EXPECT_EQ(first.last_sequence, 3u);
+    EXPECT_EQ(log.entries()[1].count, 1u);
+    EXPECT_TRUE(log.has_fatal());
+    EXPECT_TRUE(log.has_errors());
 }
 
-SCALE_TEST(log_is_bounded) {
+TEST(DiagnosticLog, IsBounded) {
     DiagnosticLog log(2);
     log.report(unresolved("A"));
     log.report(unresolved("B"));
     log.report(unresolved("C"));
     log.report(unresolved("A"));
-    SCALE_CHECK_EQ(log.entries().size(), 2u);
-    SCALE_CHECK_EQ(log.dropped(), 1u);
-    SCALE_CHECK_EQ(log.entries()[0].count, 2u);
-    SCALE_CHECK_EQ(log.total_reported(), 4u);
+    EXPECT_EQ(log.entries().size(), 2u);
+    EXPECT_EQ(log.dropped(), 1u);
+    EXPECT_EQ(log.entries()[0].count, 2u);
+    EXPECT_EQ(log.total_reported(), 4u);
 }
 
-SCALE_TEST(log_summary_orders_by_severity) {
+TEST(DiagnosticLog, SummaryOrdersBySeverity) {
     DiagnosticLog log;
     log.report(DiagnosticEvent{.component = "loader",
                                .stage = "pe_parse",
@@ -66,14 +66,14 @@ SCALE_TEST(log_summary_orders_by_severity) {
     const std::string summary = log.summary();
     const auto fatal_pos = summary.find("[error, fatal] runtime/import_resolution/unresolved_import");
     const auto warn_pos = summary.find("[warning] loader/pe_parse/unknown_section_flag");
-    SCALE_REQUIRE(fatal_pos != std::string::npos);
-    SCALE_REQUIRE(warn_pos != std::string::npos);
-    SCALE_CHECK(fatal_pos < warn_pos);
-    SCALE_CHECK(summary.find("symbol=FixtureAllocate") != std::string::npos);
+    ASSERT_NE(fatal_pos, std::string::npos);
+    ASSERT_NE(warn_pos, std::string::npos);
+    EXPECT_LT(fatal_pos, warn_pos);
+    EXPECT_NE(summary.find("symbol=FixtureAllocate"), std::string::npos);
 }
 
-SCALE_TEST(log_empty_summary) {
+TEST(DiagnosticLog, EmptySummary) {
     const DiagnosticLog log;
-    SCALE_CHECK_EQ(log.summary(), std::string("no diagnostics\n"));
-    SCALE_CHECK(!log.has_fatal());
+    EXPECT_EQ(log.summary(), "no diagnostics\n");
+    EXPECT_FALSE(log.has_fatal());
 }

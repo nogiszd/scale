@@ -6,11 +6,12 @@ interpreter, Vulkan backend.
 ## Completed
 
 - T-000 foundation scaffold (see docs/PROGRESS.md 2026-11-24).
+- T-001 GoogleTest 1.18.0 migration (35/35 tests, Debug and Release).
 
 ## Current / next
 
-- T-001 GoogleTest migration (waiting on dependency install), then T-101
-  PE inspector and T-201 worker supervisor.
+- T-001 done. Next: T-101 PE inspector, T-201 worker supervisor, T-601
+  Vulkan compute harness.
 - Review gates: T-701 `decode.h` freeze and
   T-704 ABI contract (Codex).
 - T-601 is ready (Vulkan SDK 1.4.363.0 installed).

@@ -14,7 +14,7 @@
 | `src/shader_ref` | `scale::shader_ref` | shader_decode (public header only), common | Claude | planned, `SCALE_ENABLE_SHADER` |
 | `src/graphics` | `scale::graphics` | common, diagnostics, Vulkan | Claude | planned, `SCALE_ENABLE_GRAPHICS` |
 | `tools/scale` | `scale` (exe) | everything above, host | Claude (registry); command owners own their file | present |
-| `tests/support` | `scale::test_support` | — | Claude | present |
+| `tests/support` | `expect_command.cmake` (CLI checks); GoogleTest 1.18.0 via FetchContent | — | Claude | present |
 
 Directories are created only when their first task starts.
 `scale_add_component` in the root `CMakeLists.txt` already lists every planned

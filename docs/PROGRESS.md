@@ -2,6 +2,25 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-001 GoogleTest migration (Claude)
+
+- GoogleTest **1.18.0** via `FetchContent`, from
+  `https://github.com/google/googletest/releases/download/v1.18.0/googletest-1.18.0.tar.gz`
+  with `URL_HASH SHA256=6e3191c1455468b3fc35a417fb565c1c5071aee1b7e7f85e30cf48a98d37d8b5`.
+  gMock off, shared CRT (/MD).
+- The in-tree harness (`tests/support/scale_test.h`, its main and the skip
+  probe) was removed. All unit cases were ported with unchanged meaning.
+  `scale_add_test` now calls `gtest_discover_tests` (PRE_TEST discovery) with
+  labels, timeout and `SKIP_REGULAR_EXPRESSION "\[  SKIPPED \]"`.
+- Self-tests (`selftest_gtest_*`, label quick) check GoogleTest's skip, pass
+  and failure output and exit codes.
+- One-off end-to-end check: a scratch project registered the probe through
+  `scale_add_test`. CTest reported `Probe.Passing` Passed,
+  `Probe.Skipped` ***Skipped and `Probe.Failing` ***Failed (exit 8).
+- `ctest --preset full`: 100% passed, 35/35 (30 quick, 5 integration).
+  `ctest --preset release-full`: 35/35. Zero compiler warnings in both
+  configurations.
+
 ## 2026-11-24 — Toolchain: Vulkan SDK and LLVM AMDGPU (Claude)
 
 - Vulkan SDK 1.4.363.0 installed by the user. `scripts/vsenv.ps1` now reloads
