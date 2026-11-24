@@ -22,7 +22,7 @@ namespace {
 
 using namespace scale::shader;
 
-// Fixture words from the T-704 ABI contract. LLVM independently assembles
+// Test program words from the T-704 ABI contract. LLVM independently assembles
 // and disassembles tests/shader/add_lane_to_input.s.
 constexpr std::uint32_t kExampleWords[]{
     0xe0301000, 0x80000201, 0xbf8c3f70, 0x4a040500,
@@ -127,14 +127,14 @@ struct ReferenceInstruction {
     std::vector<std::uint32_t> words;
 };
 
-void expect_disassembly(std::string_view fixture, std::size_t instruction_count,
+void expect_disassembly(std::string_view test_program, std::size_t instruction_count,
                         std::span<const std::uint32_t> contract_words = {}) {
     constexpr std::string_view reference_dir = SCALE_SHADER_LLVM_REFERENCE_DIR;
     if (reference_dir.empty()) {
         GTEST_SKIP() << "llvm-mc and llvm-objdump with AMDGPU were unavailable at configure time";
     }
 
-    const auto reference_path = std::format("{}/{}.disasm", reference_dir, fixture);
+    const auto reference_path = std::format("{}/{}.disasm", reference_dir, test_program);
     const auto path = scale::to_wide(reference_path);
     ASSERT_TRUE(path.has_value()) << path.error().to_string();
     std::ifstream file{std::filesystem::path(*path)};
@@ -176,7 +176,7 @@ void expect_disassembly(std::string_view fixture, std::size_t instruction_count,
     for (std::size_t i = 0; i < reference.size(); ++i) {
         const auto& expected = reference[i];
         const auto& instruction = (*decoded)[i];
-        SCOPED_TRACE(std::format("{} at 0x{:x}", fixture, expected.address));
+        SCOPED_TRACE(std::format("{} at 0x{:x}", test_program, expected.address));
         EXPECT_EQ(without_whitespace(instruction_text(instruction)), expected.text);
         EXPECT_EQ(instruction.dword_offset * sizeof(std::uint32_t), expected.address);
         ASSERT_EQ(instruction.word_count, expected.words.size());

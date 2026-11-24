@@ -43,8 +43,8 @@ The proposed public freeze for T-703 is [ir.h](../../../src/shader/include/scale
 The ordered IR retains input loads, waits, the final output store and the
 terminator. Lowering validates descriptor use, address operands, register
 definition, pending loads and stream termination. Failures use documented
-error codes with the instruction dword offset where available. Fixture JSON
-metadata and the data-dependent float domain are checked by the caller.
+error codes with the instruction dword offset where available. The caller
+checks test case metadata and the data-dependent float domain.
 
 ```powershell
 . .\scripts\vsenv.ps1
@@ -109,7 +109,7 @@ git diff --cached --check
   `llvm-objdump --disassemble --mcpu=gfx1030` produced both listings. In both
   configurations GoogleTest matched text, offsets and raw words for all 33
   subset instructions (55 dwords) and all five T-704 instructions (seven
-  dwords). The T-704 words also match the ABI contract. The subset fixture
+  dwords). The T-704 words also match the ABI contract. The subset test program
   exercises all 12 opcodes, the e32/e64 forms, register and constant sources,
   signed immediates, wait counters and MUBUF load/store addressing fields.
 - Changing `0.5` to `0.75` in the generated LLVM listing failed the subset

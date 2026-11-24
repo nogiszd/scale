@@ -71,8 +71,8 @@ struct IrProgram {
 };
 
 // Lower a complete decoded gfx1030 stream under the synthetic T-704 ABI v0.
-// The result owns its data. Fixture metadata and the data-dependent floating
-// point domain are checked by the caller. The first lowering failure uses
+// The result owns its data. The caller checks test case metadata and the
+// data-dependent floating point domain. The first lowering failure uses
 // component "shader" and one of these codes:
 // invalid_decoded_instruction, invalid_program, unsupported_abi,
 // reserved_register, undefined_register, load_not_ready.

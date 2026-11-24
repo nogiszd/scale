@@ -1,6 +1,6 @@
 # Synthetic shader ABI v0
 
-This contract is for Scale's first self-authored `gfx1030` compute fixtures.
+This contract is for Scale's first self-authored `gfx1030` compute test programs.
 Every requirement below is a **synthetic ABI decision**. Use the AMD and LLVM
 references for instruction semantics and encodings. Xbox shader metadata,
 container parsing and AMDHSA code objects are outside this contract.
@@ -44,10 +44,10 @@ access behavior are outside v0.
 Every load must be covered by a later `s_waitcnt vmcnt(0)` before the final
 store and before any use or overwrite of the load destination. This is the
 only v0 wait form. The compiler may represent a validated load and wait
-with a synchronous SPIR-V load and its normal value dependency. Each fixture
-issues exactly one store immediately before `s_endpgm`, writing one dword
-per lane. The observable result is all 32 output dwords in lane order after
-dispatch completion.
+with a synchronous SPIR-V load and its normal value dependency. Each test
+program issues exactly one store immediately before `s_endpgm`, writing one
+dword per lane. The observable result is all 32 output dwords in lane order
+after dispatch completion.
 
 **Synthetic ABI decision.** Emit a `GLCompute` entry point with
 `LocalSize 32 1 1`. Map `v0` to `LocalInvocationIndex` and `v1` to four times
@@ -101,7 +101,7 @@ device without `shaderRoundingModeRTEFloat32` cannot run an `f32` arithmetic
 case. Report the missing capability and mark the GPU case SKIPPED. Integer
 cases have no float-controls dependency.
 
-Report invalid fixture data and unsupported instructions or ABI usage as
+Report invalid test case data and unsupported instructions or ABI usage as
 errors before dispatch. Include the case name and, for instruction-specific
 errors, its offset and opcode when available. Follow the
 [diagnostics contract](diagnostics.md) for event fields and the
