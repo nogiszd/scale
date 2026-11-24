@@ -28,8 +28,8 @@ std::string_view opcode_name(Opcode opcode) {
     case Opcode::v_mul_f32: return "v_mul_f32";
     case Opcode::buffer_load_dword: return "buffer_load_dword";
     case Opcode::buffer_store_dword: return "buffer_store_dword";
+    default: return "unknown opcode";
     }
-    return "unknown opcode";
 }
 
 class Lowerer {
@@ -152,8 +152,8 @@ private:
             }
             return *value;
         }
+        default: return error("invalid_decoded_instruction", "unknown source operand kind");
         }
-        return error("invalid_decoded_instruction", "unknown source operand kind");
     }
 
     Result<void> alu(IrOpcode opcode, IrLanes lanes, IrType type = IrType::u32) {
@@ -241,6 +241,7 @@ private:
         case Opcode::buffer_load_dword: return buffer(true);
         case Opcode::buffer_store_dword: return buffer(false);
         case Opcode::s_endpgm: break;  // Handled by run with the stream-level checks.
+        default: break;
         }
         return error("invalid_decoded_instruction", "opcode cannot be lowered");
     }

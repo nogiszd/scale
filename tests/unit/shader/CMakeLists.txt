@@ -67,7 +67,7 @@ scale_add_test(NAME unit_shader_spirv
 
 scale_add_test(NAME integration_shader_spirv_val
     SOURCES spirv_val_test.cpp
-    LIBS scale::shader_spirv
+    LIBS scale::shader_spirv scale::test_tools
     LABELS integration)
 
 find_program(SCALE_SHADER_SPIRV_VAL spirv-val HINTS "$ENV{VULKAN_SDK}/Bin" NO_CACHE)

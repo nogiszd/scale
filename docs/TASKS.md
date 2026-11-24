@@ -33,10 +33,10 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-705 | Shader test-case library (T-704 JSON) | Codex | DONE | T-704 | M7 |
 | T-706 | `scale-shader` CLI (decode / compile / validate) | Codex | READY | T-705 | M7 |
 | T-707 | Shader ABI v1 contract: EXEC masks and control flow | Codex | DONE | T-704 | M7 |
-| T-708 | Decoder for ABI v1 (decode.h v3: vcc_lo/exec_lo, VOPC, branches) | Codex | READY | T-707 | M7 |
+| T-708 | Decoder for ABI v1 (decode.h v3: vcc_lo/exec_lo, VOPC, branches) | Codex | IN_PROGRESS (interface v3 frozen) | T-707 | M7 |
 | T-709 | IR + SPIR-V for ABI v1 (EXEC masks, structured branches, VCC exchange) | Codex | WAITING | T-708 | M7 |
 | T-711 | RDNA2 reference interpreter | Claude | DONE | T-701 (interface), T-704 | M7 |
-| T-712 | Reference interpreter for ABI v1 | Claude | WAITING | T-708 (interface) | M7 |
+| T-712 | Reference interpreter for ABI v1 | Claude | READY | T-708 (interface) | M7 |
 | T-720 | Differential runner: interpreter vs GPU | Claude | DONE (inline cases; JSON via T-705 next) | T-601, T-703, T-711 | M7 |
 
 Unassigned backlog: title filesystem / path translation (M4), adapter
@@ -49,7 +49,7 @@ Dependent work starts from a **frozen public header** that has been merged to
 
 | Interface | Producer | Consumer | Freeze deliverable |
 |---|---|---|---|
-| `src/shader/include/scale/shader/decode.h` | Codex (T-701) | Claude (T-711) | **Frozen** at `c4ce6f3` (v2: 3 sources, raw `encoded` field) |
+| `src/shader/include/scale/shader/decode.h` | Codex (T-701, T-708) | Claude (T-711, T-712) | **Frozen** v3 (T-708: vcc_lo/exec_lo, VOPC, branches; additive over v2 `c4ce6f3`) |
 | `docs/contracts/shader_abi.md` | Codex (T-704) | Claude (T-711, T-720) | **Frozen** at `d4886a5` (ABI v0) |
 | `src/shader/include/scale/shader/test_case.h` | Codex (T-705) | Claude (T-720), Codex (T-706) | **Frozen** (v0 + v1 fields) |
 

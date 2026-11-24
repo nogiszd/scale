@@ -59,8 +59,8 @@ std::string operand_text(const Operand& operand) {
         EXPECT_EQ(operand.value, static_cast<std::uint32_t>(std::bit_cast<std::int16_t>(low)));
         return std::format("0x{:x}", low);
     }
+    default: return "<unexpected operand>";
     }
-    return "<unexpected operand>";
 }
 
 std::string alu_text(const DecodedInstruction& instruction, std::string_view mnemonic, Encoding base_encoding) {
@@ -117,8 +117,8 @@ std::string instruction_text(const DecodedInstruction& instruction) {
         EXPECT_EQ(instruction.encoding, Encoding::sopp);
         EXPECT_TRUE(std::holds_alternative<std::monostate>(instruction.operands));
         return "s_endpgm";
+    default: return "<unexpected opcode>";
     }
-    return "<unexpected opcode>";
 }
 
 struct ReferenceInstruction {
