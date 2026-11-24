@@ -2,6 +2,41 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-202 First native execution slice (Claude)
+
+- Decision 0002: custom mapping in the worker. The OS loader cannot meet
+  the resolver policy or stop before an unresolved import. It stays the
+  native reference.
+- `scale::loader::map_image` copies headers and sections into private
+  memory, applies DIR64 relocations (relocatable images always move), sets
+  per-section protections (headers R, code RX, data RW, gaps NOACCESS) and
+  returns the entry. Before allocating, it rejects DLLs, any directory except
+  base relocations and debug, other relocation types, W+X sections, a
+  non-executable or zero entry, and a taken preferred base without
+  relocations. `read_file` is shared with `inspect_pe_file`.
+- `fixture_ret42.exe` (`tests/fixtures/native`): entry contract
+  `int fixture_entry(void)` returning the initialized global
+  `fixture_result` (42). No CRT, no imports.
+- Native reference: Windows exits the process with the entry's return value.
+  42 in 30/30 runs of a scratch probe, and 42 under the supervisor in the
+  test.
+- Worker `run-fixture <path>` reports `stage start/inspected/mapped/entry/
+  returned value=N` and exits with the entry's value. Loader errors exit 3
+  with `error component=... code=... message=...`. Observed run:
+  `stage mapped base=0x140000000 delta=0 relocations=0`,
+  `stage returned value=42`, exit 42, 17 ms. `fixture_exit.exe`: `error
+  component=loader code=unsupported_directory message=the import_table
+  directory ...`, exit 3, entry never reached.
+- Tests: `unit_image_map` (11, quick): mapping and protections checked with
+  `VirtualQuery`, DIR64 relocation, release on destruction, and every
+  rejection code. No code is executed in this process.
+  `integration_native_fixture` (5): native reference = 42, worker = 42 and
+  equal to the reference with all stages, imports/DLL/missing file rejected
+  before entry.
+- Limitations: one fixture with a custom entry. Relocated-data execution is
+  T-203. There is no `scale run` CLI yet (T-203). Imports, TLS, exceptions and
+  CRT entry points are unsupported and rejected.
+
 ## 2026-11-24 — T-201 Worker process supervisor (Claude)
 
 - `scale::host::run_supervised` (`src/host`) creates the worker directly in a

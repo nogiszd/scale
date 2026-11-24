@@ -48,3 +48,9 @@ scale_add_test(NAME unit_host
     SOURCES host/supervisor_unit_test.cpp
     LIBS scale::host
     LABELS quick)
+
+# --- Fixture loader mapping (T-202) ---------------------------------------------
+scale_add_test(NAME unit_image_map
+    SOURCES loader/image_map_test.cpp
+    LIBS scale::loader
+    LABELS quick)

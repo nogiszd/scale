@@ -1,4 +1,5 @@
 #include "scale/loader/pe_image.h"
+#include "scale/loader/image_map.h"
 
 #include "scale/common/checked.h"
 #include "scale/common/text.h"
@@ -608,7 +609,7 @@ Result<PeImage> inspect_pe(ByteView file) {
     return Parser(file).run();
 }
 
-Result<PeImage> inspect_pe_file(const std::filesystem::path& path, std::uint64_t max_size) {
+Result<std::vector<std::byte>> read_file(const std::filesystem::path& path, std::uint64_t max_size) {
     std::error_code ec;
     const std::uintmax_t size = std::filesystem::file_size(path, ec);
     if (ec) {
@@ -622,11 +623,19 @@ Result<PeImage> inspect_pe_file(const std::filesystem::path& path, std::uint64_t
     if (!in) {
         return loader_error("file_open_failed", std::format("cannot open '{}' for reading", display(path)));
     }
-    std::vector<char> data(static_cast<std::size_t>(size));
-    if (size != 0 && !in.read(data.data(), static_cast<std::streamsize>(size))) {
+    std::vector<std::byte> data(static_cast<std::size_t>(size));
+    if (size != 0 && !in.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(size))) {
         return loader_error("file_read_failed", std::format("short read from '{}'", display(path)));
     }
-    return inspect_pe(ByteView(std::as_bytes(std::span(data))));
+    return data;
+}
+
+Result<PeImage> inspect_pe_file(const std::filesystem::path& path, std::uint64_t max_size) {
+    const auto data = read_file(path, max_size);
+    if (!data) {
+        return std::unexpected(data.error());
+    }
+    return inspect_pe(ByteView(*data));
 }
 
 }  // namespace scale::loader

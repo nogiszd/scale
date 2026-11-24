@@ -108,3 +108,16 @@ scale_add_test(NAME integration_host_supervisor
 add_dependencies(integration_host_supervisor scale_worker)
 target_compile_definitions(integration_host_supervisor PRIVATE
     "SCALE_WORKER_PATH=\"$<TARGET_FILE:scale_worker>\"")
+
+# --- First native execution slice (T-202) ----------------------------------------
+scale_add_test(NAME integration_native_fixture
+    SOURCES native_fixture_test.cpp
+    LIBS scale::host scale::common
+    LABELS integration
+    TIMEOUT 60)
+add_dependencies(integration_native_fixture scale_worker fixture_ret42 fixture_exit fixture_lib)
+target_compile_definitions(integration_native_fixture PRIVATE
+    "SCALE_WORKER_PATH=\"$<TARGET_FILE:scale_worker>\""
+    "SCALE_FIXTURE_RET42=\"$<TARGET_FILE:fixture_ret42>\""
+    "SCALE_FIXTURE_EXIT=\"$<TARGET_FILE:fixture_exit>\""
+    "SCALE_FIXTURE_LIB=\"$<TARGET_FILE:fixture_lib>\"")
