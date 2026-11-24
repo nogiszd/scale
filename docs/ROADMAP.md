@@ -23,8 +23,8 @@ deliverables, not a strict serial order. Tasks and owners are in
 ## Current tracks
 
 - **Shaders (Codex):** T-709 IR + SPIR-V for ABI v1, then T-706 `scale-shader` CLI.
-- **Shaders, verification (Claude):** T-721 moves the GPU differential runner
-  to shared JSON test cases and adds ABI v1 GPU cases once T-709 lands.
+- **Shaders, verification (Claude):** T-721 GPU differential runner on shared
+  JSON test cases (done); ABI v1 GPU cases run once T-709 lands.
 - **CPU/runtime (Claude):** T-301 exception directory (`RtlAddFunctionTable`)
   with a test executable that throws and catches, then the remaining M3
   features one at a time.

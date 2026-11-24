@@ -37,7 +37,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-711 | RDNA2 reference interpreter (ABI v0) | Claude | DONE | T-701, T-704 | M7 |
 | T-712 | Reference interpreter for ABI v1 | Claude | DONE | T-708 | M7 |
 | T-720 | Differential runner: interpreter vs GPU (inline ABI v0 cases) | Claude | DONE | T-601, T-703, T-711 | M7 |
-| T-721 | Differential runner on JSON test cases, ABI v1 GPU cases | Claude | READY (v1 part WAITING on T-709) | T-705, T-720, T-709 | M7 |
+| T-721 | Differential runner on JSON test cases, ABI v1 GPU cases | Claude | IN_PROGRESS (JSON runner done; v1 GPU part waits for T-709) | T-705, T-720, T-709 | M7 |
 | T-801 | Portability groundwork (decision 0004) | Claude | DONE | T-000 | infra |
 | T-802 | Linux build/test environment and CI | unassigned | BLOCKED (no Linux environment) | T-801 | infra |
 
@@ -86,9 +86,12 @@ Lower ABI v1 per `docs/contracts/shader_abi.md`: uniform EXEC/VCC/SCC/PC,
 static branch-structure checks (forward only, the single store and end on
 every path), a structured block dispatcher, per-lane guards, masked store,
 and the workgroup-memory VCC exchange with barriers in uniform control flow.
-No subgroup-size assumptions. spirv-val on every test program. Put the T-707
-worked examples in `tests/shader/*.json` (T-705 format, `abi_version: 1`) so
-T-721 can run them on the GPU. GPU execution itself is T-721.
+No subgroup-size assumptions. spirv-val on every test program. The ABI v1
+GPU cases already exist in `tests/shader/cases/` (`t707_*`,
+`v1_scc_and_unconditional_branches`); add more there in the same format. The
+case's `initial_exec` reaches the translated program without an extra
+binding (contract), so document how the lowering API takes it. GPU
+execution itself is T-721.
 
 ### T-706 — `scale-shader` CLI (Codex, after T-709)
 
@@ -105,8 +108,14 @@ malformed input. Natural home for the opt-in shader debug mode (decision
 
 ### T-721 — Differential runner on JSON test cases (Claude)
 
-Replace the T-720 inline cases with `tests/shader/*.json` loaded through
-`scale::shader_testcase`. Run each case on `scale::shader_ref` (`run_abi_v0`
+Done so far: `gpu_shader_differential` loads every `tests/shader/cases/*.json`
+through `scale::shader_testcase`, one CTest test per case. ABI v0 cases run
+on the interpreter and the GPU. ABI v1 cases run the interpreter checks and
+SKIP the GPU part with the T-709 reason until the compiler lowers ABI v1.
+Remaining: pass `initial_exec` to the lowering once T-709 defines it.
+
+Original scope: replace the T-720 inline cases with JSON test cases loaded
+through `scale::shader_testcase`. Run each case on `scale::shader_ref` (`run_abi_v0`
 or `run_abi_v1`) and on the GPU, and compare both with the manual expected
 values. After T-709: ABI v1 cases including partial initial EXEC. Records
 device, driver, tools and seed; label `gpu`; software devices labelled

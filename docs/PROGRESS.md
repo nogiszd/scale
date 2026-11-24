@@ -8,11 +8,34 @@ Only recorded, executed results, newest first. Each entry describes the state at
 |---|---|
 | M0 Foundation, M1 PE inspector, M2 native execution | complete |
 | M3 runtime fidelity | next: T-301 exception directory registration |
-| M7 shaders | first compute slice verified on hardware (ABI v0). ABI v1: contract (T-707), decoder (T-708) and reference interpreter (T-712) done and cross-checked against each other. Test-case library merged (T-705). Next: IR + SPIR-V for v1 (T-709), then the `scale-shader` CLI (T-706) (Codex); GPU runner on JSON cases with v1 GPU cases (T-721, Claude). |
+| M7 shaders | first compute slice verified on hardware (ABI v0). ABI v1: contract (T-707), decoder (T-708) and reference interpreter (T-712) done and cross-checked against each other. Test-case library merged (T-705). Next: IR + SPIR-V for v1 (T-709), then the `scale-shader` CLI (T-706) (Codex); ABI v1 GPU cases are authored and wait for T-709 (T-721). |
 | M6 graphics | Vulkan compute harness with per-device fingerprints (T-601). Coverage: GPU class A2 only. |
 | Portability | groundwork done (T-801). Linux unverified (T-802 blocked). |
 
-Latest suite totals: `full`/`release-full` 173/173, `full-all`/`release-full-all` 277/277, `gpu` 4/4 (RX 9070 XT).
+Latest suite totals: `full`/`release-full` 173/173, `full-all`/`release-full-all` 284/284 (3 SKIPPED: ABI v1 GPU part, T-709), `gpu` 11/11 (8 passed, 3 SKIPPED, RX 9070 XT).
+
+## 2026-11-24 — T-721 Differential runner on JSON test cases (Claude, in progress)
+
+- `tests/shader/cases/*.json` (T-705 format) replace the T-720 inline cases:
+  the four ABI v0 cases with unchanged words and values, plus three ABI v1
+  cases: both T-707 worked examples (`t707_exec_ff_lanes_4_to_7`,
+  `t707_exec_0f_branch_taken`) and `v1_scc_and_unconditional_branches`
+  (all lanes 11). Generated once from the hand-computed values; words from
+  llvm-mc 23.1.6.
+- `gpu_shader_differential` is parameterized: one CTest test per case file,
+  named after the case, plus `DirectoryHasAllCases` (at least 7 files) so an
+  empty directory cannot pass. Each case checks that its `name` matches the
+  file name and prints its ABI version and seed.
+- Results on the RX 9070 XT: the four v0 cases PASS (interpreter and GPU
+  agree with the expected words). The three v1 cases pass the interpreter
+  checks, then report SKIPPED for the GPU part because the compiler does not
+  lower ABI v1 yet (T-709). If the compiler starts lowering v1 before the
+  runner passes `initial_exec`, the case FAILS instead of running a wrong mask.
+- Mutation checks: changing one expected word in `u32_double_wrap` fails the
+  interpreter and the GPU comparison. Changing one in
+  `t707_exec_ff_lanes_4_to_7` fails the interpreter check before the skip.
+- `ctest`: full/release-full 173/173, full-all/release-full-all 284/284
+  (3 SKIPPED), gpu 11/11 (3 SKIPPED).
 
 ## 2026-11-24 — T-708 merged; decoder ↔ interpreter cross-check for ABI v1 (Claude)
 
