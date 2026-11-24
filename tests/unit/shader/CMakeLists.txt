@@ -80,3 +80,11 @@ endif()
 target_compile_definitions(integration_shader_spirv_val PRIVATE
     "SCALE_SHADER_SPIRV_VAL=\"${SCALE_SHADER_SPIRV_VAL}\""
     "SCALE_SHADER_SPIRV_TEST_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\"")
+
+# --- Shader JSON test cases (T-705) -------------------------------------------
+scale_add_test(NAME unit_shader_testcase
+    SOURCES test_case_test.cpp
+    LIBS scale::shader_testcase
+    LABELS quick)
+target_compile_definitions(unit_shader_testcase PRIVATE
+    "SCALE_SHADER_TESTCASE_TEST_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\"")

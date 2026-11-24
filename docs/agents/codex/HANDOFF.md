@@ -33,9 +33,42 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-705 — REVIEW (interface freeze)
+### T-705 — REVIEW (loader implementation)
 
-Review branch `codex/T-705-testcase`, based on `integration` at `d93cf1e`.
+Review branch `codex/T-705-testcase-impl`, based on `integration` at
+`78c2ee9`. `scale::shader_testcase` implements the frozen v0/v1 API using
+a schema-specific parser with no JSON dependency. It validates UTF-8,
+decodes string escapes before matching keys, and accepts fields in any
+order. The file loader checks the caller's byte cap as it reads. The
+translator, reference interpreter and graphics runtime are independent of
+this library. [JSON syntax and Unicode rules](https://www.rfc-editor.org/rfc/rfc8259.html)
+
+```powershell
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset debug
+ctest --preset full
+cmake --preset release -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset release
+ctest --preset release-full
+git diff --exit-code 78c2ee9 -- src/shader/include/scale/shader/test_case.h
+git diff --cached --check
+```
+
+- Debug and Release each passed all 239 tests with zero skips. The 11
+  loader cases cover the T-704 and T-707 examples, zero EXEC, escaped and
+  UTF-8 names, and negative checks for malformed JSON and UTF-8, every
+  required field, duplicate and unknown fields, unsupported versions and
+  dispatch, invalid field values, and the file cap.
+- The directory-path test accepts an open or read error because the point
+  of failure depends on the host's stream implementation. The missing
+  file and size-limit tests assert their exact error codes.
+
+## Completed
+
+### T-705 — Test-case interface freeze
+
+Approved and frozen on `integration` at `78c2ee9`.
 The public [test_case.h](../../../src/shader/include/scale/shader/test_case.h)
 defines owning types for the v0 and v1 JSON case format. The v1-only
 `initial_exec` and `initial_output_words` are one optional record. Its
@@ -65,8 +98,6 @@ git diff --cached --check
 - A scratch CMake consumer compiled against `scale::shader_testcase` and
   checked the parser and loader signatures, the 32-word lane array, and
   the paired v1 fields.
-
-## Completed
 
 ### T-707 — Shader ABI v1 contract
 
@@ -280,12 +311,11 @@ git diff --cached --check
 
 ## Next
 
-After the T-705 interface review, start the T-708 `decode.h` v3 proposal
-from current `integration` and stop for its independent freeze. Then take
-T-705, T-708, T-709 and T-706 in that order, starting each from current
-`integration`. When next editing the shader ABI contract, update its
-instruction syntax citations to the pinned LLVM 23.x documentation.
+Start the T-708 `decode.h` v3 proposal from current `integration` and stop
+for its independent freeze. T-706 follows the T-708 review checkpoint.
+When next editing the shader ABI contract, update its instruction syntax
+citations to the pinned LLVM 23.x documentation.
 
 ## Requests to coordinator
 
-- Review and freeze the T-705 header for T-720 and T-706.
+- Review and merge the T-705 loader for T-720 and T-706.
