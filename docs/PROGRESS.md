@@ -2,6 +2,35 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — T-711 RDNA2 reference interpreter (Claude)
+
+- `scale::shader_ref` (`src/shader_ref`) interprets decoded gfx1030
+  instructions directly over a modeled wave32: SGPRs, VGPRs with per-lane
+  definedness, EXEC, VCC, SCC, and the two ABI v0 buffers. It depends only on
+  the frozen `decode.h`. It shares no code with `shader_ir` or `shader_spirv`.
+- Semantics from the RDNA 2 ISA and ABI v0: `s_add_u32` sets SCC = carry,
+  `s_movk_i32` sign-extends, vector ops touch only active lanes,
+  `v_mul_lo_u32` keeps the low 32 bits, and f32 add/mul are binary32 RNE
+  inside the ABI's finite-normal domain (operands *and* results, so a zero
+  result is out of domain). MUBUF uses v1 addressing with bounds and
+  alignment checks. Loads are pending until `s_waitcnt vmcnt(0)`.
+- Decoder cross-check: inline constants (all 90 selectors), literals (the
+  trailing dword) and register indices are re-derived from `Operand::encoded`
+  and raw words. A mismatch is `decoder_disagreement`.
+- `unit_shader_ref` (16 cases, label quick, shader build only). Instruction
+  words come from llvm-mc 23.1.6, and expected values are computed by hand.
+  Coverage: scalar carry, inline constants, wrap, mul_lo, two RNE tie cases
+  (1 + 2^-24 → 1.0; 1 + 1.5 ulp → 1 + 2 ulp), the float domain (subnormal,
+  NaN, zero result, overflow), inactive lanes, the T-704 example against the
+  contract's manual outputs, load ordering, program shape, reserved and
+  undefined registers, buffer bounds, and decoder disagreement.
+- Mutation checks: a wrong SCC carry is caught. A wrong inline 4.0 entry was
+  **not** caught at first, so the full inline-constant sweep test was added,
+  and it now catches the mutation.
+- `ctest`: full/release-full 169/169. Shader builds: Debug 228/228, Release
+  228/228.
+- Next: T-601 (Vulkan harness), then T-720 (interpreter vs GPU readback).
+
 ## 2026-11-24 — Project name written as SCALE (Claude)
 
 The project name is now written **SCALE** in prose, documentation, comments

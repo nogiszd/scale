@@ -23,7 +23,7 @@ Test totals (unchanged since the T-703 merge, `da29a41`): `ctest --preset full` 
 
 ## My next tasks, in order
 
-1. **T-711 — RDNA2 reference interpreter** (`src/shader_ref`,
+1. ~~**T-711 — RDNA2 reference interpreter**~~ DONE (`scale::shader_ref`, 16 tests, mutation-checked). Former plan: (`src/shader_ref`,
    `scale::shader_ref`). It interprets `scale::shader::DecodedInstruction`
    directly (frozen `decode.h`, `c4ce6f3`) over a modeled wave32: SGPRs,
    VGPRs, EXEC, VCC, SCC, and the two T-704 buffers. It must not use

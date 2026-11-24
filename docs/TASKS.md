@@ -33,7 +33,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-705 | Shader test-case library (T-704 JSON) | Codex | READY | T-704 | M7 |
 | T-706 | `scale-shader` CLI (decode / compile / validate) | Codex | WAITING | T-705 | M7 |
 | T-707 | Shader ABI v1 contract: EXEC masks and control flow | Codex | READY | T-704 | M7 |
-| T-711 | RDNA2 reference interpreter | Claude | READY | T-701 (interface), T-704 | M7 |
+| T-711 | RDNA2 reference interpreter | Claude | DONE | T-701 (interface), T-704 | M7 |
 | T-720 | Differential runner: interpreter vs GPU | Claude | WAITING | T-601, T-703, T-711 | M7 |
 
 Unassigned backlog: title filesystem / path translation (M4), adapter

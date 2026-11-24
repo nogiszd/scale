@@ -65,3 +65,10 @@ scale_add_test(NAME unit_runtime
     SOURCES runtime/import_resolver_test.cpp
     LIBS scale::runtime
     LABELS quick)
+# --- Reference interpreter (T-711) ------------------------------------------------
+if(SCALE_ENABLE_SHADER)
+    scale_add_test(NAME unit_shader_ref
+        SOURCES shader_ref/interpreter_test.cpp
+        LIBS scale::shader_ref
+        LABELS quick)
+endif()
