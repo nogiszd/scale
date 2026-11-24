@@ -37,7 +37,7 @@ DWORD protection_for(std::uint32_t characteristics) {
 // Rejects everything outside the supported subset before allocating memory.
 Result<void> check_supported(const PeImage& image) {
     if (image.is_dll()) {
-        return map_error("unsupported_image", "DLL images are not supported by the fixture loader");
+        return map_error("unsupported_image", "DLL images are not supported by the loader yet");
     }
     if (image.section_alignment < kPageSize) {
         return map_error("unsupported_image",
@@ -50,7 +50,7 @@ Result<void> check_supported(const PeImage& image) {
             continue;
         }
         return map_error("unsupported_directory",
-                         std::format("the {} directory is not supported by the fixture loader", directory_name(index)));
+                         std::format("the {} directory is not supported by the loader yet", directory_name(index)));
     }
     if (image.relocations) {
         for (unsigned type = 0; type < image.relocations->count_by_type.size(); ++type) {

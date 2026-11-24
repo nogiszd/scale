@@ -28,8 +28,8 @@ The project is developed incrementally, with an emphasis on correctness, reprodu
 | Milestone | Component         | Status       | Current scope                                                                            |
 | :-------- | :---------------- | :----------- | :--------------------------------------------------------------------------------------- |
 | M0        | Foundation        | **Complete** | Build system, CLI skeleton, diagnostics contract and CTest infrastructure.               |
-| M1        | PE inspector      | **Complete** | `scale::loader`, read-only PE32+ inspection and fixtures compared against `dumpbin`.     |
-| M2        | Native execution  | In progress  | Supervised worker, fixture loader and `scale run`; missing-import diagnostic next (T-204). |
+| M1        | PE inspector      | **Complete** | `scale::loader`, read-only PE32+ inspection and test executables compared against `dumpbin`.     |
+| M2        | Native execution  | In progress  | Supervised worker, Scale loader and `scale run`; missing-import diagnostic next (T-204). |
 | M6        | Graphics          | Planned      | Vulkan graphics harness; requires Vulkan SDK (T-601).                                    |
 | M7        | Shader recompiler | Planned      | RDNA2 decoding, IR and SPIR-V output; requires LLVM AMDGPU and Vulkan SDK (T-701–T-705). |
 
@@ -108,7 +108,7 @@ For Release tests, build the Release preset first, then run `ctest --preset rele
 | Test preset    | Scope                         |
 | :------------- | :---------------------------- |
 | `quick`        | Small CPU tests               |
-| `integration`  | CLI, worker and fixture tests |
+| `integration`  | CLI, worker and test executable tests |
 | `full`         | Full Debug suite              |
 | `release-full` | Full Release suite            |
 | `gpu`          | Hardware GPU tests            |
@@ -122,7 +122,7 @@ For Release tests, build the Release preset first, then run `ctest --preset rele
 scale help
 scale version
 scale inspect <file> [--json]
-scale run <trusted-fixture.exe> [--report <path>] [--timeout-ms <n>]
+scale run <executable> [--report <path>] [--timeout-ms <n>]
 ```
 
 | Command   | Description                                                  | Availability |
@@ -130,9 +130,9 @@ scale run <trusted-fixture.exe> [--report <path>] [--timeout-ms <n>]
 | `help`    | Display available commands                                   | Available    |
 | `version` | Display the project version                                  | Available    |
 | `inspect` | Inspect a PE32+ executable without executing it              | Available    |
-| `run`     | Execute a trusted self-authored fixture in a supervised worker | Available    |
+| `run`     | Execute a trusted self-authored test executable in a supervised worker | Available    |
 
-The PE inspection interface is documented in [docs/contracts/inspect.md](docs/contracts/inspect.md), and fixture execution and `report.json` are documented in [docs/contracts/run.md](docs/contracts/run.md). `scale run` accepts only trusted fixtures with the custom entry contract `int fixture_entry(void)`; it is not a general executable runner.
+The PE inspection interface is documented in [docs/contracts/inspect.md](docs/contracts/inspect.md), and test executable execution and `report.json` are documented in [docs/contracts/run.md](docs/contracts/run.md). `scale run` accepts only trusted test executables with the custom entry contract `int test_entry(void)`; it is not a general executable runner.
 
 **Exit codes**
 

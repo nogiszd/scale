@@ -16,7 +16,7 @@ scale_add_test(NAME unit_loader
 
 # Process-level check (CLI exit code + output).
 scale_add_command_test(NAME cli_inspect_ret42
-    COMMAND $<TARGET_FILE:scale> inspect $<TARGET_FILE:fixture_ret42>
+    COMMAND $<TARGET_FILE:scale> inspect $<TARGET_FILE:test_ret42>
     EXPECT_EXIT 0
     EXPECT_OUTPUT "entry_point_rva"
     LABELS integration)
@@ -57,7 +57,7 @@ TEST(VulkanCompute, Readback) {
 
 - Deterministic. Seeded generators must print their seed (e.g. with
   `SCOPED_TRACE` or test output).
-- Fixtures are source built by CMake. Never commit binaries.
+- Test executables are source built by CMake. Never commit binaries.
 - Missing hardware or tools means SKIPPED. Milestone acceptance that needs
   them stays incomplete until they actually run.
 - Tests write only under their build directory or a dedicated temp root.

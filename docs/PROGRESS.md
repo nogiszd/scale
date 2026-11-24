@@ -2,6 +2,34 @@
 
 Only recorded, executed results. Newest first.
 
+## 2026-11-24 — Terminology: "fixture" → "executable" (Claude)
+
+User-facing wording now follows the vocabulary of comparable projects (XCL:
+"executable", "game"/"title", "test title"). Entries below this one keep the
+old names as historical record. Mapping:
+
+| Old | New |
+|---|---|
+| `scale run <trusted-fixture.exe>` | `scale run <executable>` |
+| worker mode `run-fixture` | worker mode `run` |
+| report `subject.kind = "fixture"` | `"executable"` |
+| CLI label `fixture:` | `executable:` (all labels re-aligned) |
+| `tests/fixtures/{pe,native}` | `tests/executables/{pe,native}` |
+| targets `fixture_*` (`fixture_ret42`, …) | `test_*` (`test_ret42`, …) |
+| entry contract `int fixture_entry(void)` | `int test_entry(void)` |
+| `scale_add_pe_fixture`, `SCALE_FIXTURE_*` | `scale_add_test_executable`, `SCALE_TEST_EXE_*` |
+| `host::FixtureRunOptions` / `FixtureRun` / `run_fixture` / `make_fixture_report` | `RunOptions` / `ExecutableRun` / `run_executable` / `make_run_report` |
+| `fixture_run.{h,cpp}`, `native_fixture_test.cpp` | `executable_run.{h,cpp}`, `native_execution_test.cpp` |
+| synthetic `fixture_platform.dll!FixtureAllocate` | `test_platform.dll!TestAllocate` |
+| loader messages "not supported by the fixture loader" | "not supported by the loader yet" |
+
+No behavior changed; the trusted, self-authored scope and the custom entry
+contract stay the same. Codex-owned shader documents still say "fixture" for
+shader test cases. Codex will update them in its own branch.
+
+Verification after a clean rebuild: `ctest --preset full` 157/157,
+`release-full` 157/157, `-DSCALE_ENABLE_SHADER=ON` 180/180.
+
 ## 2026-11-24 — T-203 `scale run`, relocated data, report.json (Claude)
 
 - `scale run <fixture> [--report <path>] [--timeout-ms <n>]` (contract

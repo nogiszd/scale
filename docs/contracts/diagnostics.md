@@ -59,7 +59,7 @@ The example from AGENTS.md maps to this event:
   "severity": "error",
   "fatal": true,
   "message": "...",
-  "attributes": { "module": "fixture_platform.dll", "symbol": "FixtureAllocate" },
+  "attributes": { "module": "test_platform.dll", "symbol": "TestAllocate" },
   "count": 1,
   "first_sequence": 1,
   "last_sequence": 1

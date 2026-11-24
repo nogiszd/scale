@@ -2,10 +2,10 @@
 //
 // usage: scale_worker --scale-report-handle=<hex> self-test <mode> [args]
 //
-//        scale_worker --scale-report-handle=<hex> run-fixture <path>
+//        scale_worker --scale-report-handle=<hex> run <path>
 //
-// run-fixture (T-202) maps a trusted fixture with scale::loader::map_image
-// and calls its entry; see run_fixture() below.
+// run (T-202) maps a trusted test executable with scale::loader::map_image
+// and calls its entry; see run_executable() below.
 //
 // Self-test modes exercise every supervision path:
 //   exit <n>            exit with code n
@@ -19,7 +19,7 @@
 //   spawn-orphan        start a hanging copy of itself, print its pid, exit
 //
 // Exit codes: the mode's own code, 2 for usage errors, 3 (kWorkerLoadFailed)
-// when run-fixture rejects the image before its entry is called.
+// when run rejects the image before its entry is called.
 
 #include "scale/common/text.h"
 #include "scale/loader/image_map.h"
@@ -174,11 +174,11 @@ void report_error(std::string_view stage, const scale::Error& e) {
     report_line("error stage=" + std::string(stage) + " component=" + e.component + " code=" + e.code + " message=" + e.message);
 }
 
-// Maps a trusted fixture with the fixture loader and calls its entry
-// (contract: int fixture_entry(void)). Reports each stage; the process exit
+// Maps a trusted test executable with the Scale loader and calls its entry
+// (contract: int test_entry(void)). Reports each stage; the process exit
 // code is the entry's return value. Loader failures exit with
 // kWorkerLoadFailed and an `error` report line; the entry is never reached.
-int run_fixture(const std::string& path_utf8) {
+int run_executable(const std::string& path_utf8) {
     report_line("stage start");
     const auto wide = scale::to_wide(path_utf8);
     if (!wide) {
@@ -231,8 +231,8 @@ int wmain(int argc, wchar_t** argv) {
     if (args.size() >= 2 && args[1] == "self-test") {
         return self_test(std::vector<std::string>(args.begin() + 2, args.end()));
     }
-    if (args.size() == 3 && args[1] == "run-fixture") {
-        return run_fixture(args[2]);
+    if (args.size() == 3 && args[1] == "run") {
+        return run_executable(args[2]);
     }
     return usage();
 }

@@ -1,4 +1,0 @@
-LIBRARY fixture_lib
-EXPORTS
-    FixtureAdd @7 NONAME
-    FixtureMul

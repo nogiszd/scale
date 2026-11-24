@@ -32,7 +32,7 @@ rules.ninja
 /third_party/_fetched/
 
 # ---- Compiler / linker outputs ----------------------------------------------
-# Fixtures and tools are built from source; never commit binaries.
+# Test executables and tools are built from source; never commit binaries.
 *.obj
 *.o
 *.lib
@@ -58,7 +58,7 @@ rules.ninja
 *.dmp
 *.mdmp
 
-# Generated shader binaries (fixtures are generated from source at build time)
+# Generated shader binaries (test executables are generated from source at build time)
 *.spv
 *.hsaco
 *.co

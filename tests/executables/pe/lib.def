@@ -1,0 +1,4 @@
+LIBRARY test_lib
+EXPORTS
+    TestAdd @7 NONAME
+    TestMul

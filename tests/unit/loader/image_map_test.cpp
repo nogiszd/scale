@@ -1,6 +1,6 @@
-// T-202: fixture loader mapping. These tests map images and check memory
+// T-202: Scale loader mapping. These tests map images and check memory
 // state; they never execute mapped code (execution happens only in the
-// worker, see tests/integration/native_fixture_test.cpp).
+// worker, see tests/integration/native_execution_test.cpp).
 
 #include "scale/loader/image_map.h"
 
@@ -195,7 +195,7 @@ TEST(ImageMapReject, FixedImageWhosePreferredBaseIsTaken) {
 }
 
 TEST(ReadFile, MissingFile) {
-    const auto r = read_file(std::filesystem::temp_directory_path() / "scale_missing_fixture.exe");
+    const auto r = read_file(std::filesystem::temp_directory_path() / "scale_missing_executable.exe");
     ASSERT_FALSE(r.has_value());
     EXPECT_EQ(r.error().code, "file_open_failed");
 }

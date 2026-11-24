@@ -17,11 +17,11 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-000 | Foundation scaffold | Claude | DONE | — | M0 |
 | T-001 | Replace in-tree test harness with GoogleTest | Claude | DONE | T-000 | M0 |
 | T-101 | PE32+ inspector library | Claude | DONE | T-000 | M1 |
-| T-102 | PE fixture images + dumpbin comparison | Claude | DONE | T-101 | M1 |
+| T-102 | PE test executables + dumpbin comparison | Claude | DONE | T-101 | M1 |
 | T-103 | `scale inspect` command | Claude | DONE | T-101 | M1 |
 | T-201 | Worker process supervisor | Claude | DONE | T-000 | M2 |
-| T-202 | First native fixture, reference run, loader decision | Claude | DONE | T-101, T-201 | M2 |
-| T-203 | `scale run`, relocated-data fixture, report.json | Claude | DONE | T-202 | M2 |
+| T-202 | First native test executable, reference run, loader decision | Claude | DONE | T-101, T-201 | M2 |
+| T-203 | `scale run`, relocated-data test executable, report.json | Claude | DONE | T-202 | M2 |
 | T-204 | Missing synthetic import diagnostic | Claude | READY | T-203 | M2/M3 |
 | T-601 | Vulkan compute plumbing harness | Claude | READY | T-001 | M6 |
 | T-704 | Synthetic shader ABI v0 contract | Codex | DONE | T-000 | M7 |
@@ -146,9 +146,9 @@ overflowing RVAs/sizes, a PE32 (0x10B) image, an i386 machine, an
 unterminated import name and an import descriptor list that exceeds the limit.
 `ctest --preset full` is green in Debug and Release.
 
-## T-102 — PE fixture images + dumpbin comparison (Claude)
+## T-102 — PE test executables + dumpbin comparison (Claude)
 
-**Paths owned:** `tests/fixtures/pe/`, the `pe fixtures` block in
+**Paths owned:** `tests/executables/pe/`, the `pe test executables` block in
 `tests/integration/CMakeLists.txt`.
 
 Build 2 or 3 tiny self-authored images with CMake: an EXE that imports
@@ -170,7 +170,7 @@ Human-readable output by default. `--json` emits a document via
 `scale::diagnostics::JsonWriter` (top-level `schema_version`; document the
 schema in `docs/contracts/inspect.md`). On parse failure, print the error
 `component/code: message` and exit `1`. Bad usage exits `2`. **Acceptance:**
-integration tests run inspect on the T-102 fixtures (text and JSON) and on a
+integration tests run inspect on the T-102 test executables (text and JSON) and on a
 malformed file. `cli_unimplemented_command_reports_task` is removed.
 
 ---
@@ -186,9 +186,9 @@ worker self-test mode covers exit N, access violation, infinite loop
 (timeout) and large output (truncation). **Acceptance:** each mode is tested
 and reported as a structured result with diagnostics.
 
-## T-202 — First native fixture, reference run, loader decision (Claude)
+## T-202 — First native test executable, reference run, loader decision (Claude)
 
-Self-authored `fixture_ret42` with an explicit custom entry contract
+Self-authored `test_ret42` with an explicit custom entry contract
 (documented), initialized data, no CRT. A native Windows reference run
 returns 42. A decision record covers OS loader facilities vs. custom mapping.
 Minimum image loading in the worker: section permissions, bounds, entry
@@ -197,14 +197,14 @@ T-101 inspector.
 
 ## T-203 — `scale run`, relocated data, report.json (Claude)
 
-`scale run <fixture>` through the worker. A second fixture forces relocation
+`scale run <executable>` through the worker. A second test executable forces relocation
 (image base conflict or `/DYNAMICBASE` with relocated pointers in `.data`).
 `--report <path>` writes report.json v1. Comparison against the native
 reference.
 
 ## T-204 — Missing synthetic import diagnostic (Claude)
 
-A fixture imports `fixture_platform.dll!FixtureAllocate` and no resolver
+A test executable imports `test_platform.dll!TestAllocate` and no resolver
 accepts it. Execution must not start. The report shows `outcome = BLOCKED`
 and a fatal `runtime/import_resolution/unresolved_import` with `module`,
 `symbol`, `importing_module` and `import_kind`. Negative test only; no adapter

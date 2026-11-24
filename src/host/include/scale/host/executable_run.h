@@ -1,6 +1,6 @@
 #pragma once
 
-// Running a trusted fixture through scale_worker and building its report
+// Running a trusted test executable through scale_worker and building its report
 // (T-203). Contract: docs/contracts/run.md.
 
 #include "scale/common/error.h"
@@ -14,30 +14,30 @@
 
 namespace scale::host {
 
-struct FixtureRunOptions {
+struct RunOptions {
     std::filesystem::path worker;   // absolute path to scale_worker.exe
-    std::filesystem::path fixture;  // fixture image (read-only)
+    std::filesystem::path executable;  // image to run (read-only)
     std::string subject_name;       // name shown in reports (usually the path as given)
     ProcessLimits limits;
     std::string run_id;             // empty = generate one
 };
 
-struct FixtureRun {
+struct ExecutableRun {
     ProcessResult process;
     diagnostics::RunReport report;
     std::optional<int> returned_value;  // set when the entry returned
 };
 
-// Launches the worker in run-fixture mode and builds the report. Errors are
+// Launches the worker in run mode and builds the report. Errors are
 // returned only when the worker could not be supervised at all.
-[[nodiscard]] Result<FixtureRun> run_fixture(const FixtureRunOptions& options);
+[[nodiscard]] Result<ExecutableRun> run_executable(const RunOptions& options);
 
 // Builds the report from a finished worker process (pure; exposed for tests).
 //   PASS     the entry returned (exit_code = returned value)
 //   BLOCKED  the loader rejected an unsupported feature or unresolved import
 //   FAILED   malformed/unreadable input, unhandled exception, timeout or
 //            an unexpected worker exit
-[[nodiscard]] diagnostics::RunReport make_fixture_report(const ProcessResult& process,
+[[nodiscard]] diagnostics::RunReport make_run_report(const ProcessResult& process,
                                                          diagnostics::Subject subject, std::string run_id,
                                                          std::chrono::milliseconds timeout);
 

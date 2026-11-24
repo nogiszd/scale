@@ -18,7 +18,7 @@ DiagnosticEvent unresolved(std::string symbol) {
         .severity = Severity::error,
         .fatal = true,
         .message = "no adapter or approved module exports this symbol",
-        .attributes = {{"module", "fixture_platform.dll"}, {"symbol", std::move(symbol)}},
+        .attributes = {{"module", "test_platform.dll"}, {"symbol", std::move(symbol)}},
     };
 }
 
@@ -26,9 +26,9 @@ DiagnosticEvent unresolved(std::string symbol) {
 
 TEST(DiagnosticLog, DeduplicatesIdenticalEvents) {
     DiagnosticLog log;
-    log.report(unresolved("FixtureAllocate"));
-    log.report(unresolved("FixtureFree"));
-    log.report(unresolved("FixtureAllocate"));
+    log.report(unresolved("TestAllocate"));
+    log.report(unresolved("TestFree"));
+    log.report(unresolved("TestAllocate"));
 
     ASSERT_EQ(log.entries().size(), 2u);
     EXPECT_EQ(log.total_reported(), 3u);
@@ -62,14 +62,14 @@ TEST(DiagnosticLog, SummaryOrdersBySeverity) {
                                .fatal = false,
                                .message = "",
                                .attributes = {}});
-    log.report(unresolved("FixtureAllocate"));
+    log.report(unresolved("TestAllocate"));
     const std::string summary = log.summary();
     const auto fatal_pos = summary.find("[error, fatal] runtime/import_resolution/unresolved_import");
     const auto warn_pos = summary.find("[warning] loader/pe_parse/unknown_section_flag");
     ASSERT_NE(fatal_pos, std::string::npos);
     ASSERT_NE(warn_pos, std::string::npos);
     EXPECT_LT(fatal_pos, warn_pos);
-    EXPECT_NE(summary.find("symbol=FixtureAllocate"), std::string::npos);
+    EXPECT_NE(summary.find("symbol=TestAllocate"), std::string::npos);
 }
 
 TEST(DiagnosticLog, EmptySummary) {
