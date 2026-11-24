@@ -32,9 +32,64 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
+### T-731 — Decoder v4 and ABI v2 test-case interfaces
+
+Branch `codex/T-731-decoder-v2` starts from `integration` at `eaeb9eb`.
+Decoder interface commit `755af8f` adds `Encoding::smem`,
+`Opcode::s_buffer_load_dword` and `ScalarBufferOperands`. It preserves
+the raw SDATA, SBASE, SOFFSET and OFFSET fields alongside the resource
+tuple's first SGPR index. `BufferOperands` already preserves the MUBUF
+immediate and scalar selector. The existing SOPP wait decoder now also
+populates `WaitCounters::simm16`. ABI v0 and v1 consumers still require
+`vmcnt(0)`. [Decoder interface](../../../src/shader/include/scale/shader/decode.h)
+
+The separate test-case interface commit adds `ShaderTestAbiVersion::v2`
+and `ShaderTestCase::v2`. The v2 payload owns the inherited EXEC and
+initial output fields in `initial_state`, plus the 32 `constant_words`
+in byte-offset order. For v2, consumers use only the v2 payload. The SMEM
+source note in the contract now identifies the LLVM 18.1.6 syntax reference
+and links the pinned 23.1.6 encoding definition.
+[Test-case interface](../../../src/shader/include/scale/shader/test_case.h)
+
+```powershell
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=OFF -DSCALE_ENABLE_GRAPHICS=OFF
+cmake --build --preset debug
+ctest --preset full --output-on-failure
+cmake --preset release -DSCALE_ENABLE_SHADER=OFF -DSCALE_ENABLE_GRAPHICS=OFF
+cmake --build --preset release
+ctest --preset release-full --output-on-failure
+$gtestSource = (Resolve-Path out/build/debug/_deps/googletest-src).Path
+cmake --preset debug-all "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=$gtestSource"
+cmake --build --preset debug-all
+ctest --preset full-all --output-on-failure
+cmake --preset release-all "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=$gtestSource"
+cmake --build --preset release-all
+ctest --preset release-full-all --output-on-failure
+ctest --preset gpu -V
+$reviewDir = (Resolve-Path out/abi-v2-interface).Path
+cl /nologo /std:c++23 /permissive- /W4 /WX /EHsc /I src/common/include /I src/shader/include /c "$reviewDir/interface-check.cpp" "/Fo$reviewDir/interface-check.obj"
+& out/build/debug-all/bin/scale-shader.exe decode 0xbf8cc07f
+git diff --cached --check
+```
+
+- `full` and `release-full` passed 189/189 each. `full-all` and
+  `release-full-all` passed 334/334 each. `gpu` passed 14/14 on the
+  AMD Radeon RX 9070 XT. All five runs had zero skips. The all-component
+  builds reused GoogleTest 1.18.0 after verifying the cached archive hash.
+- An MSVC C++23 compile-only consumer checked the v2 SMEM fields against
+  the worked dwords, the wait field and unchanged MUBUF field types, the
+  constant array extent, and version selection for all three case types.
+  The CLI decoded `0xbf8cc07f` as VM 63, EXP 7 and LGKM 0. Logs and
+  the compile-only source are under ignored `out/abi-v2-interface/`.
+- This is the interface review checkpoint. SMEM decoding, ABI v2 JSON
+  parsing, LLVM comparisons and negative tests follow approval.
+
+## Completed
+
 ### T-730 — ABI v2 memory and resources
 
-Branch `codex/T-730-shader-abi-v2` starts from `integration` at `d207823`.
+Merged into `integration` at `df37517`. The contract is frozen at `05ba211`.
 The contract fixes two raw MUBUF descriptors and a separate read-only
 constant resource at set 0, binding 2. It allows computed vector addresses,
 aligned immediate offsets, and ordinary SGPR scalar offsets. It rejects
@@ -94,8 +149,6 @@ git diff --cached --check
   and the lane 29 crossing. Logs and scratch files are under ignored
   `out/abi-v2-review/`. The GPU results cover existing ABI v0 and v1
   cases. ABI v2 GPU readback is T-734.
-
-## Completed
 
 ### T-706 — Standalone shader CLI
 
@@ -535,10 +588,17 @@ git diff --cached --check
 
 ## Next
 
-After coordinator approval of T-730, start T-731 with separate
-`decode.h` v4 and `test_case.h` v2 interface steps. T-732 follows T-731.
+After approval of both T-731 interfaces, implement SMEM decode and strict ABI
+v2 JSON parsing. Test the new forms against LLVM 23.1.6, cover unsupported
+operands and malformed JSON, and add the T-730 worked example under
+`tests/shader/cases/`. A `scale-shader compile` request for ABI v2 must
+report an unsupported ABI until T-732 provides v2 lowering.
 
 ## Requests to coordinator
 
-- Review the T-730 synthetic bounds rules and resource layout before
-  dependent work starts.
+- Review the two T-731 interfaces and update the freeze entries on
+  `integration` once approved.
+- Before the worked example lands, update the GPU runner in
+  `tests/gpu/differential_test.cpp` to recognize ABI v2 explicitly. It
+  discovers every JSON case and currently routes every ABI other than v1
+  through v0. The v2 case needs a SKIPPED result until T-734 can run it.
