@@ -53,7 +53,7 @@ enum class IrOpcode : std::uint8_t {
 struct IrInstruction {
     IrOpcode opcode;
     std::optional<IrValueType> result;  // Absent for wait, store and end.
-    std::array<IrValueId, 2> inputs{};  // First input_count entries name earlier values.
+    std::array<IrValueId, 3> inputs{};  // First input_count entries name earlier values.
     std::uint8_t input_count{};
     // Every guest vector operation names the active EXEC mask. Uniform inputs
     // to per-lane operations are broadcast. ABI v0 enables all lanes throughout.

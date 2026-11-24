@@ -14,6 +14,24 @@ constexpr std::uint8_t kInputSgprBase = 0;
 constexpr std::uint8_t kOutputSgprBase = 4;
 constexpr std::uint8_t kResourceSgprCount = 4;
 
+std::string_view opcode_name(Opcode opcode) {
+    switch (opcode) {
+    case Opcode::s_mov_b32: return "s_mov_b32";
+    case Opcode::s_add_u32: return "s_add_u32";
+    case Opcode::s_movk_i32: return "s_movk_i32";
+    case Opcode::s_endpgm: return "s_endpgm";
+    case Opcode::s_waitcnt: return "s_waitcnt";
+    case Opcode::v_mov_b32: return "v_mov_b32";
+    case Opcode::v_add_nc_u32: return "v_add_nc_u32";
+    case Opcode::v_mul_lo_u32: return "v_mul_lo_u32";
+    case Opcode::v_add_f32: return "v_add_f32";
+    case Opcode::v_mul_f32: return "v_mul_f32";
+    case Opcode::buffer_load_dword: return "buffer_load_dword";
+    case Opcode::buffer_store_dword: return "buffer_store_dword";
+    }
+    return "unknown opcode";
+}
+
 class Lowerer {
 public:
     Result<IrProgram> run(std::span<const DecodedInstruction> instructions) {
@@ -76,8 +94,8 @@ private:
 
     std::unexpected<Error> error(std::string_view code, std::string_view detail) const {
         if (!current_) return fail("shader", code, std::format("IR lowering: {}", detail));
-        return fail("shader", code, std::format("IR lowering at dword 0x{:x} (opcode {}): {}",
-                    current_->dword_offset, static_cast<unsigned>(current_->opcode), detail));
+        return fail("shader", code, std::format("IR lowering at dword 0x{:x} ({}): {}",
+                    current_->dword_offset, opcode_name(current_->opcode), detail));
     }
 
     Result<Register*> location(const Operand& operand) {
