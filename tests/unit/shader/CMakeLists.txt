@@ -58,3 +58,25 @@ if(NOT llvm_reference_dir)
 endif()
 target_compile_definitions(integration_shader_llvm PRIVATE
     "SCALE_SHADER_LLVM_REFERENCE_DIR=\"${llvm_reference_dir}\"")
+
+# --- Direct SPIR-V emission and validation (T-703) ----------------------------
+scale_add_test(NAME unit_shader_spirv
+    SOURCES spirv_test.cpp
+    LIBS scale::shader_spirv
+    LABELS quick)
+
+scale_add_test(NAME integration_shader_spirv_val
+    SOURCES spirv_val_test.cpp
+    LIBS scale::shader_spirv
+    LABELS integration)
+
+find_program(SCALE_SHADER_SPIRV_VAL spirv-val HINTS "$ENV{VULKAN_SDK}/Bin" NO_CACHE)
+if(EXISTS "${SCALE_SHADER_SPIRV_VAL}")
+    message(STATUS "spirv-val for shader tests: ${SCALE_SHADER_SPIRV_VAL}")
+else()
+    set(SCALE_SHADER_SPIRV_VAL "")
+    message(STATUS "spirv-val unavailable: shader validation tests will be SKIPPED")
+endif()
+target_compile_definitions(integration_shader_spirv_val PRIVATE
+    "SCALE_SHADER_SPIRV_VAL=\"${SCALE_SHADER_SPIRV_VAL}\""
+    "SCALE_SHADER_SPIRV_TEST_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\"")

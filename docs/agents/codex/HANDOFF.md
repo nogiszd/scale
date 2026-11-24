@@ -27,9 +27,60 @@ Role: RDNA2 shader compiler (decoder, IR, SPIR-V, ABI mapping).
 
 ## Ready for review
 
-### T-702 — REVIEW
+### T-703 — REVIEW
 
-Review branch `codex/T-702-shader-ir`, based on `integration` at `3f642f0`.
+Review branch `codex/T-703-spirv`, based on `integration` at `e912520`.
+`scale::shader_spirv` writes SPIR-V 1.5 words directly for Vulkan 1.2. The
+public [spirv.h](../../../src/shader/include/scale/shader/spirv.h) exposes
+`emit_spirv(IrProgram)` and a module with the `requires_float32_rte` flag.
+The Vulkan caller uses the `main` compute entry point and the set 0
+storage-buffer layout defined by T-704. For floating-point arithmetic the
+emitter selects `RoundingModeRTE 32` and decorates each add and multiply with
+`NoContraction`. T-720 checks `shaderRoundingModeRTEFloat32` before dispatching
+modules with that flag. [Khronos SPIR-V specification](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html) [Vulkan SPIR-V environment](https://docs.vulkan.org/spec/latest/appendices/spirvenv.html)
+
+Emission checks that EXEC is all-active, operands refer to earlier typed
+values, buffer accesses use the ABI lane byte offset, and loads are covered
+by a wait. `wait_vmem` is represented by synchronous SPIR-V load dependencies
+under T-704. The IR now has space for three input IDs, and lowering errors
+include the decoded opcode name. The compiler and its unit tests build
+without SDK headers or libraries. `spirv-val` is an integration-test tool.
+
+```powershell
+. .\scripts\vsenv.ps1
+cmake --preset debug -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset debug
+ctest --preset full
+cmake --preset release -DSCALE_ENABLE_SHADER=ON
+cmake --build --preset release
+ctest --preset release-full
+spirv-val --version
+spirv-val --target-env vulkan1.2 out/build/debug/tests/unit/shader/t703_add_lane.spv
+spirv-val --target-env vulkan1.2 out/build/debug/tests/unit/shader/t703_float.spv
+spirv-val --target-env vulkan1.2 out/build/debug/tests/unit/shader/t703_scalar.spv
+spirv-dis out/build/debug/tests/unit/shader/t703_float.spv
+cmake --preset debug -B out/build/shader-no-spirv-val -DSCALE_ENABLE_SHADER=ON `
+    -DSCALE_SHADER_SPIRV_VAL=missing-spirv-val `
+    -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=out/build/debug/_deps/googletest-src
+cmake --build out/build/shader-no-spirv-val --target unit_shader_spirv integration_shader_spirv_val
+ctest --test-dir out/build/shader-no-spirv-val -R 'shader_spirv' --output-on-failure
+git diff --cached --check
+```
+
+- Debug and Release each passed 200/200 CTest cases with zero skips.
+- SPIRV-Tools v2026.4 (`ef96ed76`, Vulkan SDK 1.4.363.0) validated the T-704
+  integer example, a binary32 add/multiply test program, and a scalar-carry
+  and vector-copy test program. Float disassembly confirmed the RTE mode,
+  both `NoContraction` decorations, and the input/output bitcasts.
+- With `spirv-val` unavailable in the isolated configure, seven emitter
+  unit tests passed and three validation tests were SKIPPED. GPU execution
+  and differential readback are T-720.
+
+## Completed
+
+### T-702 — Shader IR v0
+
+Approved and merged into `integration` at `74b5f0d`.
 `scale::shader_ir` lowers the frozen decoder output to a typed, straight-line
 IR under T-704 ABI v0. Each value is named by its defining instruction index.
 The entry defines the all-active EXEC mask, zero VCC and clear SCC, plus lane
@@ -39,7 +90,7 @@ next SCC as the wrapping sum's unsigned carry. Float operations use binary32
 values and explicit bitcasts at raw-word boundaries. The independent
 reference interpreter continues consuming the decoder. [AMD RDNA 2 ISA reference](https://docs.amd.com/v/u/en-US/rdna2-shader-instruction-set-architecture)
 
-The proposed public freeze for T-703 is [ir.h](../../../src/shader/include/scale/shader/ir.h).
+The public IR is defined in [ir.h](../../../src/shader/include/scale/shader/ir.h).
 The ordered IR retains input loads, waits, the final output store and the
 terminator. Lowering validates descriptor use, address operands, register
 definition, pending loads and stream termination. Failures use documented
@@ -63,8 +114,6 @@ git diff --cached --check
 - The 10 new IR cases use decoded programs, including the exact T-704
   example. They check the IR graph, scalar carry, vector broadcast, float
   bitcasts, the VMEM wait, and all six lowering error codes.
-
-## Completed
 
 ### T-701 — gfx1030 decoder
 
@@ -158,10 +207,10 @@ git diff --cached --check
 
 ## Next
 
-After T-702 is merged and T-703 is ready, start the direct SPIR-V emitter on
-its own branch using the approved IR. T-711 consumes the frozen decoder
-interface and T-704 contract independently of the compiler.
+T-720 will use `emit_spirv` for the Vulkan run and compare measured outputs
+with the T-711 interpreter and manual expectations. T-711 consumes the
+frozen decoder interface and T-704 contract independently of the compiler.
 
 ## Requests to coordinator
 
-- Review the T-702 branch and freeze `ir.h` for T-703 on `integration`.
+- Review the T-703 branch and confirm `spirv.h` for the T-720 runner.

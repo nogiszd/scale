@@ -27,7 +27,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-704 | Synthetic shader ABI v0 contract | Codex | DONE | T-000 | M7 |
 | T-701 | gfx1030 decoder (first subset) | Codex | DONE | T-001 | M7 |
 | T-702 | Shader IR v0 | Codex | DONE | T-701, T-704 | M7 |
-| T-703 | SPIR-V emitter + validation | Codex | READY | T-702 | M7 |
+| T-703 | SPIR-V emitter + validation | Codex | REVIEW | T-702 | M7 |
 | T-711 | RDNA2 reference interpreter | Claude | READY | T-701 (interface), T-704 | M7 |
 | T-720 | Differential runner: interpreter vs GPU | Claude | WAITING | T-601, T-703, T-711 | M7 |
 
