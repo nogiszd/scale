@@ -7,7 +7,7 @@ source.
 |---|---|---|
 | https://learn.microsoft.com/en-us/windows/win32/debug/pe-format | PE/COFF structures and directories (M1, M2: T-101..T-204) | accessed 2026-11-24 |
 | https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention | x64 ABI (M3) | not yet used |
-| https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64 | unwind/SEH (M3, T-301) | not yet used |
+| https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64 | RUNTIME_FUNCTION, UNWIND_INFO, chained unwind info, handler flags (T-301) | accessed 2026-11-24 |
 | https://gpuopen.com/machine-readable-isa/ | AMD RDNA 2 ISA reference, document 70648: encodings and semantics (T-701, T-704, T-707, T-708, T-711, T-712) | accessed 2026-11-24 |
 | https://llvm.org/docs/AMDGPUUsage.html | Processors, buffer resource, initial kernel state (T-704); llvm-mc / llvm-objdump 23.1.6 encodings for every decoder and interpreter test | accessed 2026-11-24; LLVM 23.1.6 |
 | https://registry.khronos.org/vulkan/ | Vulkan compute, SPIR-V unified spec (T-601, T-703, T-707) | accessed 2026-11-24; SDK 1.4.363.0 |

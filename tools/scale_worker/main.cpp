@@ -231,8 +231,9 @@ int run_executable(const std::string& path_utf8) {
         report_error("map", mapped.error());
         return kWorkerLoadFailed;
     }
-    report_line(std::format("stage mapped base=0x{:x} size=0x{:x} delta={} relocations={}", mapped->base(), mapped->size(),
-                            mapped->relocation_delta(), mapped->relocations_applied()));
+    report_line(std::format("stage mapped base=0x{:x} size=0x{:x} delta={} relocations={} unwind_functions={}",
+                            mapped->base(), mapped->size(), mapped->relocation_delta(), mapped->relocations_applied(),
+                            mapped->functions_registered()));
 
     using Entry = int (*)();
     const auto entry = reinterpret_cast<Entry>(mapped->entry_point());

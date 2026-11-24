@@ -36,7 +36,7 @@ The worker writes newline-terminated lines to the report pipe (see
 stage start
 stage inspected
 stage resolved imports=<n>          (only when the image has imports and all resolved)
-stage mapped base=0x<hex> size=0x<hex> delta=<signed> relocations=<n>
+stage mapped base=0x<hex> size=0x<hex> delta=<signed> relocations=<n> unwind_functions=<n>
 stage entry
 stage returned value=<int>
 error stage=<read|inspect|map> component=<c> code=<code> message=<text>

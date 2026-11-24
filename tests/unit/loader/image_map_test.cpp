@@ -144,19 +144,78 @@ TEST(ImageMapReject, SmallSectionAlignment) {
 }
 
 TEST(ImageMapReject, UnsupportedDirectories) {
-    for (const auto index : {DirectoryIndex::import_table, DirectoryIndex::tls_table, DirectoryIndex::exception_table,
-                             DirectoryIndex::load_config_table, DirectoryIndex::delay_import_descriptor,
+    for (const auto index : {DirectoryIndex::import_table, DirectoryIndex::tls_table, DirectoryIndex::load_config_table, DirectoryIndex::delay_import_descriptor,
                              DirectoryIndex::export_table}) {
         PeBuilder pe = code_image();
         const std::uint32_t rva = pe.add_section(".rdata", Bytes(0x100, std::byte{0}), PeBuilder::kRdata);
         // Valid contents for the directories the inspector parses.
-        pe.set_directory(index, rva, index == DirectoryIndex::exception_table ? 12 : 40);
+        pe.set_directory(index, rva, 40);
         const Built b = build(pe);
         const auto r = map(b);
         ASSERT_FALSE(r.has_value()) << directory_name(index);
         EXPECT_EQ(r.error().code, "unsupported_directory") << directory_name(index);
         EXPECT_NE(r.error().message.find(directory_name(index)), std::string::npos);
     }
+}
+
+// ---- T-301: exception directory registration -------------------------------------------
+
+TEST(ImageMap, RegistersAndDeregistersTheExceptionDirectory) {
+    // Two functions in .text; the dispatcher must find each through the
+    // registered table, relative to the actual base.
+    const PeBuilder pe = scale::test::exception_image({{0x00, scale::test::unwind_header(1, 0)}},
+                                                      {{0x1000, 0x1010, 0x2000}, {0x1010, 0x1020, 0x2000}});
+    const Built b = build(pe);
+    std::uintptr_t base = 0;
+    {
+        auto mapped = map(b);
+        ASSERT_TRUE(mapped.has_value()) << mapped.error().to_string();
+        EXPECT_EQ(mapped->functions_registered(), 2u);
+        base = mapped->base();
+        DWORD64 image_base = 0;
+        const PRUNTIME_FUNCTION f = ::RtlLookupFunctionEntry(base + 0x1014, &image_base, nullptr);
+        ASSERT_NE(f, nullptr);
+        EXPECT_EQ(image_base, base);
+        EXPECT_EQ(f->BeginAddress, 0x1010u);
+        EXPECT_EQ(f->EndAddress, 0x1020u);
+        EXPECT_EQ(::RtlLookupFunctionEntry(base + 0x1028, &image_base, nullptr), nullptr);  // not covered
+
+        // Moving the mapping keeps one registration, owned by the target.
+        MappedImage moved = std::move(*mapped);
+        EXPECT_EQ(moved.functions_registered(), 2u);
+        EXPECT_NE(::RtlLookupFunctionEntry(base + 0x1004, &image_base, nullptr), nullptr);
+    }
+    // Destroyed: deregistered before the memory was released. A stale
+    // registration would read whatever later occupies the same addresses, so
+    // reuse them: allocate the old range again and put RUNTIME_FUNCTIONs for
+    // [0x1010, 0x1020) where the old table was. Only a leftover registration
+    // can make the lookup find it.
+    void* reused = ::VirtualAlloc(reinterpret_cast<void*>(base), b.image.size_of_image, MEM_RESERVE | MEM_COMMIT,
+                                  PAGE_READWRITE);
+    ASSERT_EQ(reinterpret_cast<std::uintptr_t>(reused), base) << "could not reallocate the released range";
+    // Both slots of the old two-entry table hold the fake entry: Windows keeps
+    // a pointer to the registered table (it does not copy it).
+    const RUNTIME_FUNCTION fake[2] = {{0x1010, 0x1020, 0x2000}, {0x1010, 0x1020, 0x2000}};
+    std::memcpy(static_cast<std::byte*>(reused) + 0x2100, fake, sizeof(fake));
+    DWORD64 image_base = 0;
+    EXPECT_EQ(::RtlLookupFunctionEntry(base + 0x1014, &image_base, nullptr), nullptr);
+    ::VirtualFree(reused, 0, MEM_RELEASE);
+}
+
+TEST(ImageMap, NoExceptionDirectoryRegistersNothing) {
+    const Built b = build(code_image());
+    auto mapped = map(b);
+    ASSERT_TRUE(mapped.has_value()) << mapped.error().to_string();
+    EXPECT_EQ(mapped->functions_registered(), 0u);
+}
+
+TEST(ImageMapReject, MalformedExceptionDirectory) {
+    // Rejected by validate_exception_table before any memory is allocated.
+    expect_error(scale::test::exception_image({{0x00, scale::test::unwind_header(1, 0)}},
+                                              {{0x1010, 0x1020, 0x2000}, {0x1000, 0x1010, 0x2000}}),
+                 "runtime_function_unsorted");
+    expect_error(scale::test::exception_image({{0x00, scale::test::unwind_header(3, 0)}}, {{0x1000, 0x1010, 0x2000}}),
+                 "unwind_info_invalid");
 }
 
 TEST(ImageMapReject, HighLowRelocation) {

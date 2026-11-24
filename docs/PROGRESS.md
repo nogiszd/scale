@@ -7,12 +7,50 @@ Only recorded, executed results, newest first. Each entry describes the state at
 | Track | State |
 |---|---|
 | M0 Foundation, M1 PE inspector, M2 native execution | complete |
-| M3 runtime fidelity | next: T-301 exception directory registration |
+| M3 runtime fidelity | exception directory validated and registered; SEH dispatch verified natively and under SCALE (T-301). Next: TLS (T-302). |
 | M7 shaders | ABI v0 and ABI v1 (EXEC masks, scalar branches) verified on hardware: decoder, IR, SPIR-V, reference interpreter and GPU agree on 10 JSON test cases (T-701..T-712, T-720, T-721). Next: `scale-shader` CLI (T-706, Codex). |
 | M6 graphics | Vulkan compute harness with per-device fingerprints (T-601). Coverage: GPU class A2 only. |
 | Portability | groundwork done (T-801). Linux unverified (T-802 blocked). |
 
-Latest suite totals: `full`/`release-full` 173/173, `full-all`/`release-full-all` 299/299, `gpu` 14/14 (RX 9070 XT), no skips.
+Latest suite totals: `full`/`release-full` 189/189, `full-all`/`release-full-all` 315/315, `gpu` 14/14 (RX 9070 XT), no skips.
+
+## 2026-11-24 — T-301 Exception directory registration (Claude)
+
+- `scale::loader::validate_exception_table` (portable, `exception_table.h`):
+  bounded checks of every RUNTIME_FUNCTION (non-empty range inside one
+  executable section, sorted, non-overlapping) and of the UNWIND_INFO it
+  references (4-byte aligned, header + even-rounded code slots + handler RVA
+  or chained entry backed by file data of one section, version 1–2, known
+  flags, CHAININFO not combined with a handler, prolog within the function,
+  handler in an executable section, chains at most 32 deep). Unwind codes and
+  language-specific data are not interpreted (documented limitation).
+- `map_image` accepts the exception directory: validated before any memory
+  is allocated, registered with `RtlAddFunctionTable` (base = actual image
+  base) after protections are set, deregistered with `RtlDeleteFunctionTable`
+  before `VirtualFree`. The worker's `stage mapped` line reports
+  `unwind_functions=<n>` (docs/contracts/run.md). Decision 0002 updated.
+- `test_seh` (MASM entry with `PROC FRAME:test_seh_handler`, C++ handler, no
+  CRT, no imports): the entry faults on a null R10; the handler sets R10 and
+  returns ExceptionContinueExecution. Native reference: exit 101 (Windows
+  registers .pdata). `scale run test_seh.exe`: PASS, returned 101,
+  `unwind_functions=1`. dumpbin /unwindinfo: one function, EHANDLER |
+  UHANDLER, handler `test_seh_handler`.
+- Tests: `unit_loader` ExceptionTable* (11 cases: valid counts, even slot
+  rounding, every rejection code), `unit_image_map` registration +
+  deregistration through `RtlLookupFunctionEntry`, malformed directory
+  rejected before mapping, `integration_native_execution`
+  NativeExecutionSeh, `cli_run_handled_exception`.
+- Mutation checks: skipping registration fails the mapper test, the SEH
+  integration test and the CLI test; dropping the sort check fails two
+  rejection tests. Skipping **deregistration was not caught** at first:
+  after the memory was freed the lookup returned null either way. A scratch
+  experiment showed Windows keeps a pointer to the registered table (no copy)
+  and that a lookup through a stale registration after `VirtualFree` reads
+  the freed memory (access violation). The test now reallocates the same
+  range with a fake table, which a stale registration resolves; the mutation
+  is caught.
+- `ctest`: full/release-full 189/189, full-all/release-full-all 315/315,
+  gpu 14/14.
 
 ## 2026-11-24 — T-709 merged; ABI v1 verified on hardware (T-721 done) (Claude)
 

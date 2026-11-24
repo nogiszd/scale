@@ -23,7 +23,8 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-202 | First native test executable, reference run, loader decision | Claude | DONE | T-101, T-201 | M2 |
 | T-203 | `scale run`, relocated-data test executable, report.json | Claude | DONE | T-202 | M2 |
 | T-204 | Missing synthetic import diagnostic | Claude | DONE | T-203 | M2/M3 |
-| T-301 | Exception directory registration (x64 unwind/SEH) | Claude | READY | T-202 | M3 |
+| T-301 | Exception directory registration (x64 unwind/SEH) | Claude | DONE | T-202 | M3 |
+| T-302 | TLS directory: static TLS and callbacks | Claude | READY | T-301 | M3 |
 | T-601 | Vulkan compute plumbing harness | Claude | DONE | T-001 | M6 |
 | T-701 | gfx1030 decoder (first subset) | Codex | DONE | T-001 | M7 |
 | T-702 | Shader IR v0 | Codex | DONE | T-701, T-704 | M7 |
@@ -64,6 +65,9 @@ The files below are shared. Make only the edits listed.
 - `tools/scale/commands.cpp`: replace your command's `nullptr` handler with
   your function. Declare the handler in your own header and add your `.cpp`
   to `tools/scale/CMakeLists.txt`.
+- Root `CMakeLists.txt`: approved exception for T-706 (Codex): the single line
+  `scale_add_component(tools/scale_shader REQUIRED)` inside the
+  `if(SCALE_ENABLE_SHADER)` block, after `src/shader_ref`.
 - `tests/unit/CMakeLists.txt`, `tests/integration/CMakeLists.txt`: append
   your own clearly delimited block. Do not edit other blocks.
 - `docs/TASKS.md`: change only the status of your own tasks.
@@ -90,16 +94,18 @@ convention. **Acceptance:** CLI tests on the T-704 and T-707 cases and on
 malformed input. Natural home for the opt-in shader debug mode (decision
 0005).
 
-### T-301 — Exception directory registration (Claude)
+### T-302 — TLS directory: static TLS and callbacks (Claude)
 
-Register the mapped image's `.pdata` (`RtlAddFunctionTable` or the
-documented equivalent) in the worker before entry, with bounds-checked
-RUNTIME_FUNCTION entries and deregistration on unload. A self-authored test
-executable raises and handles an SEH exception and a C++ exception (if the
-CRT dependency is acceptable for the test contract; otherwise SEH only,
-documented). Native Windows reference run for the same executable. A
-malformed exception directory is rejected before entry.
-
+Support the TLS directory in the worker for test executables: allocate the
+image's TLS index and template per thread (`StartAddressOfRawData`..`End`,
+`SizeOfZeroFill`), run TLS callbacks with `DLL_PROCESS_ATTACH` before the
+entry and `DLL_THREAD_ATTACH`/`DETACH` for threads the test creates, using
+documented mechanisms only. Test executables: static TLS read/write on two
+threads, a callback with an observable effect. Native reference runs for
+both. Malformed TLS directories are rejected before entry. If a documented
+mechanism for a privately mapped image does not exist, record the gap in
+docs/research/KNOWN_UNKNOWNS.md and a decision record before choosing an
+approach.
 ### T-802 — Linux build/test environment and CI (unassigned, BLOCKED)
 
 Needs a Linux machine or CI runner with Vulkan. Scope: GCC/Clang presets with
@@ -129,6 +135,9 @@ Evidence, commands and results for each are in docs/PROGRESS.md.
   (docs/contracts/run.md).
 - **T-204** Unresolved synthetic import blocks execution with a fatal
   `runtime/import_resolution/unresolved_import` diagnostic.
+- **T-301** Exception directory validated (`exception_table.h`) and registered
+  with `RtlAddFunctionTable`; `test_seh` handles an access violation through
+  its own frame handler, natively and under SCALE (101).
 - **T-601** Vulkan compute harness (`scale::graphics`), exact readback, label
   `gpu`.
 - **T-701** gfx1030 decoder subset, LLVM cross-check.

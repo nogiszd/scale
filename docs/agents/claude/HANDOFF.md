@@ -14,10 +14,8 @@ and owners: docs/TASKS.md. Milestone states: docs/ROADMAP.md.
 
 ## My next tasks, in order
 
-1. **T-301** — exception directory registration in the worker
-   (`RtlAddFunctionTable`), test executable raising and handling SEH,
-   native reference run, malformed-directory rejection.
-2. Remaining M3 features one at a time (TLS, import binding through
+1. **T-302** — TLS directory (static TLS, callbacks), spec in TASKS.md.
+2. Remaining M3 features one at a time (import binding through
    adapters, CRT startup, DLL init), each with its own test executable.
 3. Graphics triangle slice (M6).
 

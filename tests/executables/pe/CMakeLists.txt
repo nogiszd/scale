@@ -15,7 +15,8 @@ function(scale_add_test_executable target kind)
     else()
         add_executable(${target} ${ARG_SOURCES})
     endif()
-    target_compile_options(${target} PRIVATE /W4 /WX /Zl)
+    # C++ only: MASM sources (T-301) take their own flags.
+    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/W4 /WX /Zl>)
     target_link_options(${target} PRIVATE
         /NODEFAULTLIB
         /ENTRY:${ARG_ENTRY}

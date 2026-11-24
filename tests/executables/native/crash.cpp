@@ -4,7 +4,8 @@
 // The entry writes through a null pointer: EXCEPTION_ACCESS_VIOLATION
 // (0xC0000005) inside the test executable's .text. It never returns.
 // Globals (not stack locals) keep the entry a leaf function without unwind
-// data, so the image has no exception directory (unsupported in T-202/T-203).
+// data, so the image has no exception directory and no handler: the
+// exception stays unhandled (handled dispatch is test_seh, T-301).
 
 extern "C" {
 volatile int* volatile test_null_target = nullptr;

@@ -14,7 +14,7 @@ scale_add_test(NAME unit_diagnostics
     LABELS quick)
 
 # --- PE inspector (T-101) -----------------------------------------------------
-set(_scale_unit_loader_sources loader/pe_image_test.cpp)
+set(_scale_unit_loader_sources loader/pe_image_test.cpp loader/exception_table_test.cpp)
 if(SCALE_PLATFORM_WINDOWS)
     list(APPEND _scale_unit_loader_sources loader/pe_image_win32_test.cpp)
 endif()
