@@ -1,6 +1,6 @@
 # Shared compiler and linker settings.
 #
-# Every first-party target links `scale::build_options`. Fixture images that
+# Every first-party target links `scale::build_options`. Test executables that
 # need a non-standard entry contract or no CRT define their own flags instead,
 # but must keep ASLR/DEP/CFG unless a test documents why not.
 

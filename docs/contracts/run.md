@@ -1,13 +1,13 @@
 # `scale run` contract
 
 ```text
-scale run <trusted-fixture.exe> [--report <path>] [--timeout-ms <n>]
+scale run <executable> [--report <path>] [--timeout-ms <n>]
 ```
 
-Runs a **trusted, self-authored fixture** in a supervised worker process
+Runs a **trusted, self-authored test executable** in a supervised worker process
 (`scale_worker.exe`, which must sit next to `scale.exe`). This is not a
-general executable runner. The fixture must use the custom entry contract
-`int fixture_entry(void)` and stay within the fixture loader's subset
+general executable runner. The test executable must use the custom entry contract
+`int test_entry(void)` and stay within the Scale loader's subset
 (docs/decisions/0002-native-image-loading.md). Guest arguments (`-- args`)
 are rejected because the entry contract has no parameters.
 
@@ -25,7 +25,7 @@ Defaults: timeout 10 000 ms (1 to 3 600 000), job memory limit 1 GiB, and
 Usage errors exit 2. A failure to write `--report` also makes the exit 1.
 
 `PASS` means only that the run completed. Checking the returned value
-against a fixture's documented expectation is the test's job.
+against a test executable's documented expectation is the test's job.
 
 ## Worker report channel (internal protocol)
 
@@ -49,7 +49,7 @@ parsed.
 
 `--report` writes report schema v1 (docs/contracts/diagnostics.md):
 
-- `command` is `"run"`. `subject` is `{kind: "fixture", name: <path as given>,
+- `command` is `"run"`. `subject` is `{kind: "executable", name: <path as given>,
   sha256: <hex or null>}`.
 - `final_stage` is the last `stage` line (`launch` if none), e.g. `returned`,
   `entry`, `inspected`.

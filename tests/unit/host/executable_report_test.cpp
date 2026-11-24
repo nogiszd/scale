@@ -1,6 +1,6 @@
 // T-203: report construction from worker results (no processes).
 
-#include "scale/host/fixture_run.h"
+#include "scale/host/executable_run.h"
 
 #include <gtest/gtest.h>
 
@@ -24,7 +24,7 @@ ProcessResult worker(std::vector<std::string> lines, Termination t = Termination
 }
 
 scale::diagnostics::RunReport report(const ProcessResult& p) {
-    return make_fixture_report(p, Subject{"fixture", "f.exe", "ab"}, "run-test", std::chrono::milliseconds(500));
+    return make_run_report(p, Subject{"executable", "f.exe", "ab"}, "run-test", std::chrono::milliseconds(500));
 }
 
 // First diagnostic event; throws (failing the test) if there is none.
@@ -39,7 +39,7 @@ const std::vector<std::string> kLoaded = {"stage start", "stage inspected",
 
 }  // namespace
 
-TEST(FixtureReport, PassWhenEntryReturns) {
+TEST(ExecutableReport, PassWhenEntryReturns) {
     auto lines = kLoaded;
     lines.push_back("stage returned value=-7");
     const auto r = report(worker(lines, Termination::exited, static_cast<std::uint32_t>(-7)));
@@ -54,7 +54,7 @@ TEST(FixtureReport, PassWhenEntryReturns) {
     EXPECT_EQ(returned_value(worker(lines)), -7);
 }
 
-TEST(FixtureReport, UnsupportedFeatureIsBlocked) {
+TEST(ExecutableReport, UnsupportedFeatureIsBlocked) {
     const auto r = report(worker({"stage start", "stage inspected",
                                   "error stage=map component=loader code=unsupported_directory message=the "
                                   "import_table directory is not supported"},
@@ -71,7 +71,7 @@ TEST(FixtureReport, UnsupportedFeatureIsBlocked) {
     EXPECT_EQ(e.message, "the import_table directory is not supported");
 }
 
-TEST(FixtureReport, MalformedInputFails) {
+TEST(ExecutableReport, MalformedInputFails) {
     const auto r = report(worker(
         {"stage start", "error stage=inspect component=loader code=bad_dos_magic message=DOS header magic is not 'MZ'"},
         Termination::exited, 3));
@@ -79,7 +79,7 @@ TEST(FixtureReport, MalformedInputFails) {
     EXPECT_EQ(first(r).code, "bad_dos_magic");
 }
 
-TEST(FixtureReport, ExceptionInsideImageHasRva) {
+TEST(ExecutableReport, ExceptionInsideImageHasRva) {
     ProcessResult p = worker(kLoaded, Termination::exception, 0xC0000005u);
     p.exception = ExceptionReport{0xC0000005u, 0x7ff600001007ull};
     const auto r = report(p);
@@ -95,14 +95,14 @@ TEST(FixtureReport, ExceptionInsideImageHasRva) {
     EXPECT_EQ(e.attributes, expected);
 }
 
-TEST(FixtureReport, ExceptionOutsideImageHasNoRva) {
+TEST(ExecutableReport, ExceptionOutsideImageHasNoRva) {
     ProcessResult p = worker(kLoaded, Termination::exception, 0xC0000005u);
     p.exception = ExceptionReport{0xC0000005u, 0x1000ull};
     const auto r = report(p);
     EXPECT_EQ(first(r).attributes.size(), 2u);
 }
 
-TEST(FixtureReport, TimeoutFails) {
+TEST(ExecutableReport, TimeoutFails) {
     const auto r = report(worker(kLoaded, Termination::timeout, kKilledExitCode));
     EXPECT_EQ(r.outcome, Outcome::failed);
     const auto& e = first(r);
@@ -112,7 +112,7 @@ TEST(FixtureReport, TimeoutFails) {
     EXPECT_EQ(e.attributes, expected);
 }
 
-TEST(FixtureReport, ExitWithoutResultFails) {
+TEST(ExecutableReport, ExitWithoutResultFails) {
     ProcessResult p = worker(kLoaded, Termination::exited, 0xC0000409u);
     p.abnormal_exit_status = true;
     EXPECT_EQ(first(report(p)).code, "abnormal_exit");
@@ -120,7 +120,7 @@ TEST(FixtureReport, ExitWithoutResultFails) {
     EXPECT_EQ(report(worker({})).final_stage, "launch");
 }
 
-TEST(FixtureReport, TruncatedReportWarns) {
+TEST(ExecutableReport, TruncatedReportWarns) {
     auto lines = kLoaded;
     lines.push_back("stage returned value=42");
     ProcessResult p = worker(lines);
@@ -132,14 +132,14 @@ TEST(FixtureReport, TruncatedReportWarns) {
     EXPECT_FALSE(r.diagnostics.entries()[0].event.fatal);
 }
 
-TEST(FixtureReport, GuestCannotForgeReturnedValueThroughStdout) {
+TEST(ExecutableReport, GuestCannotForgeReturnedValueThroughStdout) {
     // Only the report channel counts; captured stdout is ignored.
     ProcessResult p = worker(kLoaded, Termination::exited, 42);
     p.out.data = "stage returned value=42\n";
     EXPECT_EQ(report(p).outcome, Outcome::failed);
 }
 
-TEST(FixtureReport, RunIdFormat) {
+TEST(ExecutableReport, RunIdFormat) {
     EXPECT_TRUE(std::regex_match(make_run_id(), std::regex(R"(run-\d{8}T\d{6}Z-\d+-\d+)")));
     EXPECT_NE(make_run_id(), make_run_id());
 }

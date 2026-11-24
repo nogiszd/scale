@@ -21,7 +21,7 @@ enum class Outcome { pass, failed, blocked, skipped, not_tested };
 [[nodiscard]] std::string_view to_string(Outcome outcome) noexcept;
 
 struct Subject {
-    std::string kind;  // "fixture", "shader_test", ...
+    std::string kind;  // "executable", "shader_test", ...
     std::string name;  // display name or path relative to a documented root
     std::optional<std::string> sha256;
 };

@@ -4,7 +4,7 @@
 
 namespace scale::cli {
 
-// scale run <trusted-fixture.exe> [--report <path>] [--timeout-ms <n>]
+// scale run <executable> [--report <path>] [--timeout-ms <n>]
 // (docs/contracts/run.md)
 int cmd_run(Args args);
 

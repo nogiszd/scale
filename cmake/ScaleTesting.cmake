@@ -2,7 +2,7 @@
 #
 # Labels (use exactly one primary label per test):
 #   quick        small deterministic CPU tests, no processes or GPU
-#   integration  worker process, fixture images, CLI end-to-end
+#   integration  worker process, test executables, CLI end-to-end
 #   gpu          requires real GPU hardware (software Vulkan must be labeled
 #                additionally with `software_gpu`)
 #

@@ -1,9 +1,9 @@
-// T-202: first native execution slice. Each fixture runs (a) natively under
-// Windows as the reference and (b) through scale_worker's fixture loader;
-// observable results must match the fixture's documented contract and each other.
+// T-202: first native execution slice. Each test executable runs (a) natively under
+// Windows as the reference and (b) through scale_worker's Scale loader;
+// observable results must match the test executable's documented contract and each other.
 
 #include "scale/common/text.h"
-#include "scale/host/fixture_run.h"
+#include "scale/host/executable_run.h"
 #include "scale/host/supervisor.h"
 
 #include <gtest/gtest.h>
@@ -30,8 +30,8 @@ ProcessResult supervise(const std::filesystem::path& exe, std::vector<std::strin
     return r ? *r : ProcessResult{};
 }
 
-ProcessResult run_in_worker(const char* fixture) {
-    return supervise(path_of(SCALE_WORKER_PATH), {"run-fixture", *scale::to_utf8(path_of(fixture).wstring())});
+ProcessResult run_in_worker(const char* executable) {
+    return supervise(path_of(SCALE_WORKER_PATH), {"run", *scale::to_utf8(path_of(executable).wstring())});
 }
 
 bool has_line(const ProcessResult& r, std::string_view prefix) {
@@ -47,16 +47,16 @@ std::string lines(const ProcessResult& r) {
 
 }  // namespace
 
-TEST(NativeFixtureRet42, NativeReferenceReturns42) {
-    // The fixture ignores its command line (the supervisor adds the report-handle argument).
-    const ProcessResult r = supervise(path_of(SCALE_FIXTURE_RET42), {});
+TEST(NativeExecutionRet42, NativeReferenceReturns42) {
+    // The test executable ignores its command line (the supervisor adds the report-handle argument).
+    const ProcessResult r = supervise(path_of(SCALE_TEST_EXE_RET42), {});
     EXPECT_EQ(r.termination, Termination::exited);
     EXPECT_EQ(r.exit_code, 42u);
 }
 
-TEST(NativeFixtureRet42, WorkerReturns42AndMatchesReference) {
-    const ProcessResult native = supervise(path_of(SCALE_FIXTURE_RET42), {});
-    const ProcessResult worker = run_in_worker(SCALE_FIXTURE_RET42);
+TEST(NativeExecutionRet42, WorkerReturns42AndMatchesReference) {
+    const ProcessResult native = supervise(path_of(SCALE_TEST_EXE_RET42), {});
+    const ProcessResult worker = run_in_worker(SCALE_TEST_EXE_RET42);
     EXPECT_EQ(worker.termination, Termination::exited) << lines(worker);
     EXPECT_EQ(worker.exit_code, 42u) << lines(worker);
     EXPECT_EQ(worker.exit_code, native.exit_code);
@@ -67,33 +67,33 @@ TEST(NativeFixtureRet42, WorkerReturns42AndMatchesReference) {
     EXPECT_FALSE(has_line(worker, "error")) << lines(worker);
 }
 
-TEST(NativeFixtureReject, ImportsAreRejectedBeforeEntry) {
-    // fixture_exit.exe imports KERNEL32!ExitProcess: unsupported by the T-202 loader.
-    const ProcessResult r = run_in_worker(SCALE_FIXTURE_EXIT);
+TEST(NativeExecutionReject, ImportsAreRejectedBeforeEntry) {
+    // test_exit.exe imports KERNEL32!ExitProcess: unsupported by the T-202 loader.
+    const ProcessResult r = run_in_worker(SCALE_TEST_EXE_EXIT);
     EXPECT_EQ(r.exit_code, 3u) << lines(r);
     EXPECT_TRUE(has_line(r, "error stage=map component=loader code=unsupported_directory message=the import_table"))
         << lines(r);
     EXPECT_FALSE(has_line(r, "stage entry")) << lines(r);
 }
 
-TEST(NativeFixtureReject, DllIsRejectedBeforeEntry) {
-    const ProcessResult r = run_in_worker(SCALE_FIXTURE_LIB);
+TEST(NativeExecutionReject, DllIsRejectedBeforeEntry) {
+    const ProcessResult r = run_in_worker(SCALE_TEST_EXE_LIB);
     EXPECT_EQ(r.exit_code, 3u) << lines(r);
     EXPECT_TRUE(has_line(r, "error stage=map component=loader code=unsupported_image")) << lines(r);
     EXPECT_FALSE(has_line(r, "stage entry")) << lines(r);
 }
 
-TEST(NativeFixtureReject, MissingFile) {
-    const ProcessResult r = supervise(path_of(SCALE_WORKER_PATH), {"run-fixture", "C:/does/not/exist.exe"});
+TEST(NativeExecutionReject, MissingFile) {
+    const ProcessResult r = supervise(path_of(SCALE_WORKER_PATH), {"run", "C:/does/not/exist.exe"});
     EXPECT_EQ(r.exit_code, 3u);
     EXPECT_TRUE(has_line(r, "error stage=read component=loader code=file_open_failed")) << lines(r);
 }
 
-// ---- T-203: relocated data, crash and hang fixtures -----------------------------
+// ---- T-203: relocated data, crash and hang test executables -----------------------------
 
-TEST(NativeFixtureReloc, RelocatedPointersMatchReference) {
-    const ProcessResult native = supervise(path_of(SCALE_FIXTURE_RELOC), {});
-    const ProcessResult worker = run_in_worker(SCALE_FIXTURE_RELOC);
+TEST(NativeExecutionReloc, RelocatedPointersMatchReference) {
+    const ProcessResult native = supervise(path_of(SCALE_TEST_EXE_RELOC), {});
+    const ProcessResult worker = run_in_worker(SCALE_TEST_EXE_RELOC);
     EXPECT_EQ(native.exit_code, 42u);
     EXPECT_EQ(worker.exit_code, 42u) << lines(worker);
     EXPECT_TRUE(has_line(worker, "stage returned value=42")) << lines(worker);
@@ -103,9 +103,9 @@ TEST(NativeFixtureReloc, RelocatedPointersMatchReference) {
     EXPECT_EQ(lines(worker).find(" delta=0 "), std::string::npos) << lines(worker);
 }
 
-TEST(NativeFixtureCrash, ExceptionMatchesReference) {
-    const ProcessResult native = supervise(path_of(SCALE_FIXTURE_CRASH), {});
-    const ProcessResult worker = run_in_worker(SCALE_FIXTURE_CRASH);
+TEST(NativeExecutionCrash, ExceptionMatchesReference) {
+    const ProcessResult native = supervise(path_of(SCALE_TEST_EXE_CRASH), {});
+    const ProcessResult worker = run_in_worker(SCALE_TEST_EXE_CRASH);
     // Natively Windows ends the process with the exception code.
     EXPECT_EQ(native.exit_code, 0xC0000005u);
     EXPECT_EQ(worker.termination, Termination::exception) << lines(worker);
@@ -115,25 +115,25 @@ TEST(NativeFixtureCrash, ExceptionMatchesReference) {
     EXPECT_FALSE(has_line(worker, "stage returned"));
 }
 
-TEST(NativeFixtureHang, TimeoutMatchesReference) {
+TEST(NativeExecutionHang, TimeoutMatchesReference) {
     ProcessLimits limits;
     limits.timeout = std::chrono::milliseconds(500);
-    const auto native = run_supervised(LaunchRequest{path_of(SCALE_FIXTURE_HANG), {}, limits});
+    const auto native = run_supervised(LaunchRequest{path_of(SCALE_TEST_EXE_HANG), {}, limits});
     const auto worker = run_supervised(LaunchRequest{
-        path_of(SCALE_WORKER_PATH), {"run-fixture", *scale::to_utf8(path_of(SCALE_FIXTURE_HANG).wstring())}, limits});
+        path_of(SCALE_WORKER_PATH), {"run", *scale::to_utf8(path_of(SCALE_TEST_EXE_HANG).wstring())}, limits});
     ASSERT_TRUE(native && worker);
     EXPECT_EQ(native->termination, Termination::timeout);
     EXPECT_EQ(worker->termination, Termination::timeout);
     EXPECT_TRUE(has_line(*worker, "stage entry"));
 }
 
-TEST(FixtureRun, ReportJsonForPassAndBlocked) {
-    FixtureRunOptions options;
+TEST(ExecutableRun, ReportJsonForPassAndBlocked) {
+    RunOptions options;
     options.worker = path_of(SCALE_WORKER_PATH);
-    options.fixture = path_of(SCALE_FIXTURE_RELOC);
-    options.subject_name = "fixture_reloc.exe";
+    options.executable = path_of(SCALE_TEST_EXE_RELOC);
+    options.subject_name = "test_reloc.exe";
     options.run_id = "run-integration";
-    const auto pass = run_fixture(options);
+    const auto pass = run_executable(options);
     ASSERT_TRUE(pass.has_value()) << pass.error().to_string();
     EXPECT_EQ(pass->returned_value, 42);
     const std::string json = scale::diagnostics::to_json(pass->report);
@@ -142,9 +142,9 @@ TEST(FixtureRun, ReportJsonForPassAndBlocked) {
     EXPECT_NE(json.find("\"exit_code\": 42"), std::string::npos) << json;
     EXPECT_NE(json.find("\"final_stage\": \"returned\""), std::string::npos) << json;
 
-    options.fixture = path_of(SCALE_FIXTURE_EXIT);
-    options.subject_name = "fixture_exit.exe";
-    const auto blocked = run_fixture(options);
+    options.executable = path_of(SCALE_TEST_EXE_EXIT);
+    options.subject_name = "test_exit.exe";
+    const auto blocked = run_executable(options);
     ASSERT_TRUE(blocked.has_value());
     const std::string bjson = scale::diagnostics::to_json(blocked->report);
     EXPECT_NE(bjson.find("\"outcome\": \"BLOCKED\""), std::string::npos) << bjson;

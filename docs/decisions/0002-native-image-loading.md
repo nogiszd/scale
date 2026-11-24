@@ -4,7 +4,7 @@ Status: accepted (2026-11-24, T-202)
 
 ## Context
 
-M2 needs trusted PE32+ fixtures to run on the host CPU. AGENTS.md says to
+M2 needs trusted PE32+ test executables to run on the host CPU. AGENTS.md says to
 prefer documented OS loader facilities and to use custom mapping only when
 there is a demonstrated need.
 
@@ -27,7 +27,7 @@ supervised worker process (T-201).
 - **Resolver policy (AGENTS.md M3):** documented adapter → approved guest
   module → explicitly permitted Windows export → unresolved error. The OS
   loader cannot substitute an adapter for a synthetic module such as
-  `fixture_platform.dll` without a real DLL of that name. It also follows
+  `test_platform.dll` without a real DLL of that name. It also follows
   the arbitrary DLL search path that AGENTS.md rules out.
 - **No execution past an unresolved required import:** with the OS loader
   the process either fails with a loader dialog or status code, which can't
@@ -37,7 +37,7 @@ supervised worker process (T-201).
   evidence-driven loading behavior (KNOWN_UNKNOWNS U-001). The mapping code
   is where that will live.
 
-The OS loader is still the **reference**: every fixture whose contract allows
+The OS loader is still the **reference**: every test executable whose contract allows
 it also runs natively, and the observable results must match.
 
 ## Scope of the first slice (T-202)
@@ -45,7 +45,7 @@ it also runs natively, and the observable results must match.
 Supported: EXE images with SectionAlignment ≥ 4 KiB, DIR64 base
 relocations (relocatable images are always moved to an OS-chosen address),
 the debug directory (ignored), and an entry inside an executable section,
-called directly as `int fixture_entry(void)`.
+called directly as `int test_entry(void)`.
 
 Rejected with named errors before any memory is made executable: DLLs, every
 other present directory (imports, TLS, exceptions, load config, delay
@@ -59,8 +59,8 @@ images whose preferred base is taken.
 - Mapped images live in private memory. Debuggers and
   `GetModuleHandle` do not see them as modules. Unwinding through guest code
   needs `RtlAddFunctionTable` once the exception directory is supported.
-- Success with `fixture_entry` says nothing about CRT entry points
+- Success with `test_entry` says nothing about CRT entry points
   (`mainCRTStartup`). These are separate M3 features.
 - Executable pages come from `VirtualProtect(PAGE_EXECUTE_READ)` on private
   memory, so CFG marks the whole region as valid call targets. This is
-  acceptable for trusted fixtures. Revisit before untrusted inputs.
+  acceptable for trusted test executables. Revisit before untrusted inputs.

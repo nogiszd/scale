@@ -34,7 +34,7 @@ TEST(JsonQuote, ReplacesInvalidUtf8) {
 TEST(JsonWriter, NestedDocument) {
     JsonWriter w;
     w.begin_object();
-    w.field("name", "fixture");
+    w.field("name", "game.exe");
     w.field("count", 3);
     w.field("big", std::numeric_limits<std::uint64_t>::max());
     w.field("neg", std::int64_t{-5});
@@ -52,7 +52,7 @@ TEST(JsonWriter, NestedDocument) {
     w.end_object();
 
     const std::string expected = "{\n"
-                                 "  \"name\": \"fixture\",\n"
+                                 "  \"name\": \"game.exe\",\n"
                                  "  \"count\": 3,\n"
                                  "  \"big\": 18446744073709551615,\n"
                                  "  \"neg\": -5,\n"

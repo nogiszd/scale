@@ -18,7 +18,7 @@ enum class Severity { info, warning, error };
 
 [[nodiscard]] std::string_view to_string(Severity severity) noexcept;
 
-// A component-specific key/value detail, e.g. {"module", "fixture_platform.dll"}.
+// A component-specific key/value detail, e.g. {"module", "test_platform.dll"}.
 // Keys are lowercase snake_case. Values are bounded, non-secret text.
 struct Attribute {
     std::string key;

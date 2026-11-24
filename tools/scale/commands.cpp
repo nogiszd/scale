@@ -41,7 +41,7 @@ constexpr std::array kCommands = {
     Command{"help", "help", "Show available commands", "", &cmd_help},
     Command{"version", "version", "Print the Scale version", "", &cmd_version},
     Command{"inspect", "inspect <file> [--json]", "Inspect a PE32+ image (read-only)", "", &cmd_inspect},
-    Command{"run", "run <trusted-fixture.exe> [--report <path>]", "Execute a trusted fixture in a worker process",
+    Command{"run", "run <executable> [--report <path>]", "Execute a trusted test executable in a worker process",
             "", &cmd_run},
 };
 

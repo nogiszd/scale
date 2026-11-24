@@ -1,4 +1,4 @@
-#include "scale/host/fixture_run.h"
+#include "scale/host/executable_run.h"
 
 #include "scale/common/sha256.h"
 #include "scale/common/text.h"
@@ -79,7 +79,7 @@ std::optional<int> returned_value(const ProcessResult& process) {
     return std::nullopt;
 }
 
-diagnostics::RunReport make_fixture_report(const ProcessResult& process, diagnostics::Subject subject,
+diagnostics::RunReport make_run_report(const ProcessResult& process, diagnostics::Subject subject,
                                            std::string run_id, std::chrono::milliseconds timeout) {
     diagnostics::RunReport report;
     report.run_id = std::move(run_id);
@@ -122,7 +122,7 @@ diagnostics::RunReport make_fixture_report(const ProcessResult& process, diagnos
             attrs.push_back({"module", report.subject.name});
         }
         report.diagnostics.report(DiagnosticEvent{"host", report.final_stage, "unhandled_exception", Severity::error,
-                                                  true, "unhandled exception while running the fixture",
+                                                  true, "unhandled exception while running the executable",
                                                   std::move(attrs)});
     } else if (worker_error) {
         report.outcome = is_blocking_code(worker_error->code) ? Outcome::blocked : Outcome::failed;
@@ -174,24 +174,24 @@ Result<std::filesystem::path> default_worker_path() {
     return path;
 }
 
-Result<FixtureRun> run_fixture(const FixtureRunOptions& options) {
-    diagnostics::Subject subject{"fixture", options.subject_name, std::nullopt};
-    if (const auto bytes = loader::read_file(options.fixture)) {
+Result<ExecutableRun> run_executable(const RunOptions& options) {
+    diagnostics::Subject subject{"executable", options.subject_name, std::nullopt};
+    if (const auto bytes = loader::read_file(options.executable)) {
         if (auto digest = sha256_hex(ByteView(*bytes))) {
             subject.sha256 = std::move(*digest);
         }
     }
-    auto fixture_utf8 = to_utf8(std::filesystem::absolute(options.fixture).wstring());
-    if (!fixture_utf8) {
-        return std::unexpected(fixture_utf8.error());
+    auto executable_utf8 = to_utf8(std::filesystem::absolute(options.executable).wstring());
+    if (!executable_utf8) {
+        return std::unexpected(executable_utf8.error());
     }
-    auto process = run_supervised(LaunchRequest{options.worker, {"run-fixture", *fixture_utf8}, options.limits});
+    auto process = run_supervised(LaunchRequest{options.worker, {"run", *executable_utf8}, options.limits});
     if (!process) {
         return std::unexpected(process.error());
     }
-    FixtureRun run;
+    ExecutableRun run;
     run.returned_value = returned_value(*process);
-    run.report = make_fixture_report(*process, std::move(subject),
+    run.report = make_run_report(*process, std::move(subject),
                                      options.run_id.empty() ? make_run_id() : options.run_id, options.limits.timeout);
     run.process = std::move(*process);
     return run;

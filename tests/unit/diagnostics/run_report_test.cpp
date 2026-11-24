@@ -14,7 +14,7 @@ TEST(RunReport, SchemaV1Golden) {
     RunReport r;
     r.run_id = "test-run-0001";
     r.command = "run";
-    r.subject = Subject{"fixture", "missing_import.exe", std::nullopt};
+    r.subject = Subject{"executable", "missing_import.exe", std::nullopt};
     r.final_stage = "import_resolution";
     r.outcome = Outcome::blocked;
     r.elapsed_ms = 12;
@@ -25,7 +25,7 @@ TEST(RunReport, SchemaV1Golden) {
         .severity = Severity::error,
         .fatal = true,
         .message = "no resolver accepted this import",
-        .attributes = {{"module", "fixture_platform.dll"}, {"symbol", "FixtureAllocate"}},
+        .attributes = {{"module", "test_platform.dll"}, {"symbol", "TestAllocate"}},
     });
 
     const std::string expected = std::string("{\n"
@@ -39,7 +39,7 @@ TEST(RunReport, SchemaV1Golden) {
                                  "  },\n"
                                  "  \"command\": \"run\",\n"
                                  "  \"subject\": {\n"
-                                 "    \"kind\": \"fixture\",\n"
+                                 "    \"kind\": \"executable\",\n"
                                  "    \"name\": \"missing_import.exe\",\n"
                                  "    \"sha256\": null\n"
                                  "  },\n"
@@ -58,8 +58,8 @@ TEST(RunReport, SchemaV1Golden) {
                                  "      \"fatal\": true,\n"
                                  "      \"message\": \"no resolver accepted this import\",\n"
                                  "      \"attributes\": {\n"
-                                 "        \"module\": \"fixture_platform.dll\",\n"
-                                 "        \"symbol\": \"FixtureAllocate\"\n"
+                                 "        \"module\": \"test_platform.dll\",\n"
+                                 "        \"symbol\": \"TestAllocate\"\n"
                                  "      },\n"
                                  "      \"count\": 1,\n"
                                  "      \"first_sequence\": 1,\n"

@@ -45,11 +45,11 @@ scale_add_command_test(NAME selftest_gtest_failure_fails_run
 
 # --- Host supervisor helpers (T-201) -------------------------------------------
 scale_add_test(NAME unit_host
-    SOURCES host/supervisor_unit_test.cpp host/fixture_report_test.cpp
+    SOURCES host/supervisor_unit_test.cpp host/executable_report_test.cpp
     LIBS scale::host
     LABELS quick)
 
-# --- Fixture loader mapping (T-202) ---------------------------------------------
+# --- Image mapping (T-202) -------------------------------------------------------
 scale_add_test(NAME unit_image_map
     SOURCES loader/image_map_test.cpp
     LIBS scale::loader

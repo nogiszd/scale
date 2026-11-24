@@ -139,7 +139,7 @@ TEST(Supervisor, RejectsRelativeAndMissingExecutables) {
 }
 
 TEST(Worker, UnknownModeIsUsageError) {
-    const auto r = run_supervised(LaunchRequest{worker_path(), {"fixture.exe"}, {}});
+    const auto r = run_supervised(LaunchRequest{worker_path(), {"program.exe"}, {}});
     ASSERT_TRUE(r.has_value());
     EXPECT_EQ(r->exit_code, 2u);
     EXPECT_NE(r->err.data.find("usage: scale_worker"), std::string::npos);

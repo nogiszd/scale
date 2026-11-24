@@ -1,6 +1,6 @@
 #pragma once
 
-// Minimal native image mapping for trusted fixtures (T-202).
+// Minimal native image mapping for trusted test executables (T-202).
 // Decision record: docs/decisions/0002-native-image-loading.md
 //
 // This is NOT a general executable loader. It maps a PE32+ AMD64 executable

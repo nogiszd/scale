@@ -15,7 +15,7 @@ Success document, written to stdout:
 {
   "schema_version": 1,
   "tool": { "name": "scale", "version": "0.1.0" },
-  "file": "fixture_exit.exe",
+  "file": "test_exit.exe",
   "result": "ok",
   "image": {
     "machine": "0x8664",

@@ -1,8 +1,8 @@
 // T-102: compares scale::loader::inspect_pe_file against dumpbin (an
-// independent Microsoft tool) for the self-authored fixtures in
-// tests/fixtures/pe, and checks each fixture's documented contract.
+// independent Microsoft tool) for the self-authored test executables in
+// tests/executables/pe, and checks each test executable's documented contract.
 //
-// The fixtures are only read, never executed. If dumpbin is unavailable the
+// The test executables are only read, never executed. If dumpbin is unavailable the
 // comparison cases are SKIPPED (GTEST_SKIP), never passed.
 
 #include "scale/common/text.h"
@@ -255,7 +255,7 @@ void compare_with_dumpbin(const std::filesystem::path& file, const PeImage& img)
     EXPECT_EQ(dump_count("DIR64"), type_count(10));
 }
 
-PeImage inspect_fixture(const char* path_utf8) {
+PeImage inspect_test_executable(const char* path_utf8) {
     const auto r = inspect_pe_file(utf8_path(path_utf8));
     EXPECT_TRUE(r.has_value()) << (r ? "" : r.error().to_string());
     return r ? *r : PeImage{};
@@ -263,10 +263,10 @@ PeImage inspect_fixture(const char* path_utf8) {
 
 }  // namespace
 
-// ---- fixture_exit.exe ---------------------------------------------------------------
+// ---- test_exit.exe ---------------------------------------------------------------
 
-TEST(PeFixtureExit, MatchesContract) {
-    const PeImage img = inspect_fixture(SCALE_FIXTURE_EXIT);
+TEST(PeTestExit, MatchesContract) {
+    const PeImage img = inspect_test_executable(SCALE_TEST_EXE_EXIT);
     EXPECT_EQ(img.machine, kMachineAmd64);
     EXPECT_FALSE(img.is_dll());
     EXPECT_NE(img.address_of_entry_point, 0u);
@@ -275,47 +275,47 @@ TEST(PeFixtureExit, MatchesContract) {
     ASSERT_EQ(img.imports[0].entries.size(), 1u);
     EXPECT_EQ(img.imports[0].entries[0].name, "ExitProcess");
     ASSERT_TRUE(img.relocations.has_value());
-    EXPECT_GE(img.relocations->count_by_type[10], 1u);  // pointer to fixture_value
+    EXPECT_GE(img.relocations->count_by_type[10], 1u);  // pointer to test_value
     EXPECT_FALSE(img.tls.has_value());
 }
 
-TEST(PeFixtureExit, MatchesDumpbin) {
-    compare_with_dumpbin(utf8_path(SCALE_FIXTURE_EXIT), inspect_fixture(SCALE_FIXTURE_EXIT));
+TEST(PeTestExit, MatchesDumpbin) {
+    compare_with_dumpbin(utf8_path(SCALE_TEST_EXE_EXIT), inspect_test_executable(SCALE_TEST_EXE_EXIT));
 }
 
-// ---- fixture_lib.dll ----------------------------------------------------------------
+// ---- test_lib.dll ----------------------------------------------------------------
 
-TEST(PeFixtureLib, MatchesContract) {
-    const PeImage img = inspect_fixture(SCALE_FIXTURE_LIB);
+TEST(PeTestLib, MatchesContract) {
+    const PeImage img = inspect_test_executable(SCALE_TEST_EXE_LIB);
     EXPECT_TRUE(img.is_dll());
     EXPECT_TRUE(img.directory(DirectoryIndex::export_table).present());
     EXPECT_TRUE(img.imports.empty());
 }
 
-TEST(PeFixtureLib, MatchesDumpbin) {
-    compare_with_dumpbin(utf8_path(SCALE_FIXTURE_LIB), inspect_fixture(SCALE_FIXTURE_LIB));
+TEST(PeTestLib, MatchesDumpbin) {
+    compare_with_dumpbin(utf8_path(SCALE_TEST_EXE_LIB), inspect_test_executable(SCALE_TEST_EXE_LIB));
 }
 
-// ---- fixture_ordinal.exe ------------------------------------------------------------
+// ---- test_ordinal.exe ------------------------------------------------------------
 
-TEST(PeFixtureOrdinal, MatchesContract) {
-    const PeImage img = inspect_fixture(SCALE_FIXTURE_ORDINAL);
+TEST(PeTestOrdinal, MatchesContract) {
+    const PeImage img = inspect_test_executable(SCALE_TEST_EXE_ORDINAL);
     ASSERT_EQ(img.imports.size(), 2u);
     const ImportModule* lib = nullptr;
     for (const ImportModule& m : img.imports) {
-        if (m.dll_name == "fixture_lib.dll") lib = &m;
+        if (m.dll_name == "test_lib.dll") lib = &m;
     }
     ASSERT_NE(lib, nullptr);
     bool ordinal7 = false;
     bool mul_by_name = false;
     for (const ImportEntry& e : lib->entries) {
         ordinal7 = ordinal7 || (e.by_ordinal && e.ordinal == 7);
-        mul_by_name = mul_by_name || (!e.by_ordinal && e.name == "FixtureMul");
+        mul_by_name = mul_by_name || (!e.by_ordinal && e.name == "TestMul");
     }
-    EXPECT_TRUE(ordinal7) << "FixtureAdd must be imported by ordinal 7";
-    EXPECT_TRUE(mul_by_name) << "FixtureMul must be imported by name";
+    EXPECT_TRUE(ordinal7) << "TestAdd must be imported by ordinal 7";
+    EXPECT_TRUE(mul_by_name) << "TestMul must be imported by name";
 }
 
-TEST(PeFixtureOrdinal, MatchesDumpbin) {
-    compare_with_dumpbin(utf8_path(SCALE_FIXTURE_ORDINAL), inspect_fixture(SCALE_FIXTURE_ORDINAL));
+TEST(PeTestOrdinal, MatchesDumpbin) {
+    compare_with_dumpbin(utf8_path(SCALE_TEST_EXE_ORDINAL), inspect_test_executable(SCALE_TEST_EXE_ORDINAL));
 }

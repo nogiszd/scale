@@ -108,7 +108,7 @@ TEST(PeInspect, ImportsByNameAndOrdinal) {
     const std::uint32_t rva = pe.next_section_rva();
     const auto idata = scale::test::build_import_section(
         rva, {ImportSpec{"KERNEL32.dll", {std::string("ExitProcess"), std::string("GetStdHandle")}},
-              ImportSpec{"fixture_platform.dll", {std::uint16_t{7}}}});
+              ImportSpec{"test_platform.dll", {std::uint16_t{7}}}});
     pe.add_section(".idata", idata.data, PeBuilder::kRdata);
     pe.set_directory(DirectoryIndex::import_table, rva, idata.directory_size);
 
@@ -128,7 +128,7 @@ TEST(PeInspect, ImportsByNameAndOrdinal) {
     EXPECT_EQ(k32.entries[1].hint, 0x11u);
 
     const ImportModule& plat = r->imports[1];
-    EXPECT_EQ(plat.dll_name, "fixture_platform.dll");
+    EXPECT_EQ(plat.dll_name, "test_platform.dll");
     ASSERT_EQ(plat.entries.size(), 1u);
     EXPECT_TRUE(plat.entries[0].by_ordinal);
     EXPECT_EQ(plat.entries[0].ordinal, 7u);
@@ -454,12 +454,12 @@ TEST(PeReject, DirectoryInZeroFillIsNotInFile) {
 // ---- Import rejection ----------------------------------------------------------------------
 
 namespace {
-struct ImportFixture {
+struct ImportCase {
     PeBuilder pe = minimal_builder();
     std::uint32_t rva = 0;
     scale::test::ImportSection idata;
 
-    explicit ImportFixture(std::vector<ImportSpec> modules) {
+    explicit ImportCase(std::vector<ImportSpec> modules) {
         rva = pe.next_section_rva();
         idata = scale::test::build_import_section(rva, modules);
     }
@@ -472,26 +472,26 @@ struct ImportFixture {
 }  // namespace
 
 TEST(PeReject, ImportDescriptorWithoutName) {
-    ImportFixture f({ImportSpec{"KERNEL32.dll", {std::string("ExitProcess")}}});
+    ImportCase f({ImportSpec{"KERNEL32.dll", {std::string("ExitProcess")}}});
     put_u32(f.idata.data, 12, 0);  // Name = 0
     expect_error(f.build(), "import_table_malformed");
 }
 
 TEST(PeReject, ImportOrdinalReservedBits) {
-    ImportFixture f({ImportSpec{"fixture_platform.dll", {std::uint16_t{1}}}});
+    ImportCase f({ImportSpec{"test_platform.dll", {std::uint16_t{1}}}});
     // ILT starts right after the two descriptors (offset 40).
     put_u64(f.idata.data, 40, (1ull << 63) | (1ull << 20) | 1);
     expect_error(f.build(), "import_table_malformed");
 }
 
 TEST(PeReject, ImportNameThunkReservedBits) {
-    ImportFixture f({ImportSpec{"KERNEL32.dll", {std::string("ExitProcess")}}});
+    ImportCase f({ImportSpec{"KERNEL32.dll", {std::string("ExitProcess")}}});
     put_u64(f.idata.data, 40, 1ull << 40);
     expect_error(f.build(), "import_table_malformed");
 }
 
 TEST(PeReject, ImportThunkTableNotBacked) {
-    ImportFixture f({ImportSpec{"KERNEL32.dll", {std::string("ExitProcess")}}});
+    ImportCase f({ImportSpec{"KERNEL32.dll", {std::string("ExitProcess")}}});
     put_u32(f.idata.data, 0, 0x7000);  // ILT RVA outside every section
     expect_error(f.build(), "import_table_malformed");
 }
