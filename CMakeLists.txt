@@ -58,6 +58,7 @@ endif()
 if(SCALE_ENABLE_GRAPHICS)
     scale_add_component(src/graphics REQUIRED)
 endif()
+scale_add_component(tools/scale_worker)
 scale_add_component(tools/scale REQUIRED)
 
 if(SCALE_BUILD_TESTS)
