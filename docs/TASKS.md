@@ -64,6 +64,35 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-901 | Exercise local data and input with deterministic host doubles | unassigned | PROPOSED | T-401, T-404 | M9 |
 | T-902 | Submit a synthetic PCM buffer through an audio adapter | unassigned | PROPOSED | T-401 | M9 |
 
+| T-308 | [Look up guest modules and exports at runtime](research/TRANSLATION_GAPS.md#t-308--look-up-guest-modules-and-exports-at-runtime) | unassigned | PROPOSED | T-304, T-305 | M3 |
+| T-405 | [Read local title identity and executable metadata](research/TRANSLATION_GAPS.md#t-405--read-local-title-identity-and-executable-metadata) | unassigned | PROPOSED | T-103, T-404 | M4 |
+| T-406 | [Implement one documented GDK async queue mode](research/TRANSLATION_GAPS.md#t-406--implement-one-documented-gdk-async-queue-mode) | unassigned | PROPOSED | T-401 | M4 |
+| T-407 | [Read assets through an uncompressed DirectStorage queue](research/TRANSLATION_GAPS.md#t-407--read-assets-through-an-uncompressed-directstorage-queue) | unassigned | PROPOSED | T-404, T-406 | M4 |
+| T-408 | [Model one title memory allocation lifecycle](research/TRANSLATION_GAPS.md#t-408--model-one-title-memory-allocation-lifecycle) | unassigned | PROPOSED | T-401 | M4 |
+| T-502 | [Record compatibility failures by stage and subsystem](research/TRANSLATION_GAPS.md#t-502--record-compatibility-failures-by-stage-and-subsystem) | unassigned | PROPOSED | T-204 | M5 |
+| T-503 | [Verify the PE inspector with a public GDK PC sample](research/TRANSLATION_GAPS.md#t-503--verify-the-pe-inspector-with-a-public-gdk-pc-sample) | unassigned | PROPOSED | T-103 | M5 |
+| T-504 | [Inspect a Scarlett GDK sample when a GDKX build is available](research/TRANSLATION_GAPS.md#t-504--inspect-a-scarlett-gdk-sample-when-a-gdkx-build-is-available) | unassigned | PROPOSED | T-103, T-402 | M5 |
+| T-603 | [Draw a textured primitive with host shaders](research/TRANSLATION_GAPS.md#t-603--draw-a-textured-primitive-with-host-shaders) | unassigned | PROPOSED | T-602 | M6 |
+| T-604 | [Submit dependent GPU work with correct resource states](research/TRANSLATION_GAPS.md#t-604--submit-dependent-gpu-work-with-correct-resource-states) | unassigned | PROPOSED | T-603 | M6 |
+| T-605 | [Present and resize a host window](research/TRANSLATION_GAPS.md#t-605--present-and-resize-a-host-window) | unassigned | PROPOSED | T-604 | M6 |
+| T-606 | [Check one placed-resource aliasing case](research/TRANSLATION_GAPS.md#t-606--check-one-placed-resource-aliasing-case) | unassigned | PROPOSED | T-604 | M6 |
+| T-736 | [Identify one readable console shader container and its stage metadata](research/TRANSLATION_GAPS.md#t-736--identify-one-readable-console-shader-container-and-its-stage-metadata) | unassigned | PROPOSED | T-706 | M7 |
+| T-737 | [Translate one texture sampling instruction family](research/TRANSLATION_GAPS.md#t-737--translate-one-texture-sampling-instruction-family) | unassigned | PROPOSED | T-734, T-603 | M7 |
+| T-738 | [Model local data share and a workgroup barrier](research/TRANSLATION_GAPS.md#t-738--model-local-data-share-and-a-workgroup-barrier) | unassigned | PROPOSED | T-734 | M7 |
+| T-739 | [Verify one wave64 operation across lane 31/32](research/TRANSLATION_GAPS.md#t-739--verify-one-wave64-operation-across-lane-3132) | unassigned | PROPOSED | T-734 | M7 |
+| T-740 | [Verify one storage-buffer atomic operation](research/TRANSLATION_GAPS.md#t-740--verify-one-storage-buffer-atomic-operation) | unassigned | PROPOSED | T-734 | M7 |
+| T-804 | [Identify the first console graphics ABI slice](research/TRANSLATION_GAPS.md#t-804--identify-the-first-console-graphics-abi-slice) | unassigned | PROPOSED | T-402 | M8 |
+| T-805 | [Bind a guest resource to one translated shader pipeline](research/TRANSLATION_GAPS.md#t-805--bind-a-guest-resource-to-one-translated-shader-pipeline) | unassigned | PROPOSED | T-803, T-737, T-804 | M8 |
+| T-806 | [Replay one evidenced recorded command sequence](research/TRANSLATION_GAPS.md#t-806--replay-one-evidenced-recorded-command-sequence) | unassigned | PROPOSED | T-604, T-804, T-805 | M8 |
+| T-807 | [Cache verified shader translations with explicit invalidation](research/TRANSLATION_GAPS.md#t-807--cache-verified-shader-translations-with-explicit-invalidation) | unassigned | PROPOSED | T-803 | M8 |
+| T-808 | [Untile and upload one evidenced texture layout](research/TRANSLATION_GAPS.md#t-808--untile-and-upload-one-evidenced-texture-layout) | unassigned | PROPOSED | T-603, T-804 | M8 |
+| T-903 | [Connect the input adapter to one host controller](research/TRANSLATION_GAPS.md#t-903--connect-the-input-adapter-to-one-host-controller) | unassigned | PROPOSED | T-901 | M9 |
+| T-904 | [Play one PCM buffer through a Windows audio backend](research/TRANSLATION_GAPS.md#t-904--play-one-pcm-buffer-through-a-windows-audio-backend) | unassigned | PROPOSED | T-902 | M9 |
+| T-1001 | [Capture a repeatable early title compatibility result](research/TRANSLATION_GAPS.md#t-1001--capture-a-repeatable-early-title-compatibility-result) | unassigned | PROPOSED | T-103, T-502 | M10 |
+
+See the [translation gap review](research/TRANSLATION_GAPS.md) for the new task
+specifications, their sources and the GDK sample verification plan.
+
 ## Interface freeze points
 
 Dependent work starts from a **frozen public interface** merged to

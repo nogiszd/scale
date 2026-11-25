@@ -9,14 +9,14 @@ deliverables, not a strict serial order. Tasks and owners are in
 | M0 Foundation | CMake/presets, CLI, diagnostics contract, GoogleTest + CTest | T-000, T-001 | done |
 | M1 PE inspector | Read-only bounded PE32+ AMD64 inspection, dumpbin comparison, `scale inspect` | T-101..T-103 | done |
 | M2 Native execution slice | Supervised worker, image mapping, `scale run` + report.json, unresolved-import diagnostics | T-201..T-204 | done |
-| M3 Imports and Windows runtime fidelity | Exception tables / unwind, TLS, import binding through adapters, delay load, CRT startup, DLL init | T-301–T-307 | in progress: exception directory done (T-301), TLS next (T-302) |
-| M4 Adapters and filesystem | Adapter registry, title root + writable data root, path translation | T-401–T-404 | backlog |
-| M5 Integration and diagnostics | report.json completeness, synthetic test title | T-501 | not started |
-| M6 Graphics slice | Vulkan compute harness (done), then a verified triangle through a synthetic adapter | T-601, T-602 | compute done, triangle not started |
-| M7 RDNA2 shader recompiler | ABI contracts, decoder, IR, SPIR-V, reference interpreter, GPU differential tests | T-701..T-735 | ABI v0 and v1 verified on GPU, `scale-shader` CLI done; ABI v2 contract frozen (T-730), decoder/IR/interpreter/GPU cases next (T-731..T-734) |
-| M8 Graphics integration | Translated shaders → pipeline creation, translation cache (decision 0005) | T-803 | not started |
-| M9 Audio, input, local data | Interfaces demanded by verified tests | T-901, T-902 | not started |
-| M10 Retail compatibility baseline | Criteria below | — | not started |
+| M3 Imports and Windows runtime fidelity | Exception tables / unwind, TLS, import binding through adapters, delay load, CRT startup, DLL init | T-301–T-308 | in progress: exception directory done (T-301), TLS next (T-302) |
+| M4 Adapters and filesystem | Adapter registry, title root + writable data root, path translation | T-401–T-408 | backlog |
+| M5 Integration and diagnostics | report.json completeness, synthetic test title | T-501–T-504 | not started |
+| M6 Graphics slice | Vulkan compute harness (done), then a verified triangle through a synthetic adapter | T-601–T-606 | compute done, triangle not started |
+| M7 RDNA2 shader recompiler | ABI contracts, decoder, IR, SPIR-V, reference interpreter, GPU differential tests | T-701..T-740 | ABI v0 and v1 verified on GPU, `scale-shader` CLI done; ABI v2 contract frozen (T-730), decoder/IR/interpreter/GPU cases next (T-731..T-734) |
+| M8 Graphics integration | Translated shaders → pipeline creation, translation cache (decision 0005) | T-803–T-808 | not started |
+| M9 Audio, input, local data | Interfaces demanded by verified tests | T-901–T-904 | not started |
+| M10 Retail compatibility baseline | Criteria below | T-1001 | not started |
 | infra Portability | Windows first, Linux-ready (decision 0004) | T-801, T-802 | groundwork done; Linux CI blocked |
 
 ## Acceptance criteria and integration gates

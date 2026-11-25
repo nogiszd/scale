@@ -34,3 +34,6 @@ requires evidence for console shader containers and ISA differences, graphics
 resource binding and synchronization, and the platform services each title
 actually calls. Track those gaps in [KNOWN_UNKNOWNS.md](KNOWN_UNKNOWNS.md)
 and prioritize them as integration tests expose them.
+
+See the [translation gap review](TRANSLATION_GAPS.md) for the additional
+source comparisons, proposed tests and GDK sample matrix.
