@@ -4,15 +4,15 @@
 
 ## Ownership and isolation
 
-- Anyone can coordinate their own work and agents in a local checkout or fork. Choose a person or an agent to plan tasks, assign local work and review changes.
-- For the upstream SCALE repository, the maintainer or their delegate confirms claims in [TASKS.md](TASKS.md), approves shared interface changes and handles integration. Check the current `integration` version and use the contributor board to request a claim before starting upstream work.
-- Contributors work on separate task branches and worktrees with separate `out/` directories. Do not edit paths assigned to another agent. Shared-file exceptions and current interface freezes are in [TASKS.md](TASKS.md). Ask the coordinator through your handoff for changes to coordinator-owned files.
+- Contributors can take a pick-up task solo or organize their own local team. Choose a local coordinator if it helps your team.
+- For upstream work, follow the [pick-up workflow](../CONTRIBUTING.md#2-join-the-pipeline). The board comment records the claim. Review and integration happen through the upstream PR.
+- Contributors work in separate task branches and worktrees with separate build trees. Respect assigned paths and frozen interfaces. Raise overlap or required shared-file changes in the task thread or existing handoff before editing those paths.
 - `main` is verified merged work; `integration` receives reviewed task branches; `<agent>/<task-id>-<slug>` is an isolated task branch. The maintainer controls pushes to the remote. Never force-update a branch another agent might use.
 - Coordinate GPU tests if simultaneous execution could invalidate correctness or performance measurements.
 
 ## Example maintainer setup
 
-This is the maintainer's local setup. Contributors can use their own coordinator, tools and division of work.
+This is the maintainer's local setup. Contributors can work solo or choose their own coordinator, tools and division of work.
 
 | Agent | Area |
 |---|---|

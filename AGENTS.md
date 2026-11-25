@@ -9,7 +9,7 @@ Use public documentation and test material you create or obtain yourself. Study 
 ## Start each task
 
 1. Read [current state](docs/PROGRESS.md), the current [task registry](docs/TASKS.md) and only the relevant contract or decision record. Inspect the actual code and toolchain before relying on a status claim. Treat the dated progress heading as a pointer, not a promise that it is current.
-2. Work on a small, testable vertical slice. Use the assigned task, ownership and branch rules in [multi-agent coordination](docs/MULTI_AGENT.md); contributions and review steps are in [CONTRIBUTING.md](CONTRIBUTING.md). In ordinary manual sessions, take the user's requested task rather than selecting a new one.
+2. Work on a small, testable vertical slice. Follow the task, ownership and branch rules in [CONTRIBUTING.md](CONTRIBUTING.md). A free pick-up task can be claimed and worked on solo as described there. See [multi-agent coordination](docs/MULTI_AGENT.md) for work shared with other agents. In ordinary manual sessions, take the user's requested task rather than selecting a new one.
 3. Run relevant tests and record the actual commands, results, skips, limitations and blockers. A skipped test is not a pass. Update the relevant state documents before reporting completion.
 
 ## Engineering rules
