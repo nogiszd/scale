@@ -212,6 +212,33 @@ metrics and graph update as that title presents frames. When a Scarlett GDK
 sample can reach the same path, repeat the smoke check and record the sample
 revision and result. [R6]
 
+### T-810 — Warm up previously used Vulkan pipelines
+
+Start with one reproducible Vulkan scene through the integrated path. Queue a
+build as soon as its full pipeline description is available and the guest API
+permits deferring completion. Coalesce concurrent requests for the same
+canonical pipeline key. Bound worker concurrency and speculative work.
+Promote pending builds needed by the title above warm-up jobs. Preserve guest
+creation and error semantics. When execution requires a pending pipeline,
+wait at the required synchronization point and surface build failures through
+the existing diagnostic path.
+
+Record the canonical descriptions of pipelines actually used and enough local
+shader and layout information to rebuild them. Preserve creation and wait
+timing so a later run can prioritize early and previously blocking pipelines.
+Store stable descriptions and shader keys in place of process-local handles.
+Keep the versioned warm-up record and compatible Vulkan cache data separate
+from T-807's SPIR-V cache. Reject incompatible or unusable records and allow
+the normal on-demand path to rebuild them.
+
+Use deterministic tests for request coalescing, priority, build failure and
+stale or damaged cache data. On Windows with Vulkan, replay the same scene
+cold and warm and compare deterministic render output. Measure translation,
+driver pipeline creation, title wait time and time to the first verified scene
+frame as specified in the [testing contract](../contracts/testing.md#performance-measurement).
+Demonstrate reduced pipeline wait on the repeat run and report the startup
+cost of warm-up. [R10]
+
 ### T-903 — Connect the input adapter to one host controller
 
 Route one documented reading path to a host controller. Validate neutral state, button transition and device removal using a scripted sequence, then record a manual PC GDK Gamepad comparison where possible. Add a console-facing adapter only for supported signatures. [R6, R11]

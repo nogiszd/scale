@@ -86,6 +86,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-807 | [Cache verified shader translations with explicit invalidation](research/TRANSLATION_GAPS.md#t-807--cache-verified-shader-translations-with-explicit-invalidation) | unassigned | PROPOSED | T-803 | M8 |
 | T-808 | [Untile and upload one evidenced texture layout](research/TRANSLATION_GAPS.md#t-808--untile-and-upload-one-evidenced-texture-layout) | unassigned | PROPOSED | T-603, T-804 | M8 |
 | T-809 | [Show the game name and performance overlay](research/TRANSLATION_GAPS.md#t-809--show-the-game-name-and-performance-overlay) | unassigned | PROPOSED | T-405, T-607, T-803 | M8 |
+| T-810 | [Warm up previously used Vulkan pipelines](research/TRANSLATION_GAPS.md#t-810--warm-up-previously-used-vulkan-pipelines) | unassigned | PROPOSED | T-807 | M8 |
 | T-903 | [Connect the input adapter to one host controller](research/TRANSLATION_GAPS.md#t-903--connect-the-input-adapter-to-one-host-controller) | unassigned | PROPOSED | T-901 | M9 |
 | T-904 | [Play one PCM buffer through a Windows audio backend](research/TRANSLATION_GAPS.md#t-904--play-one-pcm-buffer-through-a-windows-audio-backend) | unassigned | PROPOSED | T-902 | M9 |
 | T-1001 | [Capture a repeatable early title compatibility result](research/TRANSLATION_GAPS.md#t-1001--capture-a-repeatable-early-title-compatibility-result) | unassigned | PROPOSED | T-103, T-502 | M10 |

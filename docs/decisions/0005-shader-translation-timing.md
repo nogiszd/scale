@@ -1,6 +1,6 @@
 # 0005 — Shader translation timing, caching and runtime diagnostics
 
-Status: accepted (2026-11-24, maintainer decision). Implemented in M8.
+Status: accepted (2026-11-24, maintainer decision). Implementation tracked in M8.
 
 ## Context
 
@@ -19,18 +19,24 @@ diagnostics are available while a title runs.
 2. **Translate once, then reuse.** A shader binary is fixed, so each distinct
    binary is normally translated exactly once. The result goes into a disk
    cache keyed by: shader binary hash, shader ABI version, translator
-   version and relevant Vulkan backend configuration (AGENTS.md M8). Later
+   version and relevant Vulkan backend configuration. Later
    launches load from the cache. If the same binary is used under a
    different ABI or state that changes the translation, that is a different
    key. The cache is added only after translation is verified correct
    (AGENTS.md).
-3. **Don't stall the frame.** Translation runs off the calling thread. How a
-   pipeline behaves while its shader is still translating is its own
-   decision, made in M8. It must never silently skip work or produce
-   unverified output.
-4. **Optional warm-up.** A later `scale-shader` command may pre-translate
-   shaders recorded on an earlier run, to avoid first-run stutter. This is an
-   optimization, never a requirement.
+3. **Build pipelines ahead of use.** Schedule translation and host pipeline
+   construction when the full description is available. Defer completion when
+   the guest API allows it. Share in-flight builds and prioritize pipelines the
+   title needs. Wait for a valid pipeline at the point required by the guest
+   API and report build failures. See
+   [T-810](../research/TRANSLATION_GAPS.md#t-810--warm-up-previously-used-vulkan-pipelines).
+4. **Warm up previously used pipelines.** Reuse local pipeline descriptions
+   and compatible Vulkan driver cache data on subsequent runs. Keep both
+   separate from the translated SPIR-V cache. Check driver cache header
+   compatibility against the active Vulkan device, including vendor ID, device
+   ID and pipeline cache UUID. A later optional offline tool may translate
+   complete shader archives for supported formats. On-demand builds cover
+   pipelines absent from the saved records.
 5. **Runtime diagnostics, always on:** every translation failure becomes a
    structured event in `report.json` (AGENTS.md diagnostic contract), with
    shader hash, stage, ISA target, instruction offset and opcode, unsupported
@@ -48,7 +54,8 @@ diagnostics are available while a title runs.
 
 - The translator stays a library with no global state, callable from a
   background thread. The cache key inputs must stay explicit.
-- The `scale-shader` CLI (T-706) is the natural home for the optional
-  warm-up and for offline inspection of cached translations.
+- The `scale-shader` CLI (T-706) can host later offline shader translation
+  and inspection. Pipeline warm-up uses the same creation path as runtime
+  requests.
 - Debug-mode comparisons inherit the interpreter's coverage, so the
   interpreter grows together with the translator.

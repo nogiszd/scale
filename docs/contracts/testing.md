@@ -81,6 +81,11 @@ TEST(VulkanCompute, Readback) {
   cadence. Use CPU traces where useful and read supported Vulkan timestamp
   results after the work completes, without adding a per-frame wait. The
   presentation interval from the host overlay measures cadence.
+- For pipeline warm-up, report translator work, driver creation time and wall
+  time the title spends waiting for required pipelines. Track time to the first
+  verified scene frame from launch, including warm-up, so startup and rendering
+  stalls are visible together. Compare deterministic output between cold and
+  warm runs and record which caches were enabled.
 - Keep timing benchmarks opt-in. Correctness tests should assert deterministic
   results. Use timing thresholds only with a documented baseline on a
   controlled runner.

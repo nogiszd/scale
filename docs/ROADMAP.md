@@ -14,7 +14,7 @@ deliverables, not a strict serial order. Tasks and owners are in
 | M5 Integration and diagnostics | report.json completeness, synthetic test title | T-501–T-504 | not started |
 | M6 Graphics slice | Vulkan compute harness (done), verified triangle, host presentation and performance overlay | T-601–T-607 | compute done, triangle not started |
 | M7 RDNA2 shader recompiler | ABI contracts, decoder, IR, SPIR-V, reference interpreter, GPU differential tests | T-701..T-740 | ABI v0 and v1 verified on GPU, `scale-shader` CLI done; ABI v2 contract frozen (T-730), decoder/IR/interpreter/GPU cases next (T-731..T-734) |
-| M8 Graphics integration | Translated shaders → pipeline creation, translation cache (decision 0005), title window | T-803–T-809 | not started |
+| M8 Graphics integration | Translated shaders → pipeline creation, shader and pipeline caches, pipeline warm-up, title window | T-803–T-810 | not started |
 | M9 Audio, input, local data | Interfaces demanded by verified tests | T-901–T-904 | not started |
 | M10 Retail compatibility baseline | Criteria below | T-1001 | not started |
 | infra Portability | Windows first, Linux-ready (decision 0004) | T-801, T-802 | groundwork done; Linux CI blocked |
@@ -76,6 +76,8 @@ Acceptance: decoder agrees with independent LLVM disassembly; hand-authored expe
 Connect shader compiler to graphics pipeline creation with explicit resource/ABI mapping. Use deterministic compute and rendering tests, then evidence-backed title traces if available. Add cache only after correct translation, with keys covering binary, ABI, translator version and relevant backend configuration. Do not claim graphical correctness from presents or non-black pixels alone.
 
 When the integrated path presents a running title in a host window, show `SCALE — <display name>` in the title bar and provide the M6 performance overlay in that window. Verify both on a synthetic title through the integrated path. See [T-809](research/TRANSLATION_GAPS.md#t-809--show-the-game-name-and-performance-overlay).
+
+Queue pipeline builds ahead of first use where the guest API permits it and warm up previously used pipelines on subsequent runs. Compare cold and warm runs of the same scene for rendering equivalence, time the title waits for a pipeline and time to reach the scene. See [T-810](research/TRANSLATION_GAPS.md#t-810--warm-up-previously-used-vulkan-pipelines).
 
 ### M9 — Audio, input and local data
 
