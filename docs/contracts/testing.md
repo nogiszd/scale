@@ -66,6 +66,25 @@ TEST(VulkanCompute, Readback) {
 - Offline builds: configure with
   `-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=<extracted googletest-1.18.0>`.
 
+## Performance measurement
+
+- Measure a fixed, reproducible workload with the `release` or `release-all`
+  preset (both use `RelWithDebInfo`). Compare the baseline and the change with
+  the same inputs, hardware, software versions and instrumentation settings.
+  Record the revisions, commands, warm-up, sample count and relevant device
+  and driver versions. Report missing measurements explicitly.
+- Start with fixed shader inputs for decoder and translator measurements.
+  Measure cold and warm cache runs separately when the cache is available.
+  Once the host window can present, use a repeatable synthetic scene and report
+  median (p50) and p99 frame times alongside FPS.
+- Attribute time separately to CPU work, GPU execution and presentation
+  cadence. Use CPU traces where useful and read supported Vulkan timestamp
+  results after the work completes, without adding a per-frame wait. The
+  presentation interval from the host overlay measures cadence.
+- Keep timing benchmarks opt-in. Correctness tests should assert deterministic
+  results. Use timing thresholds only with a documented baseline on a
+  controlled runner.
+
 ## Cross-component evidence
 
 CPU tests: compare trusted test executable execution under normal Windows loading and the compatibility host, where contracts match. Check outputs, exit codes, file effects and observable behavior, not identical addresses or scheduling. Include malformed PE, missing imports, unsupported features and worker failure. A test executable using a synthetic console API needs an independently specified golden behavior; a normal Windows execution is not an Xbox oracle.

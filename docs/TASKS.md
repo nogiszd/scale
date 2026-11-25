@@ -47,7 +47,6 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-721 | Differential runner on JSON test cases, ABI v1 GPU cases | Claude | DONE | T-705, T-720, T-709 | M7 |
 | T-801 | Portability groundwork (decision 0004) | Claude | DONE | T-000 | infra |
 | T-802 | Linux build/test environment and CI | unassigned | BLOCKED (no Linux environment) | T-801 | infra |
-
 | T-303 | Bind normal imports through the IAT | unassigned | PROPOSED | T-204 | M3 |
 | T-304 | Load a guest DLL from an explicit module root | unassigned | PROPOSED | T-302, T-303 | M3 |
 | T-305 | Resolve forwarded exports | unassigned | PROPOSED | T-304 | M3 |
@@ -63,7 +62,6 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-803 | Feed translated stage shaders into the graphics pipeline | unassigned | PROPOSED | T-602, T-735 | M8 |
 | T-901 | Exercise local data and input with deterministic host doubles | unassigned | PROPOSED | T-401, T-404 | M9 |
 | T-902 | Submit a synthetic PCM buffer through an audio adapter | unassigned | PROPOSED | T-401 | M9 |
-
 | T-308 | [Look up guest modules and exports at runtime](research/TRANSLATION_GAPS.md#t-308--look-up-guest-modules-and-exports-at-runtime) | unassigned | PROPOSED | T-304, T-305 | M3 |
 | T-405 | [Read local title identity and executable metadata](research/TRANSLATION_GAPS.md#t-405--read-local-title-identity-and-executable-metadata) | unassigned | PROPOSED | T-103, T-404 | M4 |
 | T-406 | [Implement one documented GDK async queue mode](research/TRANSLATION_GAPS.md#t-406--implement-one-documented-gdk-async-queue-mode) | unassigned | PROPOSED | T-401 | M4 |
