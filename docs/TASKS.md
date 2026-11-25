@@ -76,6 +76,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-604 | [Submit dependent GPU work with correct resource states](research/TRANSLATION_GAPS.md#t-604--submit-dependent-gpu-work-with-correct-resource-states) | unassigned | PROPOSED | T-603 | M6 |
 | T-605 | [Present and resize a host window](research/TRANSLATION_GAPS.md#t-605--present-and-resize-a-host-window) | unassigned | PROPOSED | T-604 | M6 |
 | T-606 | [Check one placed-resource aliasing case](research/TRANSLATION_GAPS.md#t-606--check-one-placed-resource-aliasing-case) | unassigned | PROPOSED | T-604 | M6 |
+| T-607 | [Show frame pacing in the host window](research/TRANSLATION_GAPS.md#t-607--show-frame-pacing-in-the-host-window) | unassigned | PROPOSED | T-605 | M6 |
 | T-736 | [Identify one readable console shader container and its stage metadata](research/TRANSLATION_GAPS.md#t-736--identify-one-readable-console-shader-container-and-its-stage-metadata) | unassigned | PROPOSED | T-706 | M7 |
 | T-737 | [Translate one texture sampling instruction family](research/TRANSLATION_GAPS.md#t-737--translate-one-texture-sampling-instruction-family) | unassigned | PROPOSED | T-734, T-603 | M7 |
 | T-738 | [Model local data share and a workgroup barrier](research/TRANSLATION_GAPS.md#t-738--model-local-data-share-and-a-workgroup-barrier) | unassigned | PROPOSED | T-734 | M7 |
@@ -86,6 +87,7 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-806 | [Replay one evidenced recorded command sequence](research/TRANSLATION_GAPS.md#t-806--replay-one-evidenced-recorded-command-sequence) | unassigned | PROPOSED | T-604, T-804, T-805 | M8 |
 | T-807 | [Cache verified shader translations with explicit invalidation](research/TRANSLATION_GAPS.md#t-807--cache-verified-shader-translations-with-explicit-invalidation) | unassigned | PROPOSED | T-803 | M8 |
 | T-808 | [Untile and upload one evidenced texture layout](research/TRANSLATION_GAPS.md#t-808--untile-and-upload-one-evidenced-texture-layout) | unassigned | PROPOSED | T-603, T-804 | M8 |
+| T-809 | [Show the game name and performance overlay](research/TRANSLATION_GAPS.md#t-809--show-the-game-name-and-performance-overlay) | unassigned | PROPOSED | T-405, T-607, T-803 | M8 |
 | T-903 | [Connect the input adapter to one host controller](research/TRANSLATION_GAPS.md#t-903--connect-the-input-adapter-to-one-host-controller) | unassigned | PROPOSED | T-901 | M9 |
 | T-904 | [Play one PCM buffer through a Windows audio backend](research/TRANSLATION_GAPS.md#t-904--play-one-pcm-buffer-through-a-windows-audio-backend) | unassigned | PROPOSED | T-902 | M9 |
 | T-1001 | [Capture a repeatable early title compatibility result](research/TRANSLATION_GAPS.md#t-1001--capture-a-repeatable-early-title-compatibility-result) | unassigned | PROPOSED | T-103, T-502 | M10 |

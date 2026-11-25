@@ -11,7 +11,7 @@ console-specific ABI claims tied to evidence.
 |---|---|---|
 | Loader | Bounded PE32+ inspection, mapping and unwind registration in a supervised worker. `resolve_imports` reports every required import unresolved. | The previous backlog covers import binding, DLL loading and CRT startup. Add module/export lookup at runtime and inspect a larger known build. |
 | Runtime | No implemented console adapter registry or title filesystem. | The first adapter and mounts have tasks. Add title metadata, async completions, memory lifecycle and a baseline asset queue. |
-| Graphics | Vulkan submits a compute dispatch and reads back a buffer. The host triangle and translated pipeline have tasks. | Add textures, resource transitions, submission, aliasing and presentation on the host, then map confirmed console objects and bindings. |
+| Graphics | Vulkan submits a compute dispatch and reads back a buffer. The host triangle and translated pipeline have tasks. | Add textures, resource transitions, submission, aliasing and presentation on the host, then map confirmed console objects and bindings. Verify the performance overlay on the synthetic scene before connecting it to a title's window. |
 | Shader translation | Synthetic ABI v0 and v1 tests reported on RX 9070 XT. ABI v2 is specified and its implementation is tracked. The current ABI models one logical wave32. | Add one container form and explicit stage/resource metadata, then test image sampling, LDS, wave64 and one atomic operation. |
 | Integration and services | The run report and the executable, shader and GPU test paths are separate. | Correlate failures by stage, add controlled sample comparisons, and take the synthetic input and audio adapters through real host backends. |
 
@@ -24,6 +24,8 @@ console-specific ABI claims tied to evidence.
    T-737 against that reference and use T-805 to join translation with
    resource binding. T-736 and T-804 can investigate real formats and ABIs
    in parallel with synthetic work as evidence becomes available.
+   After T-605, verify the overlay in T-607. T-809 uses that overlay and
+   the T-405 display name when the integrated graphics path presents a title.
 3. Start with the smallest real behavior per title. Prioritize recorded
    command replay, tiling and streaming when the selected sample exercises
    them. Consider mesh/geometry, wave64 fallback on wave32-only devices,
@@ -85,6 +87,21 @@ Expose a guest module handle and a name/ordinal lookup using the existing resolv
 
 Read an explicit executable and the supported fields of a local `MicrosoftGame.config`. Use synthetic files to test missing or ambiguous executable entries, malformed metadata and executable paths outside the title root. Report stable title identity and PE hash without treating configuration as a service entitlement. [R2]
 
+Resolve a display name for the selected executable in this order.
+
+1. `OverrideDisplayName` from the matching `Executable` entry in `MicrosoftGame.config`.
+2. `ShellVisuals.DefaultDisplayName` from the same configuration.
+3. `ProductName` from the executable's `VERSIONINFO` resource, when available.
+4. The executable's filename, including the extension, without its directory path.
+
+Use bounded, read-only parsing. Skip empty or unusable display-name values,
+including unresolved localization references. Missing or unreadable optional
+display-name metadata falls through to the next source. Verify the precedence,
+per-executable matching, Unicode and fallback behavior with synthetic fixtures.
+See the GDK references for [Executable](https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-executable)
+and [ShellVisuals](https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-shellvisuals)
+and the Win32 reference for [VERSIONINFO](https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource).
+
 ### T-406 — Implement one documented GDK async queue mode
 
 Start with one manually dispatched work/completion queue and one synthetic async operation. Check exactly-once completion, cancellation and shutdown. Compare ordering and results with the public PC GDK reference. Add a console export only when the signature and behavior have separate evidence. [R2]
@@ -125,6 +142,22 @@ Add a Windows Vulkan presentation path for the synthetic scene. Check resize, oc
 
 Use two compatible views over a deliberately shared placement and a documented synchronization sequence. Verify the expected write/read result and that an incompatible alignment or memory type is rejected. Establish the rules in a synthetic Vulkan test before mapping console addresses. [R4, R7]
 
+### T-607 — Show frame pacing in the host window
+
+Add a host-controlled overlay that can be shown or hidden without restarting
+the synthetic scene. Show rolling FPS, the latest frame time in milliseconds
+and a bounded graph of recent frame times. Measure the interval between
+consecutive successful host presentation submissions for that window using a
+monotonic host clock. Compute rolling FPS as the number of recent intervals
+divided by their total elapsed time in seconds. The metric describes host
+presentation cadence. Skipped or failed submissions do not produce samples.
+
+Clear the history when presentation is suspended or the swapchain is recreated.
+Show metrics as unavailable until two successful submissions establish the
+first interval. Verify the calculation using controlled timestamps, including
+uneven intervals, failed submissions and a reset. On Windows, use the T-605
+scene to verify the toggle, overlay rendering, resize and minimize/restore.
+
 ### T-736 — Identify one readable console shader container and its stage metadata
 
 Investigate U-003 using a caller-supplied shader or a pipeline sample with known provenance. Document the observed version, stage, code byte range, wave size and resource metadata where evidence exists. Define a bounded read-only parser for one evidenced form. Verify with synthetic bytes, a truncated record and an unsupported version. Leave unverified fields unknown. [R8]
@@ -164,6 +197,20 @@ Implement the disk shader cache specified in decision 0005. Key on binary, ABI, 
 ### T-808 — Untile and upload one evidenced texture layout
 
 Choose one layout observed in a sample and corroborate it with AMD surface layout behavior where applicable. Compare synthetic patterned texels against an independent reference, then sample the uploaded result on Vulkan. Report unsupported layouts explicitly. [R4]
+
+### T-809 — Show the game name and performance overlay
+
+When the integrated graphics path opens the primary window for a running title,
+set its title bar to `SCALE — <display name>` using the name resolved in T-405.
+Reuse the host toggle and overlay from T-607. Sample the primary window's
+presentation stream and keep the metrics in the current title session.
+
+On Windows, run a self-authored title through the integrated graphics path and
+verify the exact title bar text with and without display-name metadata, including
+a Unicode name. Toggle the overlay in the running window and verify that its
+metrics and graph update as that title presents frames. When a Scarlett GDK
+sample can reach the same path, repeat the smoke check and record the sample
+revision and result. [R6]
 
 ### T-903 — Connect the input adapter to one host controller
 
