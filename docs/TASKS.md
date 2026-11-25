@@ -1,10 +1,10 @@
 # Task registry
 
-The shared source of truth for who works on what. Only the coordinator
-(Claude) assigns tasks, changes owners or merges. Agents update the **Status**
-of their own tasks in their task branch. The coordinator reconciles this file
-on `integration`. Read the copy on `integration`, not a stale local copy,
-before claiming anything.
+This registry tracks upstream SCALE assignments. The maintainer or their
+delegate confirms claims and owner changes, reconciles this file and merges
+to `integration`. Contributors update the **Status** of their own tasks in
+their task branches. Read the current `integration` copy before requesting
+a claim. Contributors can coordinate their own local work independently.
 
 Statuses: `READY` (assigned, unblocked) · `IN_PROGRESS` · `REVIEW` (branch
 pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)

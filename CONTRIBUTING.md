@@ -1,8 +1,8 @@
 # Contributing to SCALE
 
 SCALE is developed through a small, repeatable pipeline: a shared task
-registry, one branch per task, explicit ownership of files, test gates, and a
-single integrator who merges. The same pipeline works for people and for
+registry, one branch per task, explicit ownership of files, test gates, and
+maintainer-led upstream integration. The same pipeline works for people and for
 coding agents (Claude Code, Codex, or your own), and for any mix of them.
 This guide explains how to join it.
 
@@ -14,13 +14,12 @@ below assumes it.
 
 | Role | Responsibilities |
 |---|---|
-| **Coordinator** (one per repository) | Owns the root build, shared libraries (`src/common`, `src/diagnostics`), the task registry and the `integration`/`main` branches. Assigns tasks, freezes interfaces, reviews and merges. Currently the Claude agent, supervised by the maintainer. |
+| **Local coordinator** (person or agent) | Plans work, assigns local tasks, coordinates worktrees and reviews changes in their own setup. |
+| **Upstream integration** (maintainer or delegate) | Confirms upstream task claims and owned paths, approves shared build and interface changes, and manages review and merges into SCALE's `integration` and `main`. |
 | **Contributor** (person or agent) | Works on assigned tasks in their own branch and directories, tests them, and hands them over for review. |
 | **Maintainer** | The human owner. Approves the roster, priorities, pushes and releases. |
 
-Current contributors and their areas are listed in
-[docs/MULTI_AGENT.md](docs/MULTI_AGENT.md) and
-[docs/architecture.md](docs/architecture.md).
+See the [example maintainer setup](docs/MULTI_AGENT.md#example-maintainer-setup) and the [upstream task registry](docs/TASKS.md).
 
 ## 2. Join the pipeline
 
@@ -29,8 +28,7 @@ Current contributors and their areas are listed in
    - a name used in branch names (`alice`, `codex`, …);
    - a handoff file `docs/agents/<name>/HANDOFF.md`;
    - one or more tasks in [docs/TASKS.md](docs/TASKS.md) with owned paths.
-2. **Never self-assign** a task the coordinator hasn't given you. Read
-   `docs/TASKS.md` on the current `integration` branch, not a stale copy.
+2. **Request an upstream task claim** on the [contributor pick-up board](https://github.com/nogiszd/scale/issues/5). Use the current `integration` copy of `docs/TASKS.md` and wait for the maintainer or their delegate to confirm the claim and owned paths.
 3. **Use your own worktree** so builds and branches never collide:
 
    ```powershell
@@ -89,9 +87,9 @@ Before asking for review:
 Then push your branch and open a pull request **against `integration`**, or
 tell the maintainer the branch is ready if you work in the local repository.
 
-## 5. Review and merge (coordinator)
+## 5. Upstream review and merge
 
-The coordinator does the following for every task:
+The maintainer or their delegate does the following for every task:
 
 1. Reads the code and the handoff. Doesn't take reported results on trust.
 2. Rebuilds and reruns the tests in an isolated worktree, including
@@ -110,8 +108,8 @@ The coordinator does the following for every task:
 
 ## 6. Using the pipeline with your own agents
 
-Any coding agent can take part. Give it repository access through its own
-worktree and a first prompt like this:
+Any contributor can coordinate their own agents locally. Give each agent a
+separate worktree. Once an upstream task is confirmed, use a prompt like this:
 
 > You are the `<name>` agent for SCALE. Read AGENTS.md, CONTRIBUTING.md,
 > docs/MULTI_AGENT.md, docs/TASKS.md, docs/architecture.md, the relevant
