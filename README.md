@@ -43,7 +43,7 @@ SCALE is being built as a complete translation layer that runs Xbox Series X|S e
 | **Shaders** | M7 | **In progress** | RDNA2 (gfx1030) recompiler to SPIR-V. **First compute slice verified on real hardware:** decoder, typed IR and SPIR-V, checked by an independent reference interpreter and on the GPU against hand-computed results. EXEC masks and scalar control flow (ABI v1) are verified on the GPU too. Then wave operations, memory/resources and vertex/pixel stages. |
 | **Graphics** | M6, M8 | **In progress** | Vulkan host backend ([decision 0003](docs/decisions/0003-gpu-backend.md)): the compute harness runs on every Vulkan device and records its capabilities ([GPU targets](docs/contracts/gpu_targets.md)). Next: a verified triangle slice, then the console graphics API mapped onto Vulkan, with resources, descriptors, synchronization, presentation and pipelines built from translated shaders. |
 | **Audio, input and local data** | M9 | Planned | Interfaces demanded by verified test titles, built on public host APIs. Offline behavior is accurate, and unavailable services report documented errors. Nothing impersonates online services. |
-| **Running executables** | M10 | Gated | Authorized retail testing starts only after the readiness baseline in [AGENTS.md](AGENTS.md) is met. After that, compatibility improves blocker by blocker from observed evidence. Each executable is tracked per stage (inspected, loaded, initialized, menu, rendering, interactive). |
+| **Running executables** | M10 | Gated | Authorized retail testing starts only after the readiness baseline in the [Roadmap](docs/ROADMAP.md#m10--retail-compatibility-baseline-triage-and-iteration) is met. After that, compatibility improves blocker by blocker from observed evidence. Each executable is tracked per stage (inspected, loaded, initialized, menu, rendering, interactive). |
 
 Nothing on this roadmap is implemented beyond what the status tables show. Broad compatibility is the goal, not a promise.
 
@@ -170,7 +170,7 @@ The PE inspection interface is documented in [docs/contracts/inspect.md](docs/co
 | [Multi-agent workflow](docs/MULTI_AGENT.md) | Coordination and integration rules                 |
 | [Contracts](docs/contracts/)                | Shared interfaces, diagnostics and testing         |
 | [Research](docs/research/)                  | Known unknowns and technical references            |
-| [AGENTS.md](AGENTS.md)                      | Mission, development rules and acceptance criteria |
+| [AGENTS.md](AGENTS.md)                      | Mission and core agent rules                      |
 
 ## Legal scope
 
