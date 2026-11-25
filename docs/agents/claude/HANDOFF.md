@@ -1,8 +1,9 @@
 # Claude — handoff notes
 
-Role: architect and integration coordinator (sole merger to `integration`
-and `main`), CPU/runtime, reference interpreter, Vulkan backend,
-differential GPU verification.
+Role in the [maintainer's local setup](../../MULTI_AGENT.md#example-maintainer-setup):
+architecture, coordination, CPU/runtime, reference interpreter, Vulkan backend
+and differential GPU verification. Upstream merges are handled by the
+maintainer or their delegate.
 
 Last updated: 2026-11-24, end of day, after the T-731 interface freeze merge
 (`f0b122e`). T-733 is in progress on an unmerged branch (see below).
