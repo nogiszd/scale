@@ -22,6 +22,32 @@ Use public documentation and test material you create or obtain yourself. Study 
 - Research needed for a feature using [recorded sources](docs/research/REFERENCES.md), public specifications, public reference projects and reproducible observations. Distinguish documented facts, inference and unknowns; verify approaches from other projects with an independent source or test before implementing them. Check license compatibility before reusing code.
 - Do not install software or change machine-wide settings automatically. Do not overwrite unrelated work. The maintainer controls pushes. In manual sessions, commits are optional unless requested; for a task handoff, follow the repository's branch and review process.
 
+## C++ quality and performance
+
+- Keep control flow direct and make ownership and lifetimes explicit. Use RAII
+  for resources and non-owning views for borrowed data whose owner outlives the
+  view. Prefer existing types and helpers. Share logic when multiple callers
+  must enforce the same invariant or implement the same behavior. Keep one-off
+  code local and preserve independent implementations used as test oracles.
+- Use `scale::ByteView` for untrusted binary data and the
+  [checked arithmetic helpers](src/common/include/scale/common/checked.h) for
+  offset, size, count, alignment and narrowing operations derived from external
+  inputs. Validate arithmetic and bounds before forming a pointer, indexing,
+  allocating or narrowing. Check signed inputs before converting offsets or
+  sizes to unsigned types. Match integer widths at guest ABI and file
+  boundaries. When guest semantics require wraparound, implement it explicitly
+  at the defined width and test the boundary values.
+- In per-frame and other high-frequency paths, reuse scratch storage, keep
+  queues and histories bounded, and defer I/O and diagnostic formatting where
+  practical. Avoid recurring heap allocations, redundant copies, contended
+  locks and CPU waits on GPU work. Document the reason for costs required by
+  correctness. Keep validation, defined behavior and resource lifetimes intact
+  when optimizing.
+- Profile the affected workload and verify performance claims with a
+  [repeatable before/after measurement](docs/contracts/testing.md#performance-measurement).
+  Consider SIMD, custom allocators or profile-guided optimization when
+  measurements identify a bottleneck they can address.
+
 ## Where information lives
 
 | Need | Authoritative document |
