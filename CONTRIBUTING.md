@@ -10,22 +10,6 @@ Read [AGENTS.md](AGENTS.md) first. It gives the project's mission and core engin
 criteria are in [docs/ROADMAP.md](docs/ROADMAP.md). Everything
 below assumes it.
 
-## Ground rules
-
-- **Lawful material only.** Use public documentation and self-authored test
-  executables. Never commit or link game files, console SDK files, keys or
-  dumps. Do not implement DRM bypass, package decryption, entitlement
-  spoofing or online service impersonation.
-- **No guessing.** Don't invent undocumented ABI behavior, generate stubs for
-  unknown functions or return fake success. Unsupported behavior must fail
-  with a named error. Record missing evidence in
-  [docs/research/KNOWN_UNKNOWNS.md](docs/research/KNOWN_UNKNOWNS.md).
-- **Own your code.** Other projects may be studied but not
-  copied or translated line by line.
-- **Tests or it didn't happen.** A feature is done when its contract is
-  documented, it builds without warnings, and its positive and negative tests
-  have run. A skipped test never counts as a pass.
-
 ## 1. Set up a machine
 
 Requirements: Windows 11 x64, Visual Studio 2022+ (or Build Tools) with

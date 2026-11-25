@@ -136,12 +136,3 @@ Store local run reports outside version control by default. Provide a concise su
 Track per-title observed stages: inspected, loaded, entry reached, initialized, menu, rendering, gameplay. Distinguish NOT_TESTED, BLOCKED, FAILED and PASS for each tested stage; include the test environment and known limitations. Never label a title playable solely because its entry point or menu works. Record actual evidence and report regressions. Profile startup, frame times, memory and shader compile costs after correctness. Optimize only measured bottlenecks. Keep retail files and private traces out of the repository.
 
 
-## Current tracks
-
-- **Shaders (Codex):** ABI v2 decoder and test-case fields (T-731), then
-  IR/SPIR-V (T-732). Claude: interpreter (T-733) and GPU
-  cases (T-734).
-- **CPU/runtime (Claude):** T-302 TLS directory, then the remaining M3
-  features one at a time (import binding through adapters, CRT startup, DLL
-  init, C++ exceptions).
-- **Graphics (Claude):** the triangle slice after T-721.

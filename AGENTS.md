@@ -20,7 +20,7 @@ Use public documentation and lawfully accessible test material. Do not copy, ven
 - Reject unsupported required imports and behavior explicitly. No guessed signatures, blanket stubs, silent fallbacks or fabricated success. Record console-specific gaps in [known unknowns](docs/research/KNOWN_UNKNOWNS.md).
 - Use GoogleTest via CTest; follow the [testing contract](docs/contracts/testing.md). Keep shader compiler semantics independent from the reference interpreter.
 - Research needed for a feature using [recorded sources](docs/research/REFERENCES.md), public specifications, lawful reference projects and reproducible observations. Distinguish documented facts, inference and unknowns; verify approaches from other projects with an independent source or test before implementing them. Do not copy their code.
-- Do not install software or change machine-wide settings automatically. Do not overwrite unrelated work. The maintainer controls pushes; follow the repository's branch and review process for commits and merges.
+- Do not install software or change machine-wide settings automatically. Do not overwrite unrelated work. The maintainer controls pushes. In manual sessions, commits are optional unless requested; for a task handoff, follow the repository's branch and review process.
 
 ## Where information lives
 
