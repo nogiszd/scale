@@ -10,11 +10,11 @@ deliverables, not a strict serial order. Tasks and owners are in
 | M1 PE inspector | Read-only bounded PE32+ AMD64 inspection, dumpbin comparison, `scale inspect` | T-101..T-103 | done |
 | M2 Native execution slice | Supervised worker, image mapping, `scale run` + report.json, unresolved-import diagnostics | T-201..T-204 | done |
 | M3 Imports and Windows runtime fidelity | Exception tables / unwind, TLS, import binding through adapters, delay load, CRT startup, DLL init | T-301–T-308 | in progress: exception directory done (T-301), TLS next (T-302) |
-| M4 Adapters and filesystem | Adapter registry, title root + writable data root, path translation | T-401–T-408 | backlog |
+| M4 Adapters and filesystem | Adapter registry, title root + writable data root, path translation, title metadata | T-401–T-408 | backlog |
 | M5 Integration and diagnostics | report.json completeness, synthetic test title | T-501–T-504 | not started |
-| M6 Graphics slice | Vulkan compute harness (done), then a verified triangle through a synthetic adapter | T-601–T-606 | compute done, triangle not started |
+| M6 Graphics slice | Vulkan compute harness (done), verified triangle, host presentation and performance overlay | T-601–T-607 | compute done, triangle not started |
 | M7 RDNA2 shader recompiler | ABI contracts, decoder, IR, SPIR-V, reference interpreter, GPU differential tests | T-701..T-740 | ABI v0 and v1 verified on GPU, `scale-shader` CLI done; ABI v2 contract frozen (T-730), decoder/IR/interpreter/GPU cases next (T-731..T-734) |
-| M8 Graphics integration | Translated shaders → pipeline creation, translation cache (decision 0005) | T-803–T-808 | not started |
+| M8 Graphics integration | Translated shaders → pipeline creation, translation cache (decision 0005), title window | T-803–T-809 | not started |
 | M9 Audio, input, local data | Interfaces demanded by verified tests | T-901–T-904 | not started |
 | M10 Retail compatibility baseline | Criteria below | T-1001 | not started |
 | infra Portability | Windows first, Linux-ready (decision 0004) | T-801, T-802 | groundwork done; Linux CI blocked |
@@ -51,6 +51,8 @@ Acceptance: multiple test executables execute with expected results, including n
 
 Implement a small documented adapter registry and versioned evidence records. Start with self-authored platform-like tests. Provide SCALE-owned implementations of console module exports as their behavior becomes known. Support explicitly supplied guest DLLs through the M3 loader path when their imports and initialization are supported. Add documented file I/O, synchronization, memory and threading adaptations only when justified by tests or evidence. Define a title root and separate writable data root; translate paths deterministically, reject traversal and protect originals. Test reads, writes, missing files and path handling. Implement a writable overlay only when necessary. Console kernelx and GDK adapters require verified signatures and behavioral contracts. Never fabricate license or service success.
 
+Resolve a display name for the selected executable from local title metadata and verify the fallback order with self-authored fixtures. See [T-405](research/TRANSLATION_GAPS.md#t-405--read-local-title-identity-and-executable-metadata).
+
 ### M5 — Application integration and diagnostics
 
 Add `report.json` with loader stage, import resolutions, unsupported operations, exit result, test executable identity and timing. Keep reports free of secrets. Build a small headless test title from source that uses synthetic adapter imports, multiple DLLs, memory, threads and resource files. Compare observed results with a native reference or explicit golden expectations. A passing synthetic test title proves the exercised host features, not Xbox title support. If no console test executable is available, continue synthetic work and record the retail tests as not run.
@@ -58,6 +60,8 @@ Add `report.json` with loader stage, import resolutions, unsupported operations,
 ### M6 — Graphics vertical slice
 
 Start a small host graphics interface once the first native execution slice and shared diagnostic contracts are stable. Develop and test host GPU plumbing independently while CPU/runtime fidelity expands. Vulkan is the planned initial backend, with a later optional D3D12 backend. Revisit this decision if verified console API evidence favors D3D12; avoid implementing both simultaneously. First run a known PC shader and simple compute/triangle test program through a synthetic graphics adapter, validating readback or expected pixels. This tests host graphics plumbing, not D3D12.X compatibility. Map actual console graphics objects, ABI, descriptors, resources, GPU memory and synchronization only with evidence. Do not assume a one-to-one Vulkan mapping.
+
+Present the synthetic scene in a Windows host window. Verify a toggleable overlay that shows FPS, the most recent frame time in milliseconds and a short frame-time graph. See [T-605](research/TRANSLATION_GAPS.md#t-605--present-and-resize-a-host-window) and [T-607](research/TRANSLATION_GAPS.md#t-607--show-frame-pacing-in-the-host-window).
 
 ### M7 — RDNA2 shader recompiler
 
@@ -70,6 +74,8 @@ Acceptance: decoder agrees with independent LLVM disassembly; hand-authored expe
 ### M8 — Graphics integration
 
 Connect shader compiler to graphics pipeline creation with explicit resource/ABI mapping. Use deterministic compute and rendering tests, then evidence-backed title traces if available. Add cache only after correct translation, with keys covering binary, ABI, translator version and relevant backend configuration. Do not claim graphical correctness from presents or non-black pixels alone.
+
+When the integrated path presents a running title in a host window, show `SCALE — <display name>` in the title bar and provide the M6 performance overlay in that window. Verify both on a synthetic title through the integrated path. See [T-809](research/TRANSLATION_GAPS.md#t-809--show-the-game-name-and-performance-overlay).
 
 ### M9 — Audio, input and local data
 
