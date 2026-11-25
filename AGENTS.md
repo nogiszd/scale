@@ -2,9 +2,9 @@
 
 ## Goal and boundaries
 
-Build an independent Windows x64 compatibility layer for Xbox Series X|S software. Execute compatible AMD64 code on the host CPU, provide platform runtime adapters, and translate graphics and RDNA2 shaders. CPU/runtime, graphics and shader translation are all required. Retail testing begins only after the [M10 readiness gate](docs/ROADMAP.md#m10--retail-compatibility-baseline-triage-and-iteration); synthetic results do not establish title compatibility.
+Build an independent Windows x64 compatibility layer for Xbox Series X|S software. Execute compatible AMD64 code on the host CPU, provide platform runtime adapters, and translate graphics and RDNA2 shaders. CPU/runtime, graphics and shader translation are all required. For retail testing guidance, see the [roadmap](docs/ROADMAP.md#m10--retail-compatibility-baseline-triage-and-iteration).
 
-Use public documentation and lawfully accessible test material. Do not copy, vendor or mechanically translate XCL or other projects' code. Do not distribute proprietary SDK files or games, bypass DRM or package encryption, spoof entitlements or online services, or invent unknown console ABI details. Keep all code, comments, documentation and CLI output in English.
+Use public documentation and test material you create or obtain yourself. Do not copy, vendor or mechanically translate XCL or other projects' code. Do not distribute proprietary SDK files or games, bypass DRM or package encryption, spoof entitlements or online services, or invent unknown console ABI details. Keep all code, comments, documentation and CLI output in English.
 
 ## Start each task
 
@@ -16,10 +16,10 @@ Use public documentation and lawfully accessible test material. Do not copy, ven
 
 - Use C++23, MSVC, CMake and Ninja on Windows first. Keep portable code free of OS headers; see [architecture](docs/architecture.md) and [portability decision](docs/decisions/0004-platform-portability.md). Create modules and add dependencies only for a demonstrated need.
 - Use RAII, checked arithmetic, bounded parsing, explicit ownership and structured errors. Preserve ASLR, DEP and other applicable mitigations.
-- The native worker isolates crashes, but is not a security sandbox. Never alter original title files; execute trusted repository-built test executables without administrator privileges. Use a disposable VM when unfamiliar authorized binaries must be investigated.
+- The native worker isolates crashes, but is not a security sandbox. Never alter original title files; run repository-built tests without administrator privileges. Use a disposable VM for experiments with unfamiliar binaries.
 - Reject unsupported required imports and behavior explicitly. No guessed signatures, blanket stubs, silent fallbacks or fabricated success. Record console-specific gaps in [known unknowns](docs/research/KNOWN_UNKNOWNS.md).
 - Use GoogleTest via CTest; follow the [testing contract](docs/contracts/testing.md). Keep shader compiler semantics independent from the reference interpreter.
-- Research needed for a feature using [recorded sources](docs/research/REFERENCES.md), public specifications, lawful reference projects and reproducible observations. Distinguish documented facts, inference and unknowns; verify approaches from other projects with an independent source or test before implementing them. Do not copy their code.
+- Research needed for a feature using [recorded sources](docs/research/REFERENCES.md), public specifications, public reference projects and reproducible observations. Distinguish documented facts, inference and unknowns; verify approaches from other projects with an independent source or test before implementing them. Do not copy their code.
 - Do not install software or change machine-wide settings automatically. Do not overwrite unrelated work. The maintainer controls pushes. In manual sessions, commits are optional unless requested; for a task handoff, follow the repository's branch and review process.
 
 ## Where information lives
@@ -30,7 +30,7 @@ Use public documentation and lawfully accessible test material. Do not copy, ven
 | Milestones, acceptance gates and compatibility loop | [ROADMAP.md](docs/ROADMAP.md) |
 | Task ownership, dependencies and shared-file rules | [TASKS.md](docs/TASKS.md) |
 | Component boundaries | [architecture.md](docs/architecture.md) |
-| Build setup | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Build setup | [BUILD.md](docs/BUILD.md) |
 | Testing details | [testing.md](docs/contracts/testing.md) |
 | Evidence, sources and open unknowns | [research](docs/research/REFERENCES.md) |
 | Agent handoffs | `docs/agents/<agent>/HANDOFF.md` |

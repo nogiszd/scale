@@ -77,9 +77,6 @@ Review queue: Codex T-731 implementation (interface freeze merged).
 - Terminology: "executable" / "test executable", never "fixture". **SCALE**
   in prose, identifiers lowercase. No "games" in README.
 - Commit, merge and PR messages: task-id subject, no AI or self attribution.
-- Retail material: only authorized, lawfully obtained executables, and only
-  after the M10 gate. A leaked retail folder was proposed once and declined;
-  never use it.
 
 ## Coordinator workflow I follow
 

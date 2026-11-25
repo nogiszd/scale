@@ -43,93 +43,13 @@ SCALE is being built as a complete translation layer that runs Xbox Series X|S e
 | **Shaders** | M7 | **In progress** | RDNA2 (gfx1030) recompiler to SPIR-V. **First compute slice verified on real hardware:** decoder, typed IR and SPIR-V, checked by an independent reference interpreter and on the GPU against hand-computed results. EXEC masks and scalar control flow (ABI v1) are verified on the GPU too. Then wave operations, memory/resources and vertex/pixel stages. |
 | **Graphics** | M6, M8 | **In progress** | Vulkan host backend ([decision 0003](docs/decisions/0003-gpu-backend.md)): the compute harness runs on every Vulkan device and records its capabilities ([GPU targets](docs/contracts/gpu_targets.md)). Next: a verified triangle slice, then the console graphics API mapped onto Vulkan, with resources, descriptors, synchronization, presentation and pipelines built from translated shaders. |
 | **Audio, input and local data** | M9 | Planned | Interfaces demanded by verified test titles, built on public host APIs. Offline behavior is accurate, and unavailable services report documented errors. Nothing impersonates online services. |
-| **Running executables** | M10 | Gated | Authorized retail testing starts only after the readiness baseline in the [Roadmap](docs/ROADMAP.md#m10--retail-compatibility-baseline-triage-and-iteration) is met. After that, compatibility improves blocker by blocker from observed evidence. Each executable is tracked per stage (inspected, loaded, initialized, menu, rendering, interactive). |
+| **Retail compatibility** | M10 | Planned | For systematic tests with game files you obtained yourself, we recommend waiting until SCALE meets the [M10 readiness criteria](docs/ROADMAP.md#m10--retail-compatibility-baseline-triage-and-iteration). Early experiments are welcome. Track observed results per stage. |
 
 Nothing on this roadmap is implemented beyond what the status tables show. Broad compatibility is the goal, not a promise.
 
 ## Getting started
 
-### Prerequisites
-
-| Requirement                                 | Purpose                                |
-| :------------------------------------------ | :------------------------------------- |
-| Windows 11 x64                              | Development and execution environment  |
-| Visual Studio 2022 or newer, or Build Tools | MSVC x64 toolset and Windows SDK       |
-| Desktop development with C++ workload       | C++ toolchain, bundled CMake and Ninja |
-| Git                                         | Version control                        |
-
-Windows 11 x64 is the first supported platform. Linux is planned: the Vulkan backend and the shader, diagnostics and PE inspection components are kept platform-independent ([decision 0004](docs/decisions/0004-platform-portability.md)). Linux builds are not supported or tested yet.
-
-Graphics and shader development additionally requires:
-
-- [LunarG Vulkan SDK](https://vulkan.lunarg.com/sdk/home#windows) — Vulkan headers, libraries and SPIR-V validation tools.
-- LLVM tools (`llvm-mc` and `llvm-objdump`) with AMDGPU support. The standard Windows distribution does not provide the required complete toolset. The repository provides a script to build the tools from pinned source without administrator privileges:
-
-  ```powershell
-  .\scripts\build-llvm-amdgpu.ps1 -AddToUserPath
-  ```
-
-  The build typically takes 10–30 minutes, depending on the host.
-
-### Configure the environment
-
-Open PowerShell in the repository root and initialize the MSVC x64 environment:
-
-```powershell
-. .\scripts\vsenv.ps1
-.\scripts\check-env.ps1
-```
-
-The first script configures the current session only. The second reports the availability of required tools.
-
-### Build
-
-Configure and build the Debug preset:
-
-```powershell
-cmake --preset debug
-cmake --build --preset debug
-```
-
-For a Release build:
-
-```powershell
-cmake --preset release
-cmake --build --preset release
-```
-
-Build directories are located in `out/build/<preset>/`, with executables in `out/build/<preset>/bin/`.
-
-Optional component flags:
-
-| CMake option            | Purpose                       |
-| :---------------------- | :---------------------------- |
-| `SCALE_ENABLE_SHADER`   | Enable the shader component   |
-| `SCALE_ENABLE_GRAPHICS` | Enable the graphics component |
-
-Pass optional flags during configuration using `-DSCALE_ENABLE_SHADER=ON` or `-DSCALE_ENABLE_GRAPHICS=ON`. These flags do not imply that the respective components are already implemented.
-
-### Run tests
-
-```powershell
-ctest --preset quick
-ctest --preset integration
-ctest --preset full
-```
-
-For Release tests, build the Release preset first, then run `ctest --preset release-full`.
-
-| Test preset    | Scope                         |
-| :------------- | :---------------------------- |
-| `quick`        | Small CPU tests               |
-| `integration`  | CLI, worker and test executable tests |
-| `full`         | Full Debug suite              |
-| `release-full` | Full Release suite            |
-| `gpu`          | GPU tests on every Vulkan device (uses `debug-all`) |
-| `full-all`     | Full Debug suite with shader and graphics (`debug-all`) |
-
-> [!NOTE]
-> GPU tests need the `debug-all` preset (`cmake --preset debug-all`, which enables the shader and graphics components and needs the Vulkan SDK and LLVM AMDGPU tools). Every GPU test runs on every Vulkan device present and prints its capability fingerprint. Without a usable device it is SKIPPED, never PASS. See [docs/contracts/gpu_targets.md](docs/contracts/gpu_targets.md).
+See the [build guide](docs/BUILD.md) for Windows setup, build presets and test commands.
 
 ## Command-line interface
 
@@ -176,7 +96,7 @@ The PE inspection interface is documented in [docs/contracts/inspect.md](docs/co
 
 SCALE is an independent project and is not affiliated with Microsoft or Xbox.
 
-The project uses public documentation and self-authored test material only. It does not implement package decryption, DRM bypass, entitlement spoofing or online service impersonation, and it ships no proprietary SDK files or third-party executables.
+SCALE does not support piracy or distribute games, proprietary SDK files or third-party executables. Use game files you obtained yourself and keep them out of the repository. SCALE does not implement package decryption, DRM bypass, entitlement spoofing or online service impersonation.
 
 ---
 

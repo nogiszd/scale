@@ -16,7 +16,7 @@ deliverables, not a strict serial order. Tasks and owners are in
 | M7 RDNA2 shader recompiler | ABI contracts, decoder, IR, SPIR-V, reference interpreter, GPU differential tests | T-701..T-734 | ABI v0 and v1 verified on GPU, `scale-shader` CLI done; ABI v2 contract frozen (T-730), decoder/IR/interpreter/GPU cases next (T-731..T-734) |
 | M8 Graphics integration | Translated shaders → pipeline creation, translation cache (decision 0005) | — | not started |
 | M9 Audio, input, local data | Interfaces demanded by verified tests | — | not started |
-| M10 Retail readiness gate | Criteria below | — | not started |
+| M10 Retail compatibility baseline | Criteria below | — | not started |
 | infra Portability | Windows first, Linux-ready (decision 0004) | T-801, T-802 | groundwork done; Linux CI blocked |
 
 ## Acceptance criteria and integration gates
@@ -53,7 +53,7 @@ Implement a small documented adapter registry and versioned evidence records. Us
 
 ### M5 — Application integration and diagnostics
 
-Add `report.json` with loader stage, import resolutions, unsupported operations, exit result, test executable identity and timing. Keep reports free of secrets. Build a small headless test title from source that uses synthetic adapter imports, multiple DLLs, memory, threads and resource files. Compare observed results with a native reference or explicit golden expectations. A passing synthetic test title proves the exercised host features, not Xbox title support. If lawful console test binaries are unavailable, report the real-title track as blocked while continuing synthetic work.
+Add `report.json` with loader stage, import resolutions, unsupported operations, exit result, test executable identity and timing. Keep reports free of secrets. Build a small headless test title from source that uses synthetic adapter imports, multiple DLLs, memory, threads and resource files. Compare observed results with a native reference or explicit golden expectations. A passing synthetic test title proves the exercised host features, not Xbox title support. If no console test executable is available, continue synthetic work and record the retail tests as not run.
 
 ### M6 — Graphics vertical slice
 
@@ -77,7 +77,7 @@ Implement only interfaces demanded by verified test titles; start with public ho
 
 ### M10 — Retail compatibility: baseline, triage and iteration
 
-Retail compatibility is the intended integration phase, not a shortcut around unfinished core modules. Start only after the following baseline is demonstrated:
+We recommend starting systematic retail testing once SCALE meets the M10 baseline below. Earlier experiments with game files you obtained yourself can help identify gaps. Record the build, observed results and missing capabilities so the experiment is reproducible.
 
 - Native loader: trusted PE32+ test executables covering imports, relocation, ordinary startup, TLS, unwind/SEH and DLL initialization pass; unsupported cases are rejected predictably.
 - Platform runtime: documented adapters and title filesystem are tested, with explicit unsupported behavior and reliable diagnostic reporting.
@@ -85,16 +85,16 @@ Retail compatibility is the intended integration phase, not a shortcut around un
 - Shader recompiler: representative compute and vertex/pixel shaders are translated and tested on actual GPU hardware; instruction and ABI limitations are enumerated. Complete instruction coverage is not a prerequisite.
 - Audio, input and local data: baseline synthetic tests pass; unavailable services are accurately reported rather than impersonated.
 - Integration: one self-authored test title exercises multiple components together with repeatable results; crash/timeout reports are captured.
-- Test material: an authorized, readable retail executable and its required resources are available for testing. If unavailable, retail execution remains BLOCKED; continue synthetic integration and documented compatibility research. Do not obtain unauthorized game dumps or bypass access controls.
+- Test material: use a readable retail executable and its required resources that you obtained yourself. If test files are unavailable, continue synthetic integration and report retail testing as not run.
 
-This gate is a readiness baseline, not proof of retail compatibility. Do not require every possible API or GPU instruction to be implemented before the first authorized retail test. The purpose of the next phase is to discover real gaps, as in XCL's reported development approach.
+The baseline covers representative APIs and GPU instructions. Use retail test results to determine compatibility and prioritize the gaps encountered.
 
 #### Evidence-driven compatibility loop
 
 1. Inspect the title and record its identity/build, imports, architecture and known unsupported features. Preserve original files.
-2. Run an authorized title in a controlled test environment; capture stage transitions, missing dependencies, unsupported API/graphics/shader operations, crashes and timeouts.
+2. Run a title you obtained yourself in a controlled test environment; capture stage transitions, missing dependencies, unsupported API/graphics/shader operations, crashes and timeouts.
 3. Group repeated diagnostics into actionable blockers and identify the earliest confirmed failure on the observed path. Do not assume the first warning is the root cause.
-4. Consult public documentation and lawful reference material. Record what is known, what is inferred and what remains unknown. Prioritize blockers that prevent further execution or affect multiple titles.
+4. Consult public documentation and public reference material. Record what is known, what is inferred and what remains unknown. Prioritize blockers that prevent further execution or affect multiple titles.
 5. Implement the smallest reusable, evidence-backed fix in the responsible module. Never guess unknown function signatures or return fake success to advance execution.
 6. Add a reproducible synthetic regression test for the discovered behavior whenever possible. Run the affected module tests, then repeat the title test and compare progress.
 7. Update the compatibility report, limitations and next blocker. Repeat incrementally; prefer general fixes over per-title patches. Any justified title-specific workaround must be explicit, documented and independently tested.
