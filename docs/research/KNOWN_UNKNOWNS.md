@@ -11,3 +11,7 @@ when you close one.
 | U-003 | Console shader container format and any Xbox-specific ISA extensions beyond gfx10.3 | M7 console shaders | open: M7 uses standard gfx1030 only |
 | U-004 | Console graphics API object model and ABI (D3D12.X) | M6/M8 mapping | open |
 | U-005 | Availability of retail test files obtained by the tester | M10 | open: no retail test files available |
+
+Research tasks in the [translation gap review](TRANSLATION_GAPS.md) connect
+U-003 to T-736 and U-004 to T-804. T-504 can help investigate U-001 and U-002
+when a Scarlett sample build is available.
