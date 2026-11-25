@@ -8,7 +8,8 @@ before claiming anything.
 
 Statuses: `READY` (assigned, unblocked) · `IN_PROGRESS` · `REVIEW` (branch
 pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
-· `WAITING` (depends on unfinished tasks).
+· `WAITING` (depends on unfinished tasks)
+· `PROPOSED` (unassigned and awaiting coordinator review).
 
 ## Board
 
@@ -47,8 +48,21 @@ pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 | T-801 | Portability groundwork (decision 0004) | Claude | DONE | T-000 | infra |
 | T-802 | Linux build/test environment and CI | unassigned | BLOCKED (no Linux environment) | T-801 | infra |
 
-Unassigned backlog: title filesystem / path translation (M4), adapter
-registry (M4), graphics triangle slice (M6).
+| T-303 | Bind normal imports through the IAT | unassigned | PROPOSED | T-204 | M3 |
+| T-304 | Load a guest DLL from an explicit module root | unassigned | PROPOSED | T-302, T-303 | M3 |
+| T-305 | Resolve forwarded exports | unassigned | PROPOSED | T-304 | M3 |
+| T-306 | Run one ordinary CRT executable | unassigned | PROPOSED | T-302, T-303 | M3 |
+| T-307 | Inspect and bind delay imports | unassigned | PROPOSED | T-304 | M3 |
+| T-401 | Register SCALE-owned console module adapters | unassigned | PROPOSED | T-303 | M4 |
+| T-402 | Inventory console imports and select the first module slice | unassigned | PROPOSED | T-103 | M4 |
+| T-403 | Implement the first evidence-backed console export group | unassigned | PROPOSED | T-401, T-402 | M4 |
+| T-404 | Separate read-only title assets from writable data | unassigned | PROPOSED | — | M4 |
+| T-501 | Run a headless synthetic title across loader and runtime | unassigned | PROPOSED | T-304, T-306, T-401, T-404 | M5 |
+| T-602 | Render a deterministic Vulkan triangle through a synthetic adapter | unassigned | PROPOSED | T-601 | M6 |
+| T-735 | Translate a minimal vertex and pixel shader pair | unassigned | PROPOSED | T-734 | M7 |
+| T-803 | Feed translated stage shaders into the graphics pipeline | unassigned | PROPOSED | T-602, T-735 | M8 |
+| T-901 | Exercise local data and input with deterministic host doubles | unassigned | PROPOSED | T-401, T-404 | M9 |
+| T-902 | Submit a synthetic PCM buffer through an audio adapter | unassigned | PROPOSED | T-401 | M9 |
 
 ## Interface freeze points
 
@@ -85,6 +99,73 @@ The files below are shared. Make only the edits listed.
 ---
 
 ## Open tasks
+
+### Proposed translation work
+
+These proposals come from SCALE's code and contracts. See the
+[reference cross-check](research/REFERENCES.md#cross-check-of-the-translation-backlog)
+for related implementations and limits. The coordinator
+confirms scope and assigns owned paths before implementation.
+
+#### T-303 — Bind normal imports through the IAT
+
+`import_resolver.cpp` currently reports every import as unresolved and `image_map_win32.cpp` has no IAT binding step. Carry resolved addresses into the mapper and validate every slot before applying page protections. A synthetic EXE must call a registered function and return the expected value. A missing required import or invalid IAT slot must fail before entry.
+
+#### T-304 — Load a guest DLL from an explicit module root
+
+The mapper currently rejects DLL images. Start with a self-built DLL from a caller-configured module root and a guest EXE that imports it by name and ordinal. Test export bounds, initialization ordering and unload behavior. A missing module or failed initialization must produce a named diagnostic.
+
+#### T-305 — Resolve forwarded exports
+
+Support forwarded exports in a pair of self-built DLLs from the same module root. Test forwarding by name and ordinal, and reject missing targets and cycles with diagnostics that identify the resolution chain.
+
+#### T-306 — Run one ordinary CRT executable
+
+The worker calls a custom zero-argument entry. Compare one standard MSVC console executable with a native Windows run, covering static initialization, ASCII arguments, stdout and exit code. Document which startup mechanisms are required and reject unsupported ones before entry.
+
+#### T-307 — Inspect and bind delay imports
+
+The mapper rejects the delay-import directory. Compare inspection with `dumpbin` for one self-built `/DELAYLOAD` executable. Verify its first call and repeated calls against the native run, and report a missing delay target when invoked.
+
+#### T-401 — Register SCALE-owned console module adapters
+
+Add a registry keyed by guest module and name or ordinal with an evidence record for each binding. Exercise provider precedence with a synthetic module and a conflicting guest DLL. Missing signatures must leave the import unresolved. Use the same interface for later SCALE implementations of console exports.
+
+#### T-402 — Inventory console imports and select the first module slice
+
+Start with public references and `scale inspect` reports from locally supplied files when available. Record module, export or ordinal, sample identity, evidence for signature and behavior, and confidence. Identify a small set of related exports with verifiable contracts. Record missing evidence under U-002 and keep raw binaries out of the repo.
+
+#### T-403 — Implement the first evidence-backed console export group
+
+Implement the smallest group selected by T-402 as a SCALE-owned provider. Write ABI and behavior tests covering arguments, return codes and resource lifetime where applicable. An unknown required export from the same module must still produce `unresolved_import`.
+
+#### T-404 — Separate read-only title assets from writable data
+
+The architecture lists `src/filesystem` as planned. Add path mapping for one read-only title mount and one writable data mount. Test file reads, writes, missing paths and rejected escapes, including Windows reparse points. Confirm that test writes leave the title files unchanged.
+
+#### T-501 — Run a headless synthetic title across loader and runtime
+
+Build one source-only executable that starts through the CRT, calls a synthetic adapter and uses both filesystem mounts. Assert per-stage diagnostics, final exit code and write location. Run a negative variant with a missing import and verify that no guest code runs.
+
+#### T-602 — Render a deterministic Vulkan triangle through a synthetic adapter
+
+`vulkan_compute.cpp` only dispatches compute. Add an offscreen graphics pipeline using known host shaders, a color target and readback. Assert sampled pixels inside and outside the triangle. Record the GPU and a capability-specific skip or error when the required format is unavailable.
+
+#### T-735 — Translate a minimal vertex and pixel shader pair
+
+The existing shader harness exercises compute. Define a synthetic stage ABI for position, one interpolant and color output. Check decoding against LLVM where supported, validate SPIR-V and test the pair on Vulkan against independently specified pixels.
+
+#### T-803 — Feed translated stage shaders into the graphics pipeline
+
+Use the triangle path with SCALE-translated vertex and pixel shaders, making stage interfaces, resource bindings and synchronization explicit. Compare readback with the host shader baseline and check that a mismatched stage interface fails before submission.
+
+#### T-901 — Exercise local data and input with deterministic host doubles
+
+Add a synthetic adapter test that reads scripted input and saves then reloads local state under the writable root. Verify the disconnected-device and unavailable-service results.
+
+#### T-902 — Submit a synthetic PCM buffer through an audio adapter
+
+Define a small synthetic audio adapter with explicit format, timing and ownership. Test submitted samples, completion order and unsupported formats with a fake sink before adding a host backend.
 
 ### T-730 — Shader ABI v2 contract: memory and resources (Codex)
 

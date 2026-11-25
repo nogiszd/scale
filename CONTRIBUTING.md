@@ -6,47 +6,11 @@ single integrator who merges. The same pipeline works for people and for
 coding agents (Claude Code, Codex, or your own), and for any mix of them.
 This guide explains how to join it.
 
-Read [AGENTS.md](AGENTS.md) first. It is the project's rulebook: mission,
-legal scope, engineering rules and milestone acceptance criteria. Everything
+Read [AGENTS.md](AGENTS.md) first. It gives the project's mission and core engineering rules. Detailed milestone
+criteria are in [docs/ROADMAP.md](docs/ROADMAP.md). Everything
 below assumes it.
 
-## Ground rules
-
-- **Lawful material only.** Use public documentation and self-authored test
-  executables. Never commit or link game files, console SDK files, keys or
-  dumps. Do not implement DRM bypass, package decryption, entitlement
-  spoofing or online service impersonation.
-- **No guessing.** Don't invent undocumented ABI behavior, generate stubs for
-  unknown functions or return fake success. Unsupported behavior must fail
-  with a named error. Record missing evidence in
-  [docs/research/KNOWN_UNKNOWNS.md](docs/research/KNOWN_UNKNOWNS.md).
-- **Own your code.** Other projects may be studied but not
-  copied or translated line by line.
-- **Tests or it didn't happen.** A feature is done when its contract is
-  documented, it builds without warnings, and its positive and negative tests
-  have run. A skipped test never counts as a pass.
-
-## 1. Set up a machine
-
-Requirements: Windows 11 x64, Visual Studio 2022+ (or Build Tools) with
-*Desktop development with C++*, and Git. For graphics and shader work you
-also need the LunarG Vulkan SDK and LLVM with the AMDGPU target.
-
-```powershell
-git clone https://github.com/nogiszd/scale.git
-cd scale
-. .\scripts\vsenv.ps1              # MSVC x64 environment for this session
-.\scripts\check-env.ps1            # reports what is installed
-.\scripts\build-llvm-amdgpu.ps1 -AddToUserPath   # only for shader work (10-30 min)
-cmake --preset debug
-cmake --build --preset debug
-ctest --preset full
-```
-
-The first configure downloads GoogleTest 1.18.0, pinned and hash-checked.
-Nothing is installed machine-wide, and no administrator rights are needed.
-
-## 2. Roles
+## 1. Roles
 
 | Role | Responsibilities |
 |---|---|
@@ -58,7 +22,7 @@ Current contributors and their areas are listed in
 [docs/MULTI_AGENT.md](docs/MULTI_AGENT.md) and
 [docs/architecture.md](docs/architecture.md).
 
-## 3. Join the pipeline
+## 2. Join the pipeline
 
 1. **Introduce yourself.** Open an issue (or ask the maintainer) naming the
    area you want to work on. New contributors get:
@@ -74,9 +38,9 @@ Current contributors and their areas are listed in
    git worktree add ..\scale-wt\<name> -b <name>/<task-id>-<slug> origin/integration
    ```
 
-   Each worktree has its own `out/` build tree.
+   Each worktree has its own `out/` build tree. See the [build guide](docs/BUILD.md) for setup and test commands.
 
-## 4. Work on a task
+## 3. Work on a task
 
 Each task in `docs/TASKS.md` has an ID, owner, status, scope, dependencies,
 owned paths and acceptance criteria. Stay inside the owned paths.
@@ -106,7 +70,7 @@ GoogleTest via `scale_add_test` (see
 one label: `quick`, `integration` or `gpu`. Windows is the first platform and Linux a planned one: follow [decision 0004](docs/decisions/0004-platform-portability.md). No OS headers in shader, graphics, diagnostics or PE inspection code, and OS-specific code goes in `_win32.cpp` files behind platform-neutral headers. Test executables are source built
 by CMake under `tests/executables/`. Binaries are never committed.
 
-## 5. Hand a task over
+## 4. Hand a task over
 
 Before asking for review:
 
@@ -125,7 +89,7 @@ Before asking for review:
 Then push your branch and open a pull request **against `integration`**, or
 tell the maintainer the branch is ready if you work in the local repository.
 
-## 6. Review and merge (coordinator)
+## 5. Review and merge (coordinator)
 
 The coordinator does the following for every task:
 
@@ -144,7 +108,7 @@ The coordinator does the following for every task:
 `main` always equals a fully tested `integration`. Nobody else commits to
 `integration` or `main`.
 
-## 7. Using the pipeline with your own agents
+## 6. Using the pipeline with your own agents
 
 Any coding agent can take part. Give it repository access through its own
 worktree and a first prompt like this:
@@ -169,7 +133,7 @@ Agent configuration files in the root (`CLAUDE.md`, and the `AGENTS.md`
 that Codex reads natively) all point to the same rules. For a tool that reads
 a different file, add a one-line pointer to `AGENTS.md`, not a copy.
 
-## 8. Reporting results and compatibility
+## 7. Reporting results and compatibility
 
 - **GPU coverage needs you.** If you have a GPU class that hasn't been tested yet (see [docs/contracts/gpu_targets.md](docs/contracts/gpu_targets.md): AMD RDNA2, NVIDIA, Intel, software Vulkan), run `ctest --preset gpu` and send the printed device fingerprint and results. Each new class becomes recorded coverage.
 
@@ -177,7 +141,7 @@ a different file, add a one-line pointer to `AGENTS.md`, not a copy.
   commands and counts.
 - Keep run reports (`scale run --report`) and traces out of the repository.
 - Never call a title compatible or playable based on entry-point or menu
-  results. Use the stage vocabulary from AGENTS.md (NOT_TESTED, BLOCKED,
+  results. Use the stage vocabulary from docs/ROADMAP.md (NOT_TESTED, BLOCKED,
   FAILED, PASS per stage).
 
 ## Questions
@@ -185,3 +149,4 @@ a different file, add a one-line pointer to `AGENTS.md`, not a copy.
 Open an issue, or add a *Requests to coordinator* entry to your handoff file.
 Discuss structural changes (new dependencies, new components, interface
 changes) before you write code.
+

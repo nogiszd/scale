@@ -22,5 +22,5 @@ Status: accepted (2026-11-24, T-000)
 ## Rationale
 
 These choices give each agent its own directories, keep conflicts confined
-to a few documented shared files, and add no dependencies. The interpreter
-and compiler are kept independent as AGENTS.md M7 requires.
+to a few documented shared files. The interpreter and compiler remain independent
+as required by the [roadmap](../ROADMAP.md#m7--rdna2-shader-recompiler).

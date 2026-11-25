@@ -24,11 +24,10 @@ supervised worker process (T-201).
 
 ## Rationale (demonstrated requirements the OS loader cannot meet)
 
-- **Resolver policy (AGENTS.md M3):** documented adapter → approved guest
-  module → explicitly permitted Windows export → unresolved error. The OS
+- **Resolver policy ([roadmap M3](../ROADMAP.md#m3--import-resolution-and-windows-runtime-fidelity)):** documented adapter → guest DLL from a configured module root → explicitly permitted Windows export → unresolved error. The OS
   loader cannot substitute an adapter for a synthetic module such as
   `test_platform.dll` without a real DLL of that name. It also follows
-  the arbitrary DLL search path that AGENTS.md rules out.
+  the standard DLL search order.
 - **No execution past an unresolved required import:** with the OS loader
   the process either fails with a loader dialog or status code, which can't
   be mapped to a structured diagnostic, or it runs. Custom mapping reports
