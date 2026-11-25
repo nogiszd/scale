@@ -65,3 +65,9 @@ TEST(VulkanCompute, Readback) {
   Run `full` before moving a task to REVIEW.
 - Offline builds: configure with
   `-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=<extracted googletest-1.18.0>`.
+
+## Cross-component evidence
+
+CPU tests: compare trusted test executable execution under normal Windows loading and the compatibility host, where contracts match. Check outputs, exit codes, file effects and observable behavior, not identical addresses or scheduling. Include malformed PE, missing imports, unsupported features and worker failure. A test executable using a synthetic console API needs an independently specified golden behavior; a normal Windows execution is not an Xbox oracle.
+
+Shader tests (as soon as the shader track begins): use one data-driven differential runner. Each supported operation has a small set of manual expected results plus deterministic generated inputs. Compare independent CPU interpretation and actual GPU readback, using exact integer values and specification-based float tolerances/bit rules. Add short multi-instruction programs to detect interactions. Use a simple seedable generator only after the first working shader. Missing GPU tests are SKIPPED, never PASS; required milestone GPU acceptance remains incomplete until hardware execution is verified.

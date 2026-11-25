@@ -6,8 +6,8 @@ single integrator who merges. The same pipeline works for people and for
 coding agents (Claude Code, Codex, or your own), and for any mix of them.
 This guide explains how to join it.
 
-Read [AGENTS.md](AGENTS.md) first. It is the project's rulebook: mission,
-legal scope, engineering rules and milestone acceptance criteria. Everything
+Read [AGENTS.md](AGENTS.md) first. It gives the project's mission and core engineering rules. Detailed milestone
+criteria are in [docs/ROADMAP.md](docs/ROADMAP.md). Everything
 below assumes it.
 
 ## Ground rules
@@ -177,7 +177,7 @@ a different file, add a one-line pointer to `AGENTS.md`, not a copy.
   commands and counts.
 - Keep run reports (`scale run --report`) and traces out of the repository.
 - Never call a title compatible or playable based on entry-point or menu
-  results. Use the stage vocabulary from AGENTS.md (NOT_TESTED, BLOCKED,
+  results. Use the stage vocabulary from docs/ROADMAP.md (NOT_TESTED, BLOCKED,
   FAILED, PASS per stage).
 
 ## Questions
@@ -185,3 +185,9 @@ a different file, add a one-line pointer to `AGENTS.md`, not a copy.
 Open an issue, or add a *Requests to coordinator* entry to your handoff file.
 Discuss structural changes (new dependencies, new components, interface
 changes) before you write code.
+
+## Development environment checks
+
+Windows 11 x64 with MSVC x64, Windows SDK, CMake and Ninja is the initial target. Check `git --version`, `cmake --version`, `ninja --version`, `Get-Command cl, link, dumpbin` and the compiler/SDK architecture. Verify used C++23 features with the installed compiler. Do not auto-install dependencies or change machine-wide settings; report missing tools and exact installation steps.
+
+For graphics work, verify `vulkaninfo --summary` and `spirv-val --version`; for shader decoding, verify `llvm-mc --version`, `llvm-objdump` and AMDGPU target registration. Pin and record tool versions. Public PC GDK does not establish console GDKX compatibility. See [portability decision 0004](docs/decisions/0004-platform-portability.md).
