@@ -14,21 +14,25 @@ below assumes it.
 
 | Role | Responsibilities |
 |---|---|
-| **Local coordinator** (person or agent) | Plans work, assigns local tasks, coordinates worktrees and reviews changes in their own setup. |
-| **Upstream integration** (maintainer or delegate) | Confirms upstream task claims and owned paths, approves shared build and interface changes, and manages review and merges into SCALE's `integration` and `main`. |
-| **Contributor** (person or agent) | Works on assigned tasks in their own branch and directories, tests them, and hands them over for review. |
+| **Local coordinator** (optional person or agent) | Plans work, assigns local tasks, coordinates worktrees and reviews changes in their own setup. |
+| **Upstream integration** (maintainer or delegate) | Maintains upstream assignments and owned paths, approves shared build and interface changes, and manages review and merges into SCALE's `integration` and `main`. |
+| **Contributor** (person or agent) | Works solo or with a local team in their own task branch and directories, tests changes, and submits them for review. |
 | **Maintainer** | The human owner. Approves the roster, priorities, pushes and releases. |
 
 See the [example maintainer setup](docs/MULTI_AGENT.md#example-maintainer-setup) and the [upstream task registry](docs/TASKS.md).
 
 ## 2. Join the pipeline
 
-1. **Introduce yourself.** Open an issue (or ask the maintainer) naming the
-   area you want to work on. New contributors get:
-   - a name used in branch names (`alice`, `codex`, …);
-   - a handoff file `docs/agents/<name>/HANDOFF.md`;
-   - one or more tasks in [docs/TASKS.md](docs/TASKS.md) with owned paths.
-2. **Request an upstream task claim** on the [contributor pick-up board](https://github.com/nogiszd/scale/issues/5). Use the current `integration` copy of `docs/TASKS.md` and wait for the maintainer or their delegate to confirm the claim and owned paths.
+1. **Find a free task.** Check the current `integration` copy of [the task
+   registry](docs/TASKS.md) and the comments on the [pick-up board](https://github.com/nogiszd/scale/issues/5).
+   Pick a listed task with no active owner or claim and with prerequisites
+   ready for the listed scope. For entries marked **prep**, use the standalone
+   scope shown on the board.
+2. **Claim and start.** Post the claim on the pick-up board following the
+   instructions there. A solo contributor can start immediately and take the
+   work through to a PR. A local coordinator is optional. Keep your changes
+   within the listed scope and raise any overlap or shared-file change before
+   editing the affected paths.
 3. **Use your own worktree** so builds and branches never collide:
 
    ```powershell
@@ -80,9 +84,11 @@ Before asking for review:
 - [ ] Commits are on your task branch, with messages starting with the task id:
       `T-123: parse section headers`. Keep messages factual: what changed and
       how it was verified.
-- [ ] Your task status in `docs/TASKS.md` is `REVIEW`.
-- [ ] `docs/agents/<name>/HANDOFF.md` lists the commands you ran, their
-      actual results (counts, skips, tool versions) and known limitations.
+- [ ] For an assigned task, update its status in `docs/TASKS.md` to `REVIEW`.
+      For a pick-up task claimed on the board, link the claim in the PR.
+- [ ] Record commands, actual results (counts, skips, tool versions) and known
+      limitations in the PR or your existing `HANDOFF.md`. If you used a coding
+      agent, include the tool, model name if known, and what it did.
 
 Then push your branch and open a pull request **against `integration`**, or
 tell the maintainer the branch is ready if you work in the local repository.
@@ -91,7 +97,7 @@ tell the maintainer the branch is ready if you work in the local repository.
 
 The maintainer or their delegate does the following for every task:
 
-1. Reads the code and the handoff. Doesn't take reported results on trust.
+1. Reads the code and the evidence in the PR or handoff.
 2. Rebuilds and reruns the tests in an isolated worktree, including
    independent checks where possible (e.g. LLVM disassembly, dumpbin,
    native reference runs).
@@ -108,17 +114,16 @@ The maintainer or their delegate does the following for every task:
 
 ## 6. Using the pipeline with your own agents
 
-Any contributor can coordinate their own agents locally. Give each agent a
-separate worktree. Once an upstream task is confirmed, use a prompt like this:
+A contributor working with several agents can coordinate them locally. Give
+each agent a separate worktree. Use a prompt like this for an assigned task
+or an eligible task claimed on the pick-up board:
 
 > You are the `<name>` agent for SCALE. Read AGENTS.md, CONTRIBUTING.md,
 > docs/MULTI_AGENT.md, docs/TASKS.md, docs/architecture.md, the relevant
-> docs/contracts/ files and docs/agents/<name>/HANDOFF.md. You work in your
-> own worktree on branch `<name>/<task-id>-<slug>`. Do only the tasks assigned
-> to you, stay inside their owned paths, and follow the shared-file rules.
-> When a task meets its acceptance criteria, commit, set it to REVIEW in
-> docs/TASKS.md, record the commands and results in your HANDOFF.md, and stop
-> for review. Never commit to `integration` or `main`.
+> docs/contracts/ files and your handoff if one exists. Work in your own
+> worktree on branch `<name>/<task-id>-<slug>`. Follow the agreed or listed
+> scope and the shared-file rules. Record your commands and results and
+> submit the PR against `integration` for review.
 
 Useful follow-up prompts:
 

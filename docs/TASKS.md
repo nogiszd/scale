@@ -1,15 +1,16 @@
 # Task registry
 
 This registry tracks upstream SCALE assignments. The maintainer or their
-delegate confirms claims and owner changes, reconciles this file and merges
-to `integration`. Contributors update the **Status** of their own tasks in
-their task branches. Read the current `integration` copy before requesting
-a claim. Contributors can coordinate their own local work independently.
+delegate reconciles the registry and merges reviewed changes into `integration`.
+For already assigned tasks, contributors update the **Status** in their task
+branch. For work listed on the [pick-up board](https://github.com/nogiszd/scale/issues/5),
+check the current `integration` registry and post a claim in the issue.
+Contributors can start eligible tasks solo after posting their claim.
 
 Statuses: `READY` (assigned, unblocked) · `IN_PROGRESS` · `REVIEW` (branch
 pushed, full suite green) · `DONE` (merged to main) · `BLOCKED` (reason given)
 · `WAITING` (depends on unfinished tasks)
-· `PROPOSED` (unassigned and awaiting coordinator review).
+· `PROPOSED` (unassigned proposal. Listed pick-up work can be claimed in the issue).
 
 ## Board
 
