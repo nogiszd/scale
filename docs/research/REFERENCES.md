@@ -13,4 +13,4 @@ source.
 | https://registry.khronos.org/vulkan/ | Vulkan compute, SPIR-V unified spec (T-601, T-703, T-707) | accessed 2026-11-24; SDK 1.4.363.0 |
 | https://github.com/KhronosGroup/SPIRV-Tools | spirv-val / spirv-dis (T-703, T-720) | SPIRV-Tools v2026.4 (Vulkan SDK 1.4.363.0) |
 | https://github.com/microsoft/GDK, https://github.com/microsoft/Xbox-GDK-Samples | Public GDK context only; not console ABI evidence | — |
-| https://github.com/ivall/xcl | Reference; public source may be studied, no code copied or translated | — |
+| https://github.com/ivall/xcl | Public implementation reference for loader and compatibility design | — |

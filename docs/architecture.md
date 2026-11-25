@@ -56,6 +56,14 @@ all -> diagnostics -> common
 - Diagnostics follow `docs/contracts/diagnostics.md`. Tests follow
   `docs/contracts/testing.md`.
 
+## Planned module providers (M3–M4)
+
+The runtime will resolve imports through SCALE-owned adapters, guest DLLs from
+an explicit module root, then individually permitted Windows exports. A provider
+only binds an export when its ABI and behavior are supported. Keep third-party
+library choices separate from guest import resolution and document each library's
+purpose and license. See the [task registry](TASKS.md#proposed-translation-work).
+
 ## Execution model (M2)
 
 The CLI supervisor (`scale run`) launches an unprivileged worker process. The

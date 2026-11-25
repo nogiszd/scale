@@ -4,7 +4,7 @@
 
 Build an independent Windows x64 compatibility layer for Xbox Series X|S software. Execute compatible AMD64 code on the host CPU, provide platform runtime adapters, and translate graphics and RDNA2 shaders. CPU/runtime, graphics and shader translation are all required. For retail testing guidance, see the [roadmap](docs/ROADMAP.md#m10--retail-compatibility-baseline-triage-and-iteration).
 
-Use public documentation and test material you create or obtain yourself. Do not copy, vendor or mechanically translate XCL or other projects' code. Do not distribute proprietary SDK files or games, bypass DRM or package encryption, spoof entitlements or online services, or invent unknown console ABI details. Keep all code, comments, documentation and CLI output in English.
+Use public documentation and test material you create or obtain yourself. Study public implementations and independently implement guest-facing console module behavior where the ABI is evidenced. Evaluate external libraries for a demonstrated need and document their license and integration. Do not distribute proprietary SDK files or games, bypass DRM or package encryption, spoof entitlements or online services, or invent unknown console ABI details. Keep all code, comments, documentation and CLI output in English.
 
 ## Start each task
 
@@ -19,7 +19,7 @@ Use public documentation and test material you create or obtain yourself. Do not
 - The native worker isolates crashes, but is not a security sandbox. Never alter original title files; run repository-built tests without administrator privileges. Use a disposable VM for experiments with unfamiliar binaries.
 - Reject unsupported required imports and behavior explicitly. No guessed signatures, blanket stubs, silent fallbacks or fabricated success. Record console-specific gaps in [known unknowns](docs/research/KNOWN_UNKNOWNS.md).
 - Use GoogleTest via CTest; follow the [testing contract](docs/contracts/testing.md). Keep shader compiler semantics independent from the reference interpreter.
-- Research needed for a feature using [recorded sources](docs/research/REFERENCES.md), public specifications, public reference projects and reproducible observations. Distinguish documented facts, inference and unknowns; verify approaches from other projects with an independent source or test before implementing them. Do not copy their code.
+- Research needed for a feature using [recorded sources](docs/research/REFERENCES.md), public specifications, public reference projects and reproducible observations. Distinguish documented facts, inference and unknowns; verify approaches from other projects with an independent source or test before implementing them. Check license compatibility before reusing code.
 - Do not install software or change machine-wide settings automatically. Do not overwrite unrelated work. The maintainer controls pushes. In manual sessions, commits are optional unless requested; for a task handoff, follow the repository's branch and review process.
 
 ## Where information lives

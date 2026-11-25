@@ -96,7 +96,7 @@ The PE inspection interface is documented in [docs/contracts/inspect.md](docs/co
 
 SCALE is an independent project and is not affiliated with Microsoft or Xbox.
 
-SCALE does not support piracy or distribute games, proprietary SDK files or third-party executables. Use game files you obtained yourself and keep them out of the repository. SCALE does not implement package decryption, DRM bypass, entitlement spoofing or online service impersonation.
+SCALE does not support piracy. SCALE ships no third-party DLLs, games, proprietary SDK files or other third-party executables. Use game files you obtained yourself and keep them out of the repository. SCALE does not implement package decryption, DRM bypass, entitlement spoofing or online service impersonation.
 
 ---
 

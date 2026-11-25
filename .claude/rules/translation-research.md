@@ -10,10 +10,12 @@ Use public specifications and public implementations such as XCL as starting
 points. For each relevant approach, record the source and revision, the behavior
 it demonstrates, and where its assumptions differ from SCALE's. Verify claims
 with public documentation or a small reproducible test. Follow the evidence and
-code reuse rules in [AGENTS.md](../../AGENTS.md).
+dependency and ABI rules in [AGENTS.md](../../AGENTS.md).
 
 Turn actionable gaps into small tasks in the [task registry](../../docs/TASKS.md).
 Include a milestone, dependencies, evidence, scope and a testable acceptance
-criterion. Prioritize gaps on the path to the next integration milestone.
+criterion. For a missing console module, compare a SCALE-owned adapter, an
+explicitly supplied guest DLL and a host API or library where applicable.
+Prioritize gaps on the path to the next integration milestone.
 Record unresolved requirements in [KNOWN_UNKNOWNS.md](../../docs/research/KNOWN_UNKNOWNS.md)
 and new sources in [REFERENCES.md](../../docs/research/REFERENCES.md).
