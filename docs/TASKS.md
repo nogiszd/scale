@@ -102,7 +102,9 @@ The files below are shared. Make only the edits listed.
 
 ### Proposed translation work
 
-These proposals come from the code and contracts in this branch. The coordinator
+These proposals come from SCALE's code and contracts. See the
+[reference cross-check](research/REFERENCES.md#cross-check-of-the-translation-backlog)
+for related implementations and limits. The coordinator
 confirms scope and assigns owned paths before implementation.
 
 #### T-303 — Bind normal imports through the IAT
